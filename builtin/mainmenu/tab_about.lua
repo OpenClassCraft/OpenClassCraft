@@ -94,7 +94,7 @@ return {
 		local fs = "image[1.9,0.3;1.5,1.5;" .. core.formspec_escape(game_logo) .. "]" ..
 			"style_type[label;valign=center;halign=center]" ..
 			"label[0.1,1.9;5.3,0.4;" .. core.formspec_escape(game_title) .. "]" ..
-			"button_url[0.5,3.25;4.5,0.7;github;GitHub;https://github.com/GP-commits/OpenCodeCraft.git]" ..
+			"button_url[0.5,3.25;4.5,0.7;github;GitHub;https://github.com/OpenClassCraft/OpenClassCraft]" ..
 
 			-- Engine details slightly smaller below
 			"image[0.5,4.15;1.0,1.0;" .. core.formspec_escape(engine_logofile) .. "]" ..
