@@ -1,8 +1,11 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Submit issues about Minetest Game
-    url: https://github.com/luanti-org/minetest_game/issues/new
-    about: Only submit issues of the engine in this repository's issue tracker. Submit those of Minetest Game in its own issue tracker.
-  - name: Search for issue trackers of third-party games
-    url: https://content.luanti.org/packages/?type=game
-    about: For issues of third-party games, search for the game in the ContentDB and then submit an issue in their issue tracker.
+  - name: Report an OpenClassCraft security vulnerability privately
+    url: https://github.com/OpenClassCraft/OpenClassCraft/security/advisories/new
+    about: Do not disclose vulnerabilities, bridge tokens, or private classroom data in a public issue.
+  - name: Search OpenClassCraft issues
+    url: https://github.com/OpenClassCraft/OpenClassCraft/issues
+    about: Check for an existing report before opening a duplicate.
+  - name: Report a confirmed upstream Luanti engine issue
+    url: https://github.com/luanti-org/luanti/issues/new/choose
+    about: Use this only when the problem also occurs in an unmodified current Luanti build.
