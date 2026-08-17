@@ -1,0 +1,102 @@
+.TH OPENCLASSCRAFT 6 "2026-08-17" "OpenClassCraft 0.1.0" "Games"
+.SH NAME
+openclasscraft \- classroom-focused voxel coding game
+.SH SYNOPSIS
+.B openclasscraft
+[\fB--server\fR \fISERVER OPTIONS\fR | \fICLIENT OPTIONS\fR]
+[\fICOMMON OPTIONS\fR]
+.SH DESCRIPTION
+.B OpenClassCraft
+is an educational voxel environment in which learners arrange in-world
+programming blocks to control robots.  It includes classroom lesson tools,
+chemistry activities, accessibility helpers, and local multiplayer, on top of
+a customized Luanti engine.
+.SH COMMON OPTIONS
+.TP
+.B --help
+Print supported options and exit.
+.TP
+.B --version
+Print version and build information and exit.
+.TP
+.BI --config " file"
+Load configuration from the given file.
+.TP
+.BI --logfile " file"
+Write logs to the given file.  Use an empty value to disable file logging.
+.TP
+.B --info
+Enable informational console output.
+.TP
+.B --verbose
+Enable verbose console output.
+.TP
+.B --trace
+Enable trace-level console output.
+.TP
+.B --quiet
+Print only errors.
+.TP
+.BI --gameid " id"
+Select a game, or use
+.B --gameid list
+to list installed games.  The bundled educational game ID is
+.BR luanti_edu .
+.TP
+.BI --worldname " name"
+Select a world by name.
+.TP
+.BI --world " path"
+Select a world by path.
+.TP
+.BI --port " port"
+Select the UDP network port.
+.TP
+.B --run-unittests
+Run the inherited engine unit tests and exit.
+.SH CLIENT OPTIONS
+.TP
+.BI --address " address"
+Connect to a server address.  An empty address starts a local game.
+.TP
+.B --go
+Skip the main menu and start directly.
+.TP
+.BI --name " player"
+Set the player name.
+.TP
+.BI --password-file " file"
+Read the player password from a file.
+.TP
+.B --random-input
+Enable random input for testing.
+.SH SERVER OPTIONS
+.TP
+.B --server
+Run a server using the client executable.
+.TP
+.B --terminal
+Display the interactive server terminal when supported.
+.SH ENVIRONMENT
+.TP
+.B LUANTI_GAME_PATH
+Colon-delimited list of additional game directories.
+.TP
+.B LUANTI_MOD_PATH
+Colon-delimited list of additional mod directories.
+.TP
+.B LUANTI_USER_PATH
+User-data directory for an installed build.
+.SH FILES
+.TP
+.I minetest.conf
+Configuration file name retained for Luanti compatibility.
+.SH BUGS
+Report OpenClassCraft issues at
+https://github.com/OpenClassCraft/OpenClassCraft/issues.
+.SH COPYRIGHT
+OpenClassCraft includes software derived from Luanti and Minetest Game.
+See the installed README and license files for authorship, attribution, and
+the licenses applying to each component.
+.SH WWW
+https://github.com/OpenClassCraft/OpenClassCraft
