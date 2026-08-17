@@ -52,10 +52,9 @@ fi
 cmake .. "${cmake_args[@]}"
 
 if [ "$USE_XCODE" == "yes" ]; then
-	xcodebuild -project luanti.xcodeproj -scheme luanti -configuration Release build
-	xcodebuild -project luanti.xcodeproj -scheme luanti -archivePath ./luanti.xcarchive archive
+	xcodebuild -project openclasscraft.xcodeproj -scheme openclasscraft -configuration Release build
+	xcodebuild -project openclasscraft.xcodeproj -scheme openclasscraft -archivePath ./openclasscraft.xcarchive archive
 else
 	cmake --build . -j$(sysctl -n hw.logicalcpu)
 	make install
 fi
-
