@@ -1,7 +1,7 @@
 #!/bin/bash
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 gameid=${gameid:-devtest}
-executable=$dir/../bin/luanti
+executable=$dir/../bin/openclasscraft
 testspath=$dir/../tests
 conf_server=$testspath/server.conf
 worldpath=$testspath/world
@@ -31,7 +31,7 @@ ln -s "$dir/helper_mod" "$worldpath/worldmods/"
 
 args=(--server --config "$conf_server" --world "$worldpath" --gameid $gameid)
 
-# make sure we can tell apart sanitizer and luanti errors
+# make sure we can tell apart sanitizer and OpenClassCraft errors
 export ASAN_OPTIONS="exitcode=42"
 export MSAN_OPTIONS="exitcode=42"
 
