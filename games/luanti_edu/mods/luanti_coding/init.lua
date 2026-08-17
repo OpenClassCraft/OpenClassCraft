@@ -3,6 +3,8 @@
 
 local modpath = minetest.get_modpath("luanti_coding")
 
+luanti_coding = {}
+
 dofile(modpath .. "/blocks.lua")
 dofile(modpath .. "/executor.lua")
 dofile(modpath .. "/wires.lua")

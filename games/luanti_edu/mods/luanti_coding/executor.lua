@@ -156,22 +156,33 @@ local function execute_step(robot, instructions, index, player_name, state)
         local next_inst = instructions[index + 1]
         if is_clear and next_inst and repeats < WHILE_MAX_REPEAT then
             state.while_counts[index] = repeats + 1
-            local expanded = {}
-            for i = 1, #instructions do
-                table.insert(expanded, instructions[i])
-                if i == index then
-                    table.insert(expanded, next_inst)
-                    table.insert(expanded, { action = "while_jump", target = index })
+            local jump = instructions[index + 2]
+            if jump and jump.action == "while_jump" and jump.target == index then
+                minetest.after(STEP_DELAY, function()
+                    execute_step(robot, instructions, index + 1, player_name, state)
+                end)
+            else
+                local expanded = {}
+                for i = 1, #instructions do
+                    table.insert(expanded, instructions[i])
+                    if i == index + 1 then
+                        table.insert(expanded, { action = "while_jump", target = index })
+                    end
                 end
+                minetest.after(STEP_DELAY, function()
+                    execute_step(robot, expanded, index + 1, player_name, state)
+                end)
             end
-            minetest.after(STEP_DELAY, function()
-                execute_step(robot, expanded, index + 1, player_name, state)
-            end)
             return
         else
             state.while_counts[index] = 0
             if next_inst then
-                index = index + 1
+                local jump = instructions[index + 2]
+                if jump and jump.action == "while_jump" and jump.target == index then
+                    index = index + 2
+                else
+                    index = index + 1
+                end
             end
         end
 
