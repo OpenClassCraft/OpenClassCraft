@@ -3,11 +3,11 @@ version: 1
 AppDir:
   path: AppDir
   app_info:
-    id: org.luanti.luanti
-    name: Luanti
-    icon: luanti
+    id: org.openclasscraft.OpenClassCraft
+    name: OpenClassCraft
+    icon: openclasscraft
     version: !ENV ${VERSION}
-    exec: usr/bin/luanti
+    exec: usr/bin/openclasscraft
     exec_args: $@
   files:
     include: []
@@ -54,5 +54,5 @@ script: |
     cmake --install appimage-build
 
     # Is a backup icon location in case
-    mkdir -p AppDir/usr/share/luanti/misc
-    cp AppDir/usr/share/icons/hicolor/128x128/apps/luanti.png AppDir/usr/share/luanti/misc/luanti-xorg-icon-128.png
+    mkdir -p AppDir/usr/share/openclasscraft/misc
+    cp AppDir/usr/share/icons/hicolor/1024x1024/apps/openclasscraft.png AppDir/usr/share/openclasscraft/misc/openclasscraft.png
