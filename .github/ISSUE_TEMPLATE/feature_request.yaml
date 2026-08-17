@@ -1,40 +1,81 @@
 name: Feature request
-description: Suggest an idea for this project
-labels: ["Feature request"]
+description: Suggest an improvement for OpenClassCraft
+title: "[Feature]: "
 body:
   - type: markdown
     attributes:
       value: |
-        Please note the following:
-        1. Only submit a feature request if the feature does not exist on the latest dev version.
-        2. This page is for suggesting changes to **the engine itself**. To suggest changes to games, please [search for the game in the ContentDB](https://content.luanti.org/packages/?type=game) and submit a feature request in their issue trackers.
-        3. If you have used an LLM/AI to format your issue description, disclose this. Try to keep it concise. No walls of text please.
-  - type: textarea
+        Explain the learning, classroom, accessibility, creator, or developer problem before describing a solution. Check the current `Latest` branch, [open issues](https://github.com/OpenClassCraft/OpenClassCraft/issues), and `PROJECT_CHECKLIST.md` first.
+
+        Do not include student records or other private classroom information. Security issues belong in [private vulnerability reporting](https://github.com/OpenClassCraft/OpenClassCraft/security/advisories/new).
+
+  - type: dropdown
+    id: area
     attributes:
-      label: Problem
-      description: |
-        A clear and concise description of the problem, i.e. "Why is this needed?"
-        Example: I'm always frustrated when [...]
+      label: Area
+      options:
+        - Robot programming or curriculum activity
+        - Guides, boards, lessons, checkpoints, or chemistry
+        - Accessibility
+        - Local classroom multiplayer or permissions
+        - In-game Creator Lab
+        - Desktop Creator
+        - Teacher Console or LAN lesson bridge
+        - Ubuntu, Fedora, or Windows packaging
+        - Engine or developer API
+        - Documentation or community
+        - Other
     validations:
       required: true
+
   - type: textarea
+    id: problem
     attributes:
-      label: Solutions
-      description: |
-        A clear and concise description of what you want to happen.
+      label: Problem or learning need
+      description: Who encounters the problem, in what setting, and why does it matter?
     validations:
       required: true
+
   - type: textarea
+    id: proposal
     attributes:
-      label: Alternatives
-      description: |
-        A clear and concise description of any alternative solutions or features you've considered.
+      label: Proposed experience
+      description: Describe the user-visible workflow and a small, testable first version.
     validations:
       required: true
+
   - type: textarea
+    id: alternatives
     attributes:
-      label: Additional context
-      description: |
-        Add any other context or screenshots about the feature request here.
+      label: Alternatives considered
+      description: Include current workarounds or a simpler solution if one exists.
     validations:
       required: false
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Classroom impact
+      description: Consider student/educator permissions, destructive actions, privacy, offline/LAN use, accessibility, and existing-world compatibility.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Examples or supporting material
+      description: Add a mockup, lesson scenario, technical reference, or related issue without private student information.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I checked that this is not already implemented or requested.
+          required: true
+        - label: I removed private classroom and student information.
+          required: true
+        - label: I disclosed material LLM/AI help used to prepare this request, or none was used.
+          required: true
