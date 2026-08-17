@@ -105,9 +105,9 @@ minetest.register_on_joinplayer(function(player)
 	end)
 end)
 
--- Command to re-give items if needed
+-- Optional command for teachers who prefer a preselected kit.
 minetest.register_chatcommand("givetools", {
-    description = "Re-give starter tools and coding blocks",
+    description = "Give starter tools and coding blocks",
     func = function(name)
         local player = minetest.get_player_by_name(name)
         if player then
