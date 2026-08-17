@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>luanti</string>
+	<string>openclasscraft</string>
 	<key>CFBundleIconFile</key>
 	<string>luanti-icon.icns</string>
 	<key>CFBundleName</key>
@@ -15,11 +15,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>@PROJECT_NAME_CAPITALIZED@</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.luanti.luanti</string>
+	<string>org.openclasscraft.OpenClassCraft</string>
 	<key>CFBundleVersion</key>
 	<string>@VERSION_STRING@</string>
 	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.games</string>
+	<string>public.app-category.education</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
