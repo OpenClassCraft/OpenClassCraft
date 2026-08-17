@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=OpenClassCraft
+GenericName=Educational voxel coding game
+Comment=Learn programming with robots and in-world coding blocks
+Exec=openclasscraft
+Icon=openclasscraft
+Terminal=false
+Categories=Education;Game;
+Keywords=education;coding;programming;classroom;robot;blocks;voxel;
+StartupNotify=false
+StartupWMClass=openclasscraft
