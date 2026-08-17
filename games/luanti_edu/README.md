@@ -1,46 +1,91 @@
-# Minetest Game
+# OpenClassCraft Educational Game
 
-[![ContentDB](https://content.luanti.org/packages/Minetest/minetest_game/shields/title/)](https://content.luanti.org/packages/Minetest/minetest_game/)
+This directory contains the game layer bundled with [OpenClassCraft](https://github.com/OpenClassCraft/OpenClassCraft). It is derived from Minetest Game and adds physical block programming, a robot, classroom authoring tools, chemistry activities, accessibility-aware forms, a creative teaching catalog, and the OpenClassCraft world style.
 
-Minetest Game (abbreviated MTG) is a simple and peaceful sandbox game, with no
-real goals or built-in enemy mobs.
+For downloads, complete platform build instructions, Teacher Console setup, privacy notes, and project status, read the [main project documentation](https://github.com/OpenClassCraft/OpenClassCraft/blob/Latest/README.md).
 
-While it provides a basic gameplay experience out of the box, it is best played
-with mods.
+## Game features
 
-Minetest Game is in perpetual maintenance-only mode, meaning it will not see new
-gameplay features or anything else that breaks compatibility (see
-[#2710](https://github.com/minetest/minetest_game/issues/2710)).
+- A visible programming chain made from START, movement, turn, loop, condition, sensor, variable, wait, place, dig, stop, and wire nodes.
+- A programmable robot entity and spawner.
+- A searchable unlimited inventory with Classroom, Programming, and Chemistry categories.
+- Editable Class Guide NPCs, blackboards, and whiteboards.
+- A four-task Lesson Planner, per-player progress, teacher checks, and checkpoint flags.
+- A Chemistry Lab supporting H₂O, O₂, H₂, CO₂, NaCl, NH₃, and CH₄.
+- An in-game Creator Lab with four material styles and simple stored actions.
+- A flat-area World Edit Wand intended for backed-up lesson worlds.
+- Student and educator presentation, custom sky and music, learning-themed vegetation, and classroom textures.
+- Optional larger UI, Cousine font, stronger contrast, distinct selection color, simplified HUD, and helper chat settings.
+- An optional HTTP bridge to a Teacher Console running on the same host computer.
 
-## Installation
+## Start a robot program
 
-### ContentDB
+1. Open the inventory and take a Robot Spawner and programming blocks.
+2. Spawn one robot nearby.
+3. Place START, then place instructions in a line to its east (world `+X`). Coding Wire can bridge gaps.
+4. Right-click START to run the nearest robot within 32 nodes of the player.
 
-* Content > Browse Online Content
-* Search for "[Minetest Game](https://content.luanti.org/packages/Minetest/minetest_game/)"
-* Click Install
+Programs are linear and limited to 256 instructions. Loop, IF, and WHILE nodes act on the next instruction rather than a nested block body. ELSE and WHILE behavior is still experimental and should be tested before use in a lesson.
 
-### Manually
+## Classroom authoring
 
-- Unzip the archive, rename the folder to `minetest_game` and
-place it in `.../minetest/games/`
+- Interact with a Guide or board to read it; sneak-interact to edit it when ownership/server permissions allow.
+- Use the Lesson Planner to create up to four ordered tasks: read a board, talk to a Guide, reach a checkpoint, make water, or receive a teacher check.
+- Place atom items in the Chemistry Lab and choose a supported molecule.
+- `/givetools` gives a quick teaching kit. New-player hotbars otherwise start empty because the inventory catalog is unlimited.
+- `/student_skin`, `/educator_skin`, and `/professor_skin` change presentation. The professor command is a skin alias, not a third permission role.
+- `/music` restarts ambient music and `/sky` reapplies the custom sky.
 
-- GNU/Linux: If you use a system-wide installation place it in `~/.minetest/games/`.
+The current creative catalog and editing tools are not strictly role-gated. Use trusted classroom servers and backed-up worlds.
 
-The Luanti engine can be found at [GitHub](https://github.com/minetest/minetest).
+## Main mods
 
-For further information or help, see: [Installing Mods](https://wiki.luanti.org/Installing_Mods).
+| Mod | Responsibility |
+| --- | --- |
+| `luanti_coding` | Programming blocks, wires, parsing, and execution. |
+| `luanti_robot` | Robot entity, spawner, movement, sensing, placing, and digging. |
+| `openclasscraft_classroom` | Guides, boards, lesson progress, checkpoints, chemistry, and Teacher Console bridge. |
+| `openclasscraft_creator` | Creator Lab materials/actions and World Edit Wand. |
+| `openclasscraft_world` | Sky, music, vegetation, and generated world details. |
+| `creative` / `sfinv` | Searchable, categorized unlimited inventory. |
+| `player_api` | Student/educator skins and presentation metadata. |
+| `default` | Base nodes, tools, accessibility forms, and shared game behavior. |
 
-## Compatibility
+## Configuration
 
-As of January 2024 Minetest Game follows a **rolling release** model with new changes being automatically
-published on ContentDB every day.
+The bundled defaults enable creative mode, disable player damage, prefer peaceful play, and stop automatic time progression. The game-level `disabled_settings` rule forces damage off. Server operators should still review `minetest.conf`, privileges, passwords, and firewall rules before hosting students.
 
-There are no stable releases or tags, all existing ones are considered legacy.
+Accessibility keys are declared in `settingtypes.txt`:
 
-Minetest Game is always compatible to the latest stable release of the engine.
-Older releases may be supported too depending on circumstances.
+```text
+openclasscraft_dyslexia_font
+openclasscraft_read_aloud
+openclasscraft_high_contrast
+openclasscraft_colorblind_support
+openclasscraft_simplified_controls
+openclasscraft_large_ui
+```
 
-## Licensing
+The read-aloud option emits labeled helper chat for screen-reader use; it does not synthesize speech. Colorblind support currently changes the selected-list highlight rather than recoloring every texture.
 
-See `LICENSE.txt`
+The Teacher Console bridge is disabled unless its URL, token, and HTTP-mod permission are added to `minetest.conf`. `/occ_teacher_sync` requires the `server` privilege. Never commit an exported bridge token.
+
+## Use with another Luanti build
+
+The supported experience is the game bundled with the matching OpenClassCraft engine. For development, the `luanti_edu` folder can also be copied into the `games/` directory of a compatible Luanti 5.8-or-newer installation.
+
+Stock Luanti will load the Lua game, but OpenClassCraft's customized main menu, loading screen, pause screen, font integration, and engine defaults live outside this directory and will not all be present.
+
+## Development notes
+
+- Lua source is under `mods/`; textures, models, and sounds live in each mod's media directories.
+- Newly generated chunks receive the OpenClassCraft vegetation and decoration pass. Existing generated terrain is not rewritten.
+- Creator desktop exports use textures supplied by `openclasscraft_creator`, so they are not fully self-contained outside this game.
+- The nested `.github/` directory came from the game lineage; repository CI workflows must live in the root `.github/workflows/` directory to run on GitHub.
+- Custom game logic does not yet have complete automated end-to-end tests. Validate a fresh world, robot chain, lesson sequence, chemistry reaction, and multiplayer permission model after changes.
+
+## Lineage and licensing
+
+This game is derived from Minetest Game and retains its upstream notices. OpenClassCraft adds educational code and media on top of that base.
+
+See [`LICENSE.txt`](LICENSE.txt) here and the repository's [`LICENSE.txt`](../../LICENSE.txt) and [`COPYING.LESSER`](../../COPYING.LESSER). Individual mods and assets may carry additional notices; preserve all applicable attribution when redistributing the game.
