@@ -48,7 +48,7 @@ jobs:
           source ./util/ci/common.sh
           install_mingw_deps '${{matrix.config.bits}}' '${{matrix.config.nsis}}'
           if '${{matrix.config.nsis}}'; then
-            echo 'CMAKE_CXX_COMPILER_LAUNCHER=ccache' >>$GITHUB_ENV
+            echo 'CMAKE_CXX_COMPILER_LAUNCHER=ccache' >> "$GITHUB_ENV"
           fi
           sudo ./util/buildbot/download_toolchain.sh /usr
 
@@ -64,8 +64,11 @@ jobs:
         run: |
           dest=$(mktemp -d)
           unzip -q -d "$dest" artifact/*.zip
-          cd "$dest"/luanti-*-win*
-          wine bin/luanti.exe --version
+          executable="$(find "$dest" -type f -path '*/bin/openclasscraft.exe' -print -quit)"
+          test -n "$executable"
+          package_root="${executable%/bin/openclasscraft.exe}"
+          test -f "$package_root/games/luanti_edu/game.conf"
+          wine "$executable" --version
 
       - name: Build for NSIS
         run: |
@@ -73,9 +76,11 @@ jobs:
            ./util/buildbot/buildwin${{ matrix.config.bits }}.sh B -DRUN_IN_PLACE=0
            dest=$(mktemp -d)
            unzip -q -d "$dest" B/build/*.zip
-           cd "$dest"/luanti-*-nsis
+           nsis_script="$(find "$dest" -type f -name sfx-launcher.nsi -print -quit)"
+           test -n "$nsis_script"
+           cd "$(dirname "$nsis_script")"
            makensis -WX -V3 sfx-launcher.nsi
-           cp -v "$dest"/*.exe $GITHUB_WORKSPACE/artifact/
+           cp -v "$dest"/*.exe "$GITHUB_WORKSPACE/artifact/"
         if: ${{ matrix.config.nsis }}
 
       - uses: actions/upload-artifact@v7
@@ -135,7 +140,7 @@ jobs:
       - name: Unittests
         # need this workaround for stdout to work
         run: |
-          $proc = start .\bin\Release\luanti.exe --run-unittests -NoNewWindow -Wait -PassThru
+          $proc = start .\bin\Release\openclasscraft.exe --run-unittests -NoNewWindow -Wait -PassThru
           exit $proc.ExitCode
         continue-on-error: true # FIXME!!
 
