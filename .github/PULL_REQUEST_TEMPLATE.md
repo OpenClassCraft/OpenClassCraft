@@ -1,21 +1,64 @@
-Add compact, short information about your PR for easier understanding:
+## Summary
 
-- Goal of the PR
-- How does the PR work?
-- Does it resolve any reported issue?
-- Does this relate to a goal in [the roadmap](https://github.com/luanti-org/luanti/blob/master/doc/direction.md)?
-- If not a bug fix, why is this PR needed? What usecases does it solve?
-- If you have used an LLM/AI to help with code or assets, you must disclose this.
+<!-- What problem does this solve, and what changes for a student, educator, player, or developer? -->
 
-## To do
+Closes #
 
-This PR is a Work in Progress / Ready for Review.
-<!-- ^ delete one -->
+## Scope
 
-- [ ] List
-- [ ] Things
-- [ ] To do
+### Change type
+
+- [ ] Bug fix
+- [ ] Feature
+- [ ] Documentation/content
+- [ ] Build, packaging, or CI
+- [ ] Refactor/maintenance with no intended user-visible change
+
+### Components
+
+- [ ] C++ engine or main menu
+- [ ] Educational game / robot programming
+- [ ] Classroom tools / chemistry / lessons
+- [ ] In-game Creator Lab
+- [ ] Desktop Creator
+- [ ] Teacher Console / LAN bridge
+- [ ] Ubuntu package
+- [ ] Fedora package
+- [ ] Windows package
 
 ## How to test
 
-<!-- Example code or instructions -->
+<!-- List exact commands and manual scenarios. Include a fresh world when game behavior changes. -->
+
+```text
+Commands/results:
+```
+
+Tested platforms and versions:
+
+- _Add each tested operating system/build, or explain why this is not applicable._
+
+## Risk and compatibility
+
+<!-- Address each relevant boundary; write “not applicable” where appropriate. -->
+
+- Existing worlds, lessons, Creator projects, or Teacher Console backups:
+- Student/educator permissions and destructive actions:
+- LAN, HTTP, token, or other security impact:
+- Student data or privacy impact:
+- Accessibility impact:
+- Performance impact:
+
+## Visual evidence
+
+<!-- Add before/after screenshots or a short recording for visible changes. Remove private names and addresses. -->
+
+## Documentation and release notes
+
+- [ ] User-facing documentation is updated, or no documentation change is needed.
+- [ ] Build/package changes were tested on each selected target platform.
+- [ ] New files and assets have compatible licenses and required attribution.
+- [ ] Generated files and dependency lockfiles changed only when required.
+- [ ] I disclosed material LLM/AI assistance and reviewed generated code/assets for correctness and licensing, or none was used.
+
+Additional notes:
