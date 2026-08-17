@@ -534,7 +534,8 @@ endif()
 # This gives us the icon and file version information
 if(WIN32)
 	set(WINRESOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/winresource.rc")
-	set(EXE_MANIFEST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/luanti.exe.manifest")
+	set(EXE_MANIFEST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/openclasscraft.exe.manifest")
+	set(WINRESOURCE_ICON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/openclasscraft.ico")
 	if(MINGW)
 		if(NOT CMAKE_RC_COMPILER)
 			set(CMAKE_RC_COMPILER "windres.exe")
@@ -544,7 +545,7 @@ if(WIN32)
 			-i${WINRESOURCE_FILE}
 			-o ${CMAKE_CURRENT_BINARY_DIR}/winresource_rc.o
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-			DEPENDS ${WINRESOURCE_FILE} ${EXE_MANIFEST_FILE})
+			DEPENDS ${WINRESOURCE_FILE} ${EXE_MANIFEST_FILE} ${WINRESOURCE_ICON_FILE})
 		SET(extra_windows_SRCS ${CMAKE_CURRENT_BINARY_DIR}/winresource_rc.o)
 	else(MINGW) # Probably MSVC
 		set(extra_windows_SRCS ${WINRESOURCE_FILE} ${EXE_MANIFEST_FILE})
@@ -676,7 +677,7 @@ if(BUILD_CLIENT)
 			MACOSX_BUNDLE TRUE
 			MACOSX_BUNDLE_INFO_PLIST "${CMAKE_BINARY_DIR}/Info.plist"
 			RESOURCE "${client_RESOURCES}"
-			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.luanti.luanti"
+			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.openclasscraft.OpenClassCraft"
 			XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
 			XCODE_ATTRIBUTE_INSTALL_PATH "/Applications"
 			XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
@@ -882,6 +883,11 @@ if (GETTEXTLIB_FOUND AND APPLY_LOCALE_BLACKLIST)
 elseif (GETTEXTLIB_FOUND)
 	set(GETTEXT_USED_LOCALES ${GETTEXT_AVAILABLE_LOCALES})
 endif()
+
+# Package metadata is assembled by the top-level CMakeLists.txt. Export the
+# finalized (and possibly blacklisted) locale list so CPack can classify the
+# generated catalogs without hard-coding locale names.
+set(GETTEXT_USED_LOCALES "${GETTEXT_USED_LOCALES}" PARENT_SCOPE)
 
 # Set some optimizations and tweaks
 
@@ -1148,7 +1154,7 @@ elseif (USE_GETTEXT)
 	set(MO_FILES)
 
 	foreach(LOCALE ${GETTEXT_USED_LOCALES})
-		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME}.po")
+		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${GETTEXT_SOURCE_DOMAIN}.po")
 		set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
 		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
 
