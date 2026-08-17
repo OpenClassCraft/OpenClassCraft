@@ -5,7 +5,7 @@ name: docker_image
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "Latest", "main" ]
     # Publish semver tags as releases.
     tags: [ "*" ]
   pull_request:
@@ -19,6 +19,9 @@ on:
       - 'irr/**.cpp'
       - '**/CMakeLists.txt'
       - 'cmake/Modules/**'
+      - 'builtin/**'
+      - 'games/luanti_edu/**'
+      - 'po/**'
       - 'util/ci/**'
       - 'misc/irrlichtmt_tag.txt'
       - 'Dockerfile'
@@ -67,15 +70,15 @@ jobs:
         type=semver,pattern={{major}}.{{minor}}
         type=semver,pattern={{major}}
       labels: |
-        org.opencontainers.image.title=Luanti
-        org.opencontainers.image.vendor=Luanti
-        org.opencontainers.image.description=Luanti (formerly Minetest) is an open source voxel game-creation platform with easy modding and game creation
-        org.opencontainers.image.licenses=LGPL-2.1-only
+        org.opencontainers.image.title=OpenClassCraft Server
+        org.opencontainers.image.vendor=OpenClassCraft
+        org.opencontainers.image.description=Classroom-focused voxel coding game server with robot programming and educator tools
+        org.opencontainers.image.licenses=LGPL-2.1-or-later
       annotations: |
-        org.opencontainers.image.title=Luanti
-        org.opencontainers.image.vendor=Luanti
-        org.opencontainers.image.description=Luanti (formerly Minetest) is an open source voxel game-creation platform with easy modding and game creation
-        org.opencontainers.image.licenses=LGPL-2.1-only
+        org.opencontainers.image.title=OpenClassCraft Server
+        org.opencontainers.image.vendor=OpenClassCraft
+        org.opencontainers.image.description=Classroom-focused voxel coding game server with robot programming and educator tools
+        org.opencontainers.image.licenses=LGPL-2.1-or-later
 
     secrets:
       registry-auths: |
