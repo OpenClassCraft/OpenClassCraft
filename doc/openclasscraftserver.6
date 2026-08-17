@@ -1,0 +1,64 @@
+.TH OPENCLASSCRAFTSERVER 6 "2026-08-17" "OpenClassCraft 0.1.0" "Games"
+.SH NAME
+openclasscraftserver \- dedicated OpenClassCraft classroom server
+.SH SYNOPSIS
+.B openclasscraftserver
+[\fISERVER OPTIONS\fR]
+[\fICOMMON OPTIONS\fR]
+.SH DESCRIPTION
+.B openclasscraftserver
+runs a headless OpenClassCraft server.  Use it only on a trusted classroom
+network, review player privileges, set a password where appropriate, and keep
+world and classroom data backed up.
+.SH OPTIONS
+.TP
+.B --help
+Print supported options and exit.
+.TP
+.B --version
+Print version and build information and exit.
+.TP
+.BI --config " file"
+Load configuration from the given file.
+.TP
+.BI --gameid " id"
+Select a game.  The bundled educational game ID is
+.BR luanti_edu .
+.TP
+.BI --world " path"
+Select a world by path.
+.TP
+.BI --worldname " name"
+Select a world by name.
+.TP
+.BI --port " port"
+Select the UDP network port.
+.TP
+.B --terminal
+Display an interactive terminal when supported.
+.TP
+.B --run-unittests
+Run the inherited engine unit tests and exit.
+.SH ENVIRONMENT
+.TP
+.B LUANTI_GAME_PATH
+Colon-delimited list of additional game directories.
+.TP
+.B LUANTI_MOD_PATH
+Colon-delimited list of additional mod directories.
+.TP
+.B LUANTI_USER_PATH
+User-data directory for an installed build.
+.SH FILES
+.TP
+.I minetest.conf
+Configuration file name retained for Luanti compatibility.
+.SH BUGS
+Report OpenClassCraft issues at
+https://github.com/OpenClassCraft/OpenClassCraft/issues.
+.SH COPYRIGHT
+OpenClassCraft includes software derived from Luanti and Minetest Game.
+See the installed README and license files for authorship, attribution, and
+the licenses applying to each component.
+.SH WWW
+https://github.com/OpenClassCraft/OpenClassCraft
