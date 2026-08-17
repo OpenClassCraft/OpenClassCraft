@@ -57,19 +57,21 @@ jobs:
 
       - name: Prepare environment
         run: |
-          echo "REPDIR=$(pwd)" >> $GITHUB_ENV
-          echo "osver=${{matrix.osver}}" >> $GITHUB_ENV
-          echo "xcodever=${{matrix.xcodever}}" >> $GITHUB_ENV
-          echo "arch=${{matrix.arch}}" >> $GITHUB_ENV
-          echo "build_type=${{matrix.build_type}}" >> $GITHUB_ENV
+          {
+            echo "REPDIR=$(pwd)"
+            echo "osver=${{matrix.osver}}"
+            echo "xcodever=${{matrix.xcodever}}"
+            echo "arch=${{matrix.arch}}"
+            echo "build_type=${{matrix.build_type}}"
+          } >> "$GITHUB_ENV"
 
       - name: Install deps
         run: |
           mkdir downloads
           source ./util/ci/common.sh
           source ./util/ci/macos_sdk.sh
-          install_macos_precompiled_deps $osver $arch
-          install_macos_sdk $osver "$xcodever" downloads
+          install_macos_precompiled_deps "$osver" "$arch"
+          install_macos_sdk "$osver" "$xcodever" downloads
 
       - name: Build with GNU Make
         run: |
@@ -92,19 +94,19 @@ jobs:
         run: |
           mkdir -p "${HOME}/Library/Application Support/minetest/games/"
           ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
-          ./build/macos/luanti.app/Contents/MacOS/luanti --run-unittests
+          ./build/macos/openclasscraft.app/Contents/MacOS/openclasscraft --run-unittests
 
       - name: Test XCode build
         if: ${{matrix.xcode == 'yes'}}
         run: |
-          ./build_xcode/build/${build_type}/luanti.app/Contents/MacOS/luanti --run-unittests
-          ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/MacOS/luanti --run-unittests
+          "./build_xcode/build/${build_type}/openclasscraft.app/Contents/MacOS/openclasscraft" --run-unittests
+          ./build_xcode/openclasscraft.xcarchive/Products/Applications/openclasscraft.app/Contents/MacOS/openclasscraft --run-unittests
 
       - name: Diff Resources
         if: ${{matrix.xcode == 'yes'}}
         run: |
-          diff -rd ./build/macos/luanti.app/Contents/Resources ./build_xcode/build/${build_type}/luanti.app/Contents/Resources || exit 1
-          diff -rd ./build/macos/luanti.app/Contents/Resources ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/Resources || exit 1
+          diff -rd ./build/macos/openclasscraft.app/Contents/Resources "./build_xcode/build/${build_type}/openclasscraft.app/Contents/Resources" || exit 1
+          diff -rd ./build/macos/openclasscraft.app/Contents/Resources ./build_xcode/openclasscraft.xcarchive/Products/Applications/openclasscraft.app/Contents/Resources || exit 1
       # Zipping the built .app preserves permissions on the contained files,
       #   which the GitHub artifact pipeline would otherwise strip away.
       - name: CPack
