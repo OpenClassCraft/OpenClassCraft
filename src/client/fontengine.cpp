@@ -5,6 +5,8 @@
 #include "fontengine.h"
 
 #include "client/renderingengine.h"
+#include "filesys.h"
+#include "porting.h"
 #include "settings.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "util/numeric.h" // rangelim
