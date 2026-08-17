@@ -6,6 +6,10 @@ endif()
 # This can be read from ${PROJECT_NAME} after project() is called
 project(openclasscraft)
 set(PROJECT_NAME_CAPITALIZED "OpenClassCraft")
+# Translation catalogs still use the historical Luanti filename. Keep the
+# runtime/output gettext domain branded as openclasscraft while reading those
+# source catalogs during the transition.
+set(GETTEXT_SOURCE_DOMAIN "luanti")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -233,6 +237,10 @@ endif()
 
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/builtin" DESTINATION "${SHAREDIR}")
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/games/luanti_edu"
+	DESTINATION "${SHAREDIR}/games"
+	COMPONENT Runtime
+	PATTERN ".git*" EXCLUDE)
 if(RUN_IN_PLACE)
 	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/textures/texture_packs_here.txt" DESTINATION "${SHAREDIR}/textures")
 endif()
@@ -253,18 +261,26 @@ if(BUILD_CLIENT)
 endif()
 
 install(FILES "README.md" DESTINATION "${DOCDIR}" COMPONENT "Docs")
+install(FILES "LICENSE.txt" "COPYING.LESSER" DESTINATION "${DOCDIR}" COMPONENT "Docs")
 install(FILES "doc/texture_packs.md" DESTINATION "${DOCDIR}" COMPONENT "Docs")
 install(FILES "doc/world_format.md" DESTINATION "${DOCDIR}" COMPONENT "Docs")
 install(FILES "minetest.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX AND NOT APPLE)
-	install(FILES "doc/luanti.6" "doc/luantiserver.6" DESTINATION "${MANDIR}/man6")
-	install(FILES "misc/org.luanti.luanti.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/org.luanti.luanti.metainfo.xml" DESTINATION "${METAINFODIR}")
-	install(FILES "misc/luanti.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
-	install(FILES "misc/luanti-xorg-icon-128.png"
-		DESTINATION "${ICONDIR}/hicolor/128x128/apps"
-		RENAME "luanti.png")
+	if(BUILD_CLIENT)
+		install(FILES "doc/openclasscraft.6" DESTINATION "${MANDIR}/man6")
+	endif()
+	if(BUILD_SERVER)
+		install(FILES "doc/openclasscraftserver.6" DESTINATION "${MANDIR}/man6")
+	endif()
+	install(FILES "misc/org.openclasscraft.OpenClassCraft.desktop"
+		DESTINATION "${XDG_APPS_DIR}" COMPONENT Runtime)
+	install(FILES "misc/org.openclasscraft.OpenClassCraft.metainfo.xml"
+		DESTINATION "${METAINFODIR}" COMPONENT Runtime)
+	install(FILES "games/luanti_edu/menu/icon.png"
+		DESTINATION "${ICONDIR}/hicolor/1024x1024/apps"
+		RENAME "openclasscraft.png"
+		COMPONENT Runtime)
 endif()
 
 if(APPLE)
@@ -306,11 +322,87 @@ add_subdirectory(src)
 # Package generation
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "An educational voxel coding game for classrooms.")
+set(CPACK_PACKAGE_DESCRIPTION
+	"OpenClassCraft teaches programming through in-world coding blocks, robots, classroom guides, and educator tools.")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
-set(CPACK_PACKAGE_VENDOR "celeron55")
-set(CPACK_PACKAGE_CONTACT "Perttu Ahola <celeron55@gmail.com>")
+set(CPACK_PACKAGE_VENDOR "OpenClassCraft")
+set(CPACK_PACKAGE_CONTACT "OpenClassCraft contributors")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/OpenClassCraft/OpenClassCraft")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_DEBIAN_PACKAGE_SECTION "games")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}")
+set(CPACK_RPM_PACKAGE_GROUP "Amusements/Games")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}")
+set(CPACK_RPM_PACKAGE_LICENSE "Multiple - see installed license files")
+set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
+# CPack records the uncompressed man-page path in the generated RPM spec.
+# Fedora's brp-compress hook renames that staged file after CPack has generated
+# the file list, which makes rpmbuild fail with a missing-file error. Keep the
+# packaged man page uncompressed so the generated spec and payload stay aligned.
+set(CPACK_RPM_SPEC_MORE_DEFINE "%define __brp_compress %{nil}")
+set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
+	"/usr/share/applications"
+	"/usr/share/doc"
+	"/usr/share/icons"
+	"/usr/share/icons/hicolor"
+	"/usr/share/icons/hicolor/1024x1024"
+	"/usr/share/icons/hicolor/1024x1024/apps"
+	"/usr/share/locale"
+	"/usr/share/man"
+	"/usr/share/man/man6"
+	"/usr/share/metainfo")
+foreach(LOCALE ${GETTEXT_USED_LOCALES})
+	list(APPEND CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
+		"/usr/share/locale/${LOCALE}"
+		"/usr/share/locale/${LOCALE}/LC_MESSAGES")
+endforeach()
+
+# Installed-mode Unix destinations are absolute because SHAREDIR and LOCALEDIR
+# are also compiled into the executable. CPack otherwise labels every absolute
+# install destination as an RPM %config path. Explicitly classify those roots
+# and files so upgrades replace immutable program data while preserving only
+# genuine administrator-managed configuration.
+if(UNIX AND NOT APPLE AND NOT RUN_IN_PLACE)
+	set(CPACK_RPM_USER_FILELIST
+		"%dir ${SHAREDIR}/builtin"
+		"%dir ${SHAREDIR}/games/luanti_edu"
+		"%attr(-,root,root) ${DOCDIR}/README.md"
+		"%attr(-,root,root) ${DOCDIR}/LICENSE.txt"
+		"%attr(-,root,root) ${DOCDIR}/COPYING.LESSER"
+		"%attr(-,root,root) ${DOCDIR}/texture_packs.md"
+		"%attr(-,root,root) ${DOCDIR}/world_format.md"
+		"%attr(-,root,root) ${EXAMPLE_CONF_DIR}/minetest.conf.example"
+		"%attr(-,root,root) ${XDG_APPS_DIR}/org.openclasscraft.OpenClassCraft.desktop"
+		"%attr(-,root,root) ${METAINFODIR}/org.openclasscraft.OpenClassCraft.metainfo.xml"
+		"%attr(-,root,root) ${ICONDIR}/hicolor/1024x1024/apps/openclasscraft.png")
+
+	if(INSTALL_DEVTEST)
+		list(APPEND CPACK_RPM_USER_FILELIST "%dir ${SHAREDIR}/games/devtest")
+	endif()
+	if(BUILD_CLIENT)
+		list(APPEND CPACK_RPM_USER_FILELIST
+			"%dir ${SHAREDIR}/client/shaders"
+			"%dir ${SHAREDIR}/textures/base/pack"
+			"%dir ${SHAREDIR}/fonts"
+			"%attr(-,root,root) ${MANDIR}/man6/openclasscraft.6"
+			"%attr(-,root,root) ${BINDIR}/${PROJECT_NAME}"
+			"%attr(-,root,root) ${BINDIR}/minetest")
+	endif()
+	if(BUILD_SERVER)
+		list(APPEND CPACK_RPM_USER_FILELIST
+			"%attr(-,root,root) ${MANDIR}/man6/openclasscraftserver.6"
+			"%attr(-,root,root) ${BINDIR}/${PROJECT_NAME}server"
+			"%attr(-,root,root) ${BINDIR}/minetestserver")
+	endif()
+	foreach(LOCALE ${GETTEXT_USED_LOCALES})
+		list(APPEND CPACK_RPM_USER_FILELIST
+			"%attr(-,root,root) ${LOCALEDIR}/${LOCALE}/LC_MESSAGES/${PROJECT_NAME}.mo")
+	endforeach()
+endif()
 
 include(CPackComponent)
 
@@ -331,7 +423,7 @@ if(WIN32)
 
 	if(NOT RUN_IN_PLACE)
 		set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_STRING}-nsis")
-		install(FILES "misc/luanti-icon.ico" DESTINATION ".")
+		install(FILES "misc/openclasscraft.ico" DESTINATION ".")
 		install(FILES "misc/sfx-launcher.nsi" DESTINATION ".")
 		# normalize to 0/1
 		set(DEVELOPMENT_BUILD01 0)
