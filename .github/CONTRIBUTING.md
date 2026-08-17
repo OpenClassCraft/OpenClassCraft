@@ -1,172 +1,127 @@
-# Contributing
+# Contributing to OpenClassCraft
 
-Contributions are welcome! Here's how you can help:
+Thank you for helping make programming lessons more tangible and accessible. Contributions can improve the C++ engine, the bundled Lua game, classroom content, the Creator tools, the Teacher Console, packaging, documentation, or artwork.
 
-- [Contributing code](#code)
-- [Reporting issues](#issues)
-- [Requesting features](#feature-requests)
-- [Translating](#translations)
-- [Donating](#donations)
+Please keep student safety, teacher clarity, offline use, and compatibility with existing worlds in mind throughout a change.
 
-## Code
+## Before starting
 
-1. [Fork](https://help.github.com/articles/fork-a-repo/) the repository and
-   [clone](https://help.github.com/articles/cloning-a-repository/) your fork.
+1. Search the [OpenClassCraft issue tracker](https://github.com/OpenClassCraft/OpenClassCraft/issues) for related work.
+2. For a behavior change, new feature, file-format change, or large refactor, open a [feature request](https://github.com/OpenClassCraft/OpenClassCraft/issues/new?template=feature_request.yaml) before investing substantial time.
+3. Base work on the `Latest` branch unless a maintainer asks for another base.
+4. Keep one pull request focused on one problem. Separate unrelated formatting or generated-file churn.
 
-2. Before you start coding, consider opening an
-   [issue on Github](https://github.com/luanti-org/luanti/issues) to discuss the
-   suitability and implementation of your intended contribution with the core
-   developers.
+If a defect is reproducible in an unmodified current Luanti build, it may belong in the [upstream Luanti issue tracker](https://github.com/luanti-org/luanti/issues). If it involves OpenClassCraft's game, menus, branding, classroom tools, apps, configuration, or packages—or if you are unsure—report it to OpenClassCraft first.
 
-   Any Pull Request that isn't a bug fix and isn't covered by
-   [the roadmap](../doc/direction.md) will be closed within a month unless it
-   receives a concept approval from a Core Developer. For this reason, it is
-   recommended that you open an issue for any such pull requests before doing
-   the work, to avoid disappointment.
+## Set up the project
 
-   You may also benefit from discussing on our IRC development channel
-   [#luanti-dev](https://docs.luanti.org/about/irc/). Note that a proper IRC client
-   is required to speak on this channel.
+Clone your fork and track the project repository:
 
-3. Start coding!
-    - Refer to the
-      [Lua API](https://github.com/luanti-org/luanti/blob/master/doc/lua_api.md),
-      [Luanti Documentation](https://docs.luanti.org/) and other
-      [documentation](https://github.com/luanti-org/luanti/tree/master/doc).
-    - Follow the [C/C++](https://docs.luanti.org/for-engine-devs/code-style-guidelines/) and
-      [Lua](https://docs.luanti.org/for-engine-devs/lua-code-style-guidelines/) code style guidelines.
-    - Check your code works as expected and document any changes to the Lua API.
-    - To avoid conflicting changes between contributions, do not do the following manually. They will be done before each release.
-      - Run `updatepo.sh` or update `luanti.po{,t}` even if your code adds new translatable strings.
-      - Update `minetest.conf.example` and `settings_translation_file.cpp` even if your code adds new core settings.
+```bash
+git clone --branch Latest https://github.com/YOUR-ACCOUNT/OpenClassCraft.git
+cd OpenClassCraft
+git remote add upstream https://github.com/OpenClassCraft/OpenClassCraft.git
+```
 
-4. Commit & [push](https://help.github.com/articles/pushing-to-a-remote/) your changes to a new branch (not `master`, one change per branch)
-    - Commit messages should:
-        - Use the present tense.
-        - Be descriptive. See the commit messages by core developers for examples.
-    - The first line should:
-        - Start with a capital letter.
-        - Be a compact summary of the commit.
-        - Preferably have less than 70 characters.
-        - Have no full stop at the end.
-    - The second line should be empty.
-    - The following lines should describe the commit, starting a new line for each point.
+The main [README](../README.md#build-from-source) contains Ubuntu, Fedora, and Windows build instructions. The repository has three development areas:
 
-5. Once you are happy with your changes, submit a pull request.
-     - Open the [pull-request form](https://github.com/luanti-org/luanti/pull/new/master).
-     - Add a description explaining what you've done (or if it's a
-       work-in-progress - what you need to do).
-     - Make sure to fill out the pull request template.
+| Area | Main paths | Typical tools |
+| --- | --- | --- |
+| Engine and menu | `src/`, `builtin/`, `CMakeLists.txt` | C++17, CMake, Lua |
+| Educational game | `games/luanti_edu/` | Lua and Luanti content formats |
+| Desktop apps | `creator-app/`, `teacher-console/` | JavaScript, Electron, npm |
 
-### A pull-request is considered merge-able when:
+The `doc/` tree includes substantial documentation inherited from Luanti. Use [Luanti's official engine documentation](https://docs.luanti.org/) and [Lua API reference](https://github.com/luanti-org/luanti/blob/master/doc/lua_api.md) when working on upstream-compatible engine or mod APIs, while documenting OpenClassCraft-specific behavior in this repository.
 
-1. It follows [the roadmap](../doc/direction.md) in some way and fits the whole
-   picture of the project.
-2. It works.
-3. It follows the code style for
-   [C/C++](https://docs.luanti.org/for-engine-devs/code-style-guidelines/) or
-   [Lua](https://docs.luanti.org/for-engine-devs/lua-code-style-guidelines/).
-4. The code's interfaces are well designed, regardless of other aspects that
-   might need more work in the future.
-5. It uses protocols and formats which include the required compatibility.
+## Make a change
 
-## Issues
+- Follow the existing style near the code you change.
+- Use the [upstream C++](https://docs.luanti.org/for-engine-devs/code-style-guidelines/) and [Lua](https://docs.luanti.org/for-engine-devs/lua-code-style-guidelines/) conventions in inherited engine/game code.
+- Preserve world, lesson, project, and backup data compatibility unless the change includes a reviewed migration.
+- Do not commit local worlds, `debug.txt`, user names, Teacher Console records, exported bridge tokens, build output, `node_modules/`, or unrelated lockfile changes.
+- Keep classroom copy understandable to students and teachers. Explain destructive actions and privacy boundaries plainly.
+- Add or update documentation for user-visible behavior, settings, commands, data formats, and build changes.
+- Preserve all applicable upstream copyright, license, and asset-attribution notices.
+- Disclose material use of generated code or generated assets in the pull request, and confirm that you reviewed the result and have the right to contribute it.
 
-If you experience an issue, we would like to know the details - especially when
-a stable release is on the way.
+Use a short, present-tense commit subject. A blank line followed by context is useful when the reason is not obvious. Avoid rewriting shared history after review has started.
 
-1. Do a quick search on GitHub to check if the issue has already been reported.
-2. Is it an issue with the Luanti *engine*? If not, report it
-   [elsewhere](http://www.luanti.org/development/#reporting-issues).
-3. [Open an issue](https://github.com/luanti-org/luanti/issues/new) and describe
-   the issue you are having - you could include:
-     - Error logs (check the bottom of the `debug.txt` file).
-     - Screenshots.
-     - Ways you have tried to solve the issue, and whether they worked or not.
-     - Your Luanti version and the content (games, mods or texture packs) you have installed.
-     - Your platform (e.g. Windows 10 or Ubuntu 15.04 x64).
+## Test the change
 
-After reporting you should aim to answer questions or clarifications as this
-helps pinpoint the cause of the issue (if you don't do this your issue may be
-closed after 1 month).
+Run the checks that match the affected area and describe both successful and unsuccessful results in the pull request.
 
-## Feature requests
+### Engine
 
-Feature requests are welcome but take a moment to see if your idea follows
-[the roadmap](../doc/direction.md) in some way and fits the whole picture of
-the project. You should provide a clear explanation with as much detail as
-possible.
+Build the affected platform, then run:
 
-## Translations
+```bash
+./bin/openclasscraft --run-unittests
+```
 
-The core translations of Luanti are performed using Weblate. You can access
-the project page with a list of current languages
-[here](https://hosted.weblate.org/projects/minetest/minetest/).
+On Windows, the run-in-place Release path is `bin\Release\openclasscraft.exe`.
 
-Builtin (the component which contains things like server messages, chat command
-descriptions, privilege descriptions) is translated separately; it needs to be
-translated by editing a `.tr` text file. See
-[Translation](https://docs.luanti.org/for-creators/translation/) for more information.
+### Educational game and classroom tools
 
-## Donations
+Create a fresh world as well as opening a disposable copy of an existing world. Manually test the changed path and its permissions. Depending on the change, include:
 
-If you'd like to monetarily support Luanti development, you can find donation
-methods on [our website](http://www.luanti.org/development/#donate).
+- a robot sequence and its failure/limit cases;
+- inventory search and category placement;
+- Guide/board ownership and editing;
+- Lesson Planner progress and reset behavior;
+- Chemistry Lab item consumption/output;
+- host and student behavior on a LAN server;
+- accessibility modes at different window sizes; and
+- Teacher Console bridge startup, sync, invalid token, and stopped-bridge behavior.
 
-# Maintaining
+Never use real student records in a test fixture or bug report.
 
-* This is a concise version of the
-  [Rules & Guidelines](https://docs.luanti.org/for-engine-devs/) on the Luanti Documentation.*
+### Desktop apps
 
-These notes are for those who have push access Luanti (core developers / maintainers).
+Install each changed app independently and launch it from its own directory. At minimum, syntax-check changed JavaScript:
 
-- See the [project organisation](https://docs.luanti.org/for-engine-devs/organization/) for the people involved.
+```bash
+node --check creator-app/main.js
+node --check creator-app/preload.js
+node --check creator-app/app/renderer.js
+node --check teacher-console/main.js
+node --check teacher-console/preload.js
+node --check teacher-console/app/renderer.js
+```
 
-## Concept approvals and roadmaps
+For Creator changes, inspect and load an exported mod in a disposable world. For Teacher Console changes, test create/edit/delete, CSV import/export, JSON backup/restore, and the bridge if they are in scope. Packaging tests must be run on the target operating system.
 
-If a Pull Request is not a bug fix:
+### Documentation-only changes
 
-* If it matches a goal in [the roadmap](../doc/direction.md), then the PR should
-  be labeled as "Roadmap" and the goal stated by number in the description.
-* If it doesn't match a goal, then it needs to receive a concept approval within
-  a week of being opened to remain open. This 1 week deadline does not apply to
-  PRs opened before the roadmap was adopted; instead, they may remain open or be
-  closed as needed. Use the "Concept Approved" label. Issues can be marked as
-  "Concept Approved" to give preapproval to future PRs.
+Check relative links, commands, platform paths, headings, tables, and rendered Markdown. Do not describe a planned feature as implemented.
 
-## Reviewing pull requests
+## Open a pull request
 
-Pull requests should be reviewed and, if appropriate, checked if they achieve
-their intended purpose. You can show that you are in the process of, or will
-review the pull request by commenting *"Looks good"* or something similar.
+Push your topic branch and [open a pull request](https://github.com/OpenClassCraft/OpenClassCraft/pulls) against `OpenClassCraft/OpenClassCraft:Latest`. Complete the template with:
 
-**If the pull-request is not [merge-able](#a-pull-request-is-considered-merge-able-when):**
+- the problem and the user-visible result;
+- the components and platforms affected;
+- exact test commands and manual scenarios;
+- screenshots for visible UI changes;
+- privacy, permission, accessibility, data-migration, and compatibility impact; and
+- related issues, documentation, and release-note needs.
 
-Submit a comment explaining to the author what they need to change to make the
-pull-request merge-able.
+A change is ready to merge when it is scoped, understandable, licensed for inclusion, tested in proportion to its risk, documented, and reviewed. A maintainer may request narrower scope or more evidence when a change affects classroom data, network access, permissions, saves, releases, or generated Lua.
 
-- If the author comments or makes changes to the pull-request, it can be
-  reviewed again.
-- If no response is made from the author within 1 month (when improvements are
-  suggested or a question is asked), it can be closed.
+## Report bugs and request features
 
-**If the pull-request is [merge-able](#a-pull-request-is-considered-merge-able-when):**
+Use the project templates:
 
-Submit a :+1: (+1) or "Looks good" comment to show you believe the pull-request should be merged. "Looks good" comments often signify that the patch might require (more) testing.
+- [Bug report](https://github.com/OpenClassCraft/OpenClassCraft/issues/new?template=bug_report.yaml)
+- [Feature request](https://github.com/OpenClassCraft/OpenClassCraft/issues/new?template=feature_request.yaml)
 
-- Two core developers must agree to the merge before it is carried out and both should +1 the pull request.
-- Who intends to merge the pull-request should follow the commit rules:
-    - The title should follow the commit guidelines (title starts with a capital letter, present tense, descriptive).
-    - Don't modify history older than 10 minutes.
-    - Use rebase, not merge to get linear history:
-    - `curl -Ls https://github.com/luanti-org/luanti/pull/1.patch | git am`
+Include the OpenClassCraft version or commit, operating system, package/source origin, reproduction steps, and a redacted log when relevant. Before attaching `debug.txt`, `minetest.conf`, a world, a CSV, or a backup, remove names, passwords, LAN addresses, access tokens, and student information.
 
-## Reviewing issues and feature requests
+## Security reports
 
-- If an issue does not get a response from its author within 1 month (when requiring more details), it can be closed.
-- When an issue is a duplicate, refer to the first ones and close the later ones.
-- Tag issues with the appropriate [labels](https://github.com/luanti-org/luanti/labels) for devices, platforms etc.
+Do not open a public issue for a vulnerability. Follow the [OpenClassCraft security policy](SECURITY.md) and use [GitHub private vulnerability reporting](https://github.com/OpenClassCraft/OpenClassCraft/security/advisories/new).
 
-## Releasing a new version
+## Translation and upstream work
 
-*Refer to [docs.luanti.org/for-engine-devs/releasing-luanti](https://docs.luanti.org/for-engine-devs/releasing-luanti/)*
+OpenClassCraft inherits many translated engine strings from Luanti. Upstream engine translation is managed through [Luanti on Weblate](https://hosted.weblate.org/projects/minetest/minetest/). New OpenClassCraft-specific strings should remain translatable and should be discussed in an OpenClassCraft pull request before bulk-generated translation files are changed.
+
+Changes that are generally useful to the underlying engine may also be good upstream contributions. Submit them upstream separately under Luanti's contribution policy; do not make an OpenClassCraft pull request depend on an unmerged upstream change without explaining the fallback.
