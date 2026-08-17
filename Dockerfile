@@ -37,22 +37,26 @@ RUN cd prometheus-cpp && \
 
 FROM dev AS builder
 
-COPY .git /usr/src/luanti/.git
-COPY CMakeLists.txt /usr/src/luanti/CMakeLists.txt
-COPY README.md /usr/src/luanti/README.md
-COPY minetest.conf.example /usr/src/luanti/minetest.conf.example
-COPY builtin /usr/src/luanti/builtin
-COPY cmake /usr/src/luanti/cmake
-COPY doc /usr/src/luanti/doc
-COPY fonts /usr/src/luanti/fonts
-COPY lib /usr/src/luanti/lib
-COPY misc /usr/src/luanti/misc
-COPY po /usr/src/luanti/po
-COPY src /usr/src/luanti/src
-COPY irr /usr/src/luanti/irr
-COPY textures /usr/src/luanti/textures
+COPY .git /usr/src/openclasscraft/.git
+COPY CMakeLists.txt /usr/src/openclasscraft/CMakeLists.txt
+COPY README.md /usr/src/openclasscraft/README.md
+COPY LICENSE.txt /usr/src/openclasscraft/LICENSE.txt
+COPY COPYING.LESSER /usr/src/openclasscraft/COPYING.LESSER
+COPY minetest.conf.example /usr/src/openclasscraft/minetest.conf.example
+COPY builtin /usr/src/openclasscraft/builtin
+COPY cmake /usr/src/openclasscraft/cmake
+COPY client /usr/src/openclasscraft/client
+COPY doc /usr/src/openclasscraft/doc
+COPY fonts /usr/src/openclasscraft/fonts
+COPY games /usr/src/openclasscraft/games
+COPY lib /usr/src/openclasscraft/lib
+COPY misc /usr/src/openclasscraft/misc
+COPY po /usr/src/openclasscraft/po
+COPY src /usr/src/openclasscraft/src
+COPY irr /usr/src/openclasscraft/irr
+COPY textures /usr/src/openclasscraft/textures
 
-WORKDIR /usr/src/luanti
+WORKDIR /usr/src/openclasscraft
 RUN cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \
@@ -68,20 +72,21 @@ FROM $DOCKER_IMAGE AS runtime
 
 RUN apk add --no-cache curl gmp libstdc++ libgcc libpq jsoncpp zstd-libs \
 				sqlite-libs postgresql hiredis leveldb && \
-	adduser -D minetest --uid 30000 -h /var/lib/minetest && \
-	chown -R minetest:minetest /var/lib/minetest
+	adduser -D openclasscraft --uid 30000 -h /var/lib/openclasscraft && \
+	mkdir -p /etc/openclasscraft && \
+	chown -R openclasscraft:openclasscraft /var/lib/openclasscraft
 
-WORKDIR /var/lib/minetest
+WORKDIR /var/lib/openclasscraft
 
-COPY --from=builder /usr/local/share/luanti /usr/local/share/luanti
-COPY --from=builder /usr/local/bin/luantiserver /usr/local/bin/luantiserver
-COPY --from=builder /usr/local/share/doc/luanti/minetest.conf.example /etc/minetest/minetest.conf
+COPY --from=builder /usr/local/share/openclasscraft /usr/local/share/openclasscraft
+COPY --from=builder /usr/local/bin/openclasscraftserver /usr/local/bin/openclasscraftserver
+COPY --from=builder /usr/local/share/doc/openclasscraft/minetest.conf.example /etc/openclasscraft/openclasscraft.conf
 COPY --from=builder /usr/local/lib/libspatialindex* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libluajit* /usr/local/lib/
-USER minetest:minetest
+USER openclasscraft:openclasscraft
 
 EXPOSE 30000/udp 30000/tcp
-VOLUME /var/lib/minetest/ /etc/minetest/
+VOLUME /var/lib/openclasscraft/ /etc/openclasscraft/
 
-ENTRYPOINT ["/usr/local/bin/luantiserver"]
-CMD ["--config", "/etc/minetest/minetest.conf"]
+ENTRYPOINT ["/usr/local/bin/openclasscraftserver"]
+CMD ["--config", "/etc/openclasscraft/openclasscraft.conf"]
