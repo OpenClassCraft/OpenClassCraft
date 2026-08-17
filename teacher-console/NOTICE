@@ -1,0 +1,12 @@
+OpenClassCraft Teacher Console licensing status
+================================================
+
+No standalone license has been granted for the original Teacher Console source
+code or assets in this directory. Unless a file states otherwise, copyright is
+reserved and copying, modifying, or redistributing this component requires
+permission from its copyright holder.
+
+Electron, bundled libraries, and other third-party dependencies retain their
+own licenses and notices. This notice does not change the license of the Luanti
+engine, the OpenClassCraft game, the Creator application, or any third-party
+work elsewhere in this repository.

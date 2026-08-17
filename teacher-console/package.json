@@ -1,33 +1,56 @@
 {
   "name": "openclasscraft-teacher-console",
   "version": "0.1.0",
+  "license": "UNLICENSED",
   "private": true,
+  "author": "OpenClassCraft Contributors",
+  "desktopName": "org.openclasscraft.teacherconsole",
   "description": "Private local classroom workflow dashboard for OpenClassCraft.",
   "main": "main.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
-    "start": ".\\.electron-runtime\\electron.exe .",
+    "start": "electron .",
+    "package:linux": "electron-builder --linux AppImage",
     "package:win": "electron-builder --win portable"
   },
   "build": {
     "appId": "org.openclasscraft.teacherconsole",
     "productName": "OpenClassCraft Teacher Console",
-    "electronDist": ".electron-runtime",
+    "directories": {
+      "output": "dist"
+    },
     "files": [
-      "**/*",
-      "!dist/**"
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json",
+      "NOTICE"
     ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "../games/luanti_edu/menu/icon.png",
+      "category": "Education",
+      "syncDesktopName": true,
+      "artifactName": "OpenClassCraft-Teacher-Console-${version}-linux-${arch}.${ext}"
+    },
     "win": {
       "target": [
         "portable"
-      ]
+      ],
+      "icon": "../misc/openclasscraft.ico",
+      "artifactName": "OpenClassCraft-Teacher-Console-${version}-windows-${arch}.${ext}"
     }
   },
   "devDependencies": {
-    "electron": "^37.2.6",
-    "electron-builder": "^26.0.12"
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3"
   },
   "allowScripts": {
-    "electron@37.10.3": true,
+    "electron@43.4.0": true,
     "electron-winstaller@5.4.0": true
   }
 }
