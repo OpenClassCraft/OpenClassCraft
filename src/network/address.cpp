@@ -127,8 +127,18 @@ void Address::Resolve(const char *name, Address *fallback)
 	copy_from_ai(resolved, this);
 	if (fallback) {
 		*fallback = Address();
-		if (resolved->ai_next)
-			copy_from_ai(resolved->ai_next, fallback);
+		Address primary = *this;
+		primary.setPort(0);
+
+		for (const struct addrinfo *candidate_ai = resolved->ai_next;
+				candidate_ai; candidate_ai = candidate_ai->ai_next) {
+			Address candidate;
+			copy_from_ai(candidate_ai, &candidate);
+			if (candidate.isValid() && candidate != primary) {
+				*fallback = candidate;
+				break;
+			}
+		}
 	}
 
 	freeaddrinfo(resolved);

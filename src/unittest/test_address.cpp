@@ -97,13 +97,10 @@ void TestAddress::testResolve()
 
 	if (fallback.isValid()) {
 		UASSERT(fallback.isLocalhost());
-
-		// the result should be ::1 and 127.0.0.1 so the fallback addr should be
-		// of a different family
-		UASSERTCMP(int, !=, result.getFamily(), fallback.getFamily());
+		UASSERT(result != fallback);
 	} else if (g_settings->getBool("enable_ipv6")) {
-		warningstream << "Couldn't verify Address::Resolve fallback (no IPv6?)"
-			<< std::endl;
+		warningstream << "Couldn't verify Address::Resolve fallback "
+				"(no distinct fallback address)" << std::endl;
 	}
 }
 
