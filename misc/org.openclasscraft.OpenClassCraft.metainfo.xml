@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.openclasscraft.OpenClassCraft</id>
+  <name>OpenClassCraft</name>
+  <summary>Educational voxel coding game for classrooms</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LGPL-2.1-or-later AND CC-BY-SA-3.0 AND MIT AND Apache-2.0</project_license>
+  <developer id="org.openclasscraft">
+    <name>OpenClassCraft contributors</name>
+  </developer>
+  <description>
+    <p>
+      OpenClassCraft is a classroom-focused voxel game in which students learn
+      programming by arranging in-world instruction blocks for a robot.
+    </p>
+    <p>
+      It includes sequencing, movement, loops, conditions, variables, sensors,
+      classroom guides, lesson boards, checkpoints, and accessibility options.
+    </p>
+  </description>
+  <launchable type="desktop-id">org.openclasscraft.OpenClassCraft.desktop</launchable>
+  <provides>
+    <binary>openclasscraft</binary>
+  </provides>
+  <icon type="stock">openclasscraft</icon>
+  <categories>
+    <category>Education</category>
+    <category>Game</category>
+  </categories>
+  <keywords>
+    <keyword>education</keyword>
+    <keyword>coding</keyword>
+    <keyword>programming</keyword>
+    <keyword>classroom</keyword>
+    <keyword>robot</keyword>
+    <keyword>voxel</keyword>
+  </keywords>
+  <url type="homepage">https://github.com/OpenClassCraft/OpenClassCraft</url>
+  <url type="bugtracker">https://github.com/OpenClassCraft/OpenClassCraft/issues</url>
+  <url type="vcs-browser">https://github.com/OpenClassCraft/OpenClassCraft</url>
+  <translation type="gettext">openclasscraft</translation>
+</component>
