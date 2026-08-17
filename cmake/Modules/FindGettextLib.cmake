@@ -32,6 +32,9 @@ find_package_handle_standard_args(GettextLib DEFAULT_MSG ${GETTEXT_REQUIRED_VARS
 if(GETTEXTLIB_FOUND)
 	# Set up paths for building
 	set(GETTEXT_PO_PATH ${CMAKE_SOURCE_DIR}/po)
+	if(NOT GETTEXT_SOURCE_DOMAIN)
+		set(GETTEXT_SOURCE_DOMAIN ${PROJECT_NAME})
+	endif()
 	# If the executable is expected to be ran from <source dir>/bin/, also
 	# generate the locale in <source dir>/locale/.
 	if(RUN_IN_PLACE AND NOT CMAKE_CROSSCOMPILING)
@@ -40,12 +43,17 @@ if(GETTEXTLIB_FOUND)
 		set(GETTEXT_MO_BUILD_PATH ${CMAKE_BINARY_DIR}/locale/<locale>/LC_MESSAGES)
 	endif()
 	set(GETTEXT_MO_DEST_PATH ${LOCALEDIR}/<locale>/LC_MESSAGES)
-	file(GLOB GETTEXT_AVAILABLE_LOCALES RELATIVE ${GETTEXT_PO_PATH} "${GETTEXT_PO_PATH}/*")
-	list(REMOVE_ITEM GETTEXT_AVAILABLE_LOCALES ${PROJECT_NAME}.pot)
-	list(REMOVE_ITEM GETTEXT_AVAILABLE_LOCALES timestamp)
+	# Only register directories containing a source catalog. This avoids treating
+	# top-level files such as the POT template as locale names.
+	file(GLOB GETTEXT_SOURCE_CATALOGS RELATIVE ${GETTEXT_PO_PATH}
+		"${GETTEXT_PO_PATH}/*/${GETTEXT_SOURCE_DOMAIN}.po")
+	set(GETTEXT_AVAILABLE_LOCALES)
+	foreach(GETTEXT_SOURCE_CATALOG ${GETTEXT_SOURCE_CATALOGS})
+		get_filename_component(GETTEXT_LOCALE "${GETTEXT_SOURCE_CATALOG}" DIRECTORY)
+		list(APPEND GETTEXT_AVAILABLE_LOCALES "${GETTEXT_LOCALE}")
+	endforeach()
 	macro(SET_MO_PATHS _buildvar _destvar _locale)
 		string(REPLACE "<locale>" ${_locale} ${_buildvar} ${GETTEXT_MO_BUILD_PATH})
 		string(REPLACE "<locale>" ${_locale} ${_destvar} ${GETTEXT_MO_DEST_PATH})
 	endmacro()
 endif()
-
