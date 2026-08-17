@@ -526,6 +526,10 @@ local hidden_tools = {
 }
 
 for _, name in ipairs(hidden_tools) do
-	minetest.clear_craft({output = name})
+	-- The diamond hoe has no recipe in this game, so clearing it would only
+	-- produce a startup warning. It still needs to be removed from the catalog.
+	if name ~= "default:hoe_diamond" then
+		minetest.clear_craft({output = name})
+	end
 	minetest.unregister_item(name)
 end
