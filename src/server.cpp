@@ -55,6 +55,7 @@
 
 // Network
 #include "network/connection.h"
+#include "network/lan_discovery.h"
 #include "network/networkexceptions.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
@@ -612,6 +613,25 @@ void Server::start()
 	// Initialize connection
 	m_con->Serve(m_bind_addr);
 
+	if (!m_simple_singleplayer_mode && g_settings->getBool("enable_lan_discovery")) {
+		std::string server_name = g_settings->get("server_name");
+		if (server_name.empty())
+			server_name = fs::GetFilenameFromPath(m_path_world.c_str());
+		if (server_name.empty())
+			server_name = "OpenClassCraft Classroom";
+
+		LanDiscoveryInfo info;
+		info.port = m_bind_addr.getPort();
+		info.protocol_min = SERVER_PROTOCOL_VERSION_MIN;
+		info.protocol_max = LATEST_PROTOCOL_VERSION;
+		info.password_required = g_settings->getBool("disallow_empty_password") ||
+				!g_settings->get("default_password").empty();
+		info.name = std::move(server_name);
+		info.gameid = m_gamespec.id;
+		m_lan_discovery = std::make_unique<LanDiscoveryResponder>(std::move(info));
+		m_lan_discovery->start();
+	}
+
 	// Start thread
 	m_thread->start();
 
@@ -645,8 +665,14 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting for threads"<<std::endl;
 
 	// Stop threads (set run=false first so both start stopping)
+	if (m_lan_discovery)
+		m_lan_discovery->stop();
 	m_thread->stop();
 	m_thread->wait();
+	if (m_lan_discovery) {
+		m_lan_discovery->wait();
+		m_lan_discovery.reset();
+	}
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }

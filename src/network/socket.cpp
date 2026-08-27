@@ -203,6 +203,20 @@ void UDPSocket::Send(const Address &destination, const void *data, int size)
 		throw SendFailedException("Failed to send packet");
 }
 
+void UDPSocket::setBroadcast(bool enable)
+{
+	if (m_addr_family != AF_INET)
+		return;
+
+	const int value = enable ? 1 : 0;
+	if (setsockopt(m_handle, SOL_SOCKET, SO_BROADCAST,
+			reinterpret_cast<const char *>(&value), sizeof(value)) != 0) {
+		const auto errmsg = SOCKET_ERR_STR(LAST_SOCKET_ERR());
+		throw SocketException(std::string("Failed to configure UDP broadcast: ") +
+				errmsg);
+	}
+}
+
 int UDPSocket::Receive(Address &sender, void *data, int size)
 {
 	// Return on timeout

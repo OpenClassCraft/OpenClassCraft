@@ -37,6 +37,7 @@ class IRollbackManager;
 class IWritableCraftDefManager;
 class IWritableItemDefManager;
 class LuaError;
+class LanDiscoveryResponder;
 class MetricsBackend;
 class ModChannelMgr;
 class NodeDefManager;
@@ -698,6 +699,7 @@ private:
 
 	// server connection
 	std::shared_ptr<con::IConnection> m_con;
+	std::unique_ptr<LanDiscoveryResponder> m_lan_discovery;
 
 	// Ban checking
 	BanManager *m_banmanager = nullptr;

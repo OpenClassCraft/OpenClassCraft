@@ -22,6 +22,7 @@ public:
 	void Bind(Address addr);
 
 	void Send(const Address &destination, const void *data, int size);
+	void setBroadcast(bool enable);
 	// Returns -1 if there is no data
 	int Receive(Address &sender, void *data, int size);
 	void setTimeoutMs(int timeout_ms);
