@@ -6,14 +6,12 @@ on:
     branches: [Latest, main]
     paths:
       - 'builtin/**.lua'
-      - 'games/devtest/**.lua'
       - 'games/luanti_edu/**.lua'
       - 'util/ci/**'
       - '.github/workflows/lua.yml'
   pull_request:
     paths:
       - 'builtin/**.lua'
-      - 'games/devtest/**.lua'
       - 'games/luanti_edu/**.lua'
       - 'util/ci/**'
       - '.github/workflows/lua.yml'
@@ -38,13 +36,13 @@ jobs:
         CXX: clang++
         CMAKE_FLAGS: "-DENABLE_GETTEXT=0 -DBUILD_SERVER=0 -DBUILD_UNITTESTS=0"
 
-    - name: Integration test + devtest
+    - name: Integration test with bundled game
       run: |
-        serverconf="profiler.load=true" ./util/test_multiplayer.sh
+        gameid=luanti_edu serverconf="profiler.load=true" ./util/test_multiplayer.sh
 
     - name: Singleplayer test (legacy GL)
       run: |
-        clientconf="video_driver=opengl" xvfb-run ./util/test_singleplayer.sh
+        gameid=luanti_edu clientconf="video_driver=opengl" xvfb-run ./util/test_singleplayer.sh
 
   luacheck:
     name: "Builtin Luacheck and Unit Tests"
@@ -72,9 +70,10 @@ jobs:
         "$HOME/.luarocks/bin/busted" builtin
         "$HOME/.luarocks/bin/busted" builtin --lua="$HOME/LuaJIT/src/luajit"
 
-    - name: Run checks (devtest)
+    - name: Run checks (bundled OpenClassCraft game)
       run: |
-        "$HOME/.luarocks/bin/luacheck" --config=games/devtest/.luacheckrc games/devtest
+        cd games/luanti_edu
+        "$HOME/.luarocks/bin/luacheck" .
 
     - name: Syntax-check the bundled OpenClassCraft game
       run: |

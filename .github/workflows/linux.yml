@@ -139,7 +139,7 @@ jobs:
         run: |
           ./bin/openclasscraft --run-unittests
 
-      - name: Integration test + devtest
+      - name: Integration test with bundled game
         run: |
           ./util/test_multiplayer.sh
 
