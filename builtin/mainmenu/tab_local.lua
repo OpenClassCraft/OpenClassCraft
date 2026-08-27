@@ -282,7 +282,6 @@ local function get_formspec(tabview, name, tabdata)
 		if disabled_settings["enable_server"] == nil then
 			host = "checkbox[0.35,"..y..";cb_server;".. fgettext("Host Server") ..";" ..
 				dump(core.settings:get_bool("enable_server")) .. "]"
-			y = y + yo
 		end
 	end
 
