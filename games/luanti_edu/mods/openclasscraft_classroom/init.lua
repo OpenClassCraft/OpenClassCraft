@@ -106,18 +106,6 @@ local function trim(value)
 	return (value or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
-local function send_reference(name, title, message, link)
-	if title ~= "" then
-		minetest.chat_send_player(name, "[OpenClassCraft] " .. title)
-	end
-	if message ~= "" then
-		minetest.chat_send_player(name, message)
-	end
-	if link ~= "" then
-		minetest.chat_send_player(name, "Reference: " .. link)
-	end
-end
-
 local guide_dialogue_links = {}
 
 local function wrap_dialogue(text, line_width)
@@ -697,7 +685,7 @@ end
 register_classroom_board("openclasscraft_classroom:chalkboard", "Large Blackboard",
 	"default_obsidian.png^[colorize:#111820:210")
 register_classroom_board("openclasscraft_classroom:whiteboard", "Large Whiteboard",
-	"openclasscraft_classroom_whiteboard.png")
+	"default_cloud.png")
 
 minetest.register_lbm({
 	name = "openclasscraft_classroom:restore_board_labels",
@@ -886,7 +874,8 @@ local function show_chemistry_lab_form(player, status)
 		"label[0.5,0.5;Chemistry Lab]" ..
 		"box[0.45,1.05;5.35,5.2;#23435FE8]" ..
 		"label[0.8,1.4;Build a real substance]" ..
-		"dropdown[0.8,2.0;4.5,0.8;reaction;" .. esc(table.concat(reaction_labels, ",")) .. ";" .. selected_index .. ";false]" ..
+		"dropdown[0.8,2.0;4.5,0.8;reaction;" ..
+			esc(table.concat(reaction_labels, ",")) .. ";" .. selected_index .. ";false]" ..
 		"label[0.8,2.85;" .. esc(selected_reaction.formula) .. "]" ..
 		"label[0.8,3.45;H: " .. hydrogen_count .. "  O: " .. oxygen_count .. "  C: " .. carbon_count .. "]" ..
 		"label[0.8,3.85;N: " .. nitrogen_count .. "  Na: " .. sodium_count .. "  Cl: " .. chlorine_count .. "]" ..

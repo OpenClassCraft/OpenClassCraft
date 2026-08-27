@@ -42,35 +42,6 @@ local STARTER_ITEMS = {
     "luanti_coding:wire 16",
 }
 
--- Added separately so existing players receive classroom features introduced
--- after their first starter kit without duplicating their whole inventory.
-local CLASSROOM_UPGRADE_ITEMS = {
-	"openclasscraft_classroom:guide_npc_spawner",
-	"openclasscraft_classroom:chalkboard",
-	"openclasscraft_classroom:whiteboard",
-	"openclasscraft_classroom:chemistry_lab",
-	"openclasscraft_classroom:hydrogen_atom 16",
-	"openclasscraft_classroom:oxygen_atom 12",
-	"openclasscraft_classroom:carbon_atom 8",
-	"openclasscraft_classroom:nitrogen_atom 8",
-	"openclasscraft_classroom:sodium_atom 8",
-	"openclasscraft_classroom:chlorine_atom 8",
-	"openclasscraft_classroom:lesson_planner",
-	"openclasscraft_classroom:lesson_marker 3",
-}
-
-local CLASSROOM_UPGRADE_VERSION = 2
-
-local function give_missing_classroom_items(player)
-	local inv = player:get_inventory()
-	for _, item in ipairs(CLASSROOM_UPGRADE_ITEMS) do
-		local stack = ItemStack(item)
-		if not inv:contains_item("main", stack) and inv:room_for_item("main", stack) then
-			inv:add_item("main", stack)
-		end
-	end
-end
-
 local function give_stuff(player)
     local inv = player:get_inventory()
     for _, item in ipairs(STARTER_ITEMS) do

@@ -1,7 +1,6 @@
 -- Luanti Edu: Robot Entity
 -- A friendly programmable robot that students control via coding blocks.
 
-local modpath = minetest.get_modpath("luanti_robot")
 local ROBOT_GRAVITY = -9.81
 local ROBOT_MAX_FALL_SPEED = -20
 

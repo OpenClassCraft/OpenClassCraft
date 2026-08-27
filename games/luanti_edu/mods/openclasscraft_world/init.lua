@@ -328,7 +328,8 @@ minetest.register_lbm({
 		end
 
 		local below = minetest.get_node_or_nil({x = pos.x, y = pos.y - 1, z = pos.z})
-		if not below or not (ground_nodes[below.name] or dry_ground_nodes[below.name] or decorative_ground_nodes[below.name] or
+		if not below or not (ground_nodes[below.name] or dry_ground_nodes[below.name] or
+			decorative_ground_nodes[below.name] or
 			minetest.get_item_group(below.name, "tree") > 0 or minetest.get_item_group(below.name, "leaves") > 0) then
 			minetest.remove_node(pos)
 		end
