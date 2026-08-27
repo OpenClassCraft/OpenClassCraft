@@ -7,6 +7,9 @@ local current_game
 local local_server_choices = {}
 local local_server_last_sync = 0
 local LOCAL_SERVER_SYNC_INTERVAL = 10
+local lan_discovered_servers = {}
+local lan_discovery_started = false
+local lan_discovery_running = false
 local valid_disabled_settings = {
 	["enable_damage"]=true,
 	["creative_mode"]=true,
@@ -31,6 +34,30 @@ end
 local function get_local_server_choices()
 	local choices = {}
 	local seen = {}
+	local client_proto_min = core.get_min_supp_proto()
+	local client_proto_max = core.get_max_supp_proto()
+
+	for _, server in ipairs(lan_discovered_servers) do
+		local port = tonumber(server.port)
+		local proto_min = tonumber(server.proto_min) or 0
+		local proto_max = tonumber(server.proto_max) or 65535
+		local compatible = proto_min <= client_proto_max and proto_max >= client_proto_min
+		if server.address and port and compatible then
+			local key = server.address:lower() .. ":" .. port
+			if not seen[key] then
+				choices[#choices + 1] = {
+					name = server.name and server.name ~= "" and server.name or
+							fgettext("OpenClassCraft Classroom"),
+					address = server.address,
+					port = port,
+					password_required = server.password_required,
+					discovered = true,
+				}
+				seen[key] = true
+			end
+		end
+	end
+
 	if serverlistmgr then
 		local online = {}
 		for _, server in ipairs(serverlistmgr.servers or {}) do
@@ -38,7 +65,7 @@ local function get_local_server_choices()
 				local port = tonumber(server.port) or 30000
 				online[server.address:lower() .. ":" .. port] = server
 				if is_private_address(server.address) then
-					local key = server.address .. ":" .. port
+					local key = server.address:lower() .. ":" .. port
 					if not seen[key] then
 						choices[#choices + 1] = {
 							name = server.name or server.address,
@@ -56,7 +83,7 @@ local function get_local_server_choices()
 				local port = tonumber(fav.port) or 30000
 				local online_server = online[fav.address:lower() .. ":" .. port]
 				if is_private_address(fav.address) or online_server then
-					local key = fav.address .. ":" .. port
+					local key = fav.address:lower() .. ":" .. port
 					if not seen[key] then
 						local source = online_server or fav
 						choices[#choices + 1] = {
@@ -73,13 +100,54 @@ local function get_local_server_choices()
 	return choices
 end
 
+local function start_lan_discovery(clear_previous)
+	if lan_discovery_running or core.settings:get_bool("enable_lan_discovery") == false then
+		return
+	end
+
+	if clear_previous then
+		lan_discovered_servers = {}
+	end
+	lan_discovery_started = true
+	lan_discovery_running = true
+	local queued = core.handle_async(
+		function(timeout_ms)
+			return core.discover_lan_servers(timeout_ms)
+		end,
+		750,
+		function(result)
+			lan_discovery_running = false
+			lan_discovered_servers = type(result) == "table" and result or {}
+			table.sort(lan_discovered_servers, function(a, b)
+				local a_name = (a.name or a.address or ""):lower()
+				local b_name = (b.name or b.address or ""):lower()
+				return a_name < b_name
+			end)
+			core.event_handler("Refresh")
+		end
+	)
+	if not queued then
+		lan_discovery_running = false
+	end
+end
+
 local function render_local_serverlist()
 	local rows = {}
 	for _, server in ipairs(local_server_choices) do
-		rows[#rows + 1] = core.formspec_escape(server.name .. "  " .. server.address .. ":" .. server.port)
+		local password = server.password_required and "  [" .. fgettext("Password") .. "]" or ""
+		rows[#rows + 1] = core.formspec_escape(server.name .. "  " .. server.address ..
+				":" .. server.port .. password)
 	end
 	if #rows == 0 then
-		return core.formspec_escape(fgettext("No online local servers found"))
+		local message
+		if lan_discovery_running then
+			message = fgettext("Searching the local network...")
+		elseif lan_discovery_started then
+			message = fgettext("No classroom servers found; enter the address manually")
+		else
+			message = fgettext("Select Refresh to find classroom servers")
+		end
+		return core.formspec_escape(message)
 	end
 	return table.concat(rows, ",")
 end
@@ -157,6 +225,9 @@ end
 
 local function get_formspec(tabview, name, tabdata)
 	tabdata.view = tabdata.view or "servers"
+	if tabdata.view == "servers" and not lan_discovery_started then
+		start_lan_discovery(false)
+	end
 	if serverlistmgr and os.time() - local_server_last_sync >= LOCAL_SERVER_SYNC_INTERVAL then
 		local_server_last_sync = os.time()
 		serverlistmgr.sync()
@@ -211,7 +282,6 @@ local function get_formspec(tabview, name, tabdata)
 		if disabled_settings["enable_server"] == nil then
 			host = "checkbox[0.35,"..y..";cb_server;".. fgettext("Host Server") ..";" ..
 				dump(core.settings:get_bool("enable_server")) .. "]"
-			y = y + yo
 		end
 	end
 
@@ -240,8 +310,14 @@ local function get_formspec(tabview, name, tabdata)
 	if tabdata.view == "servers" then
 		local local_index = core.get_textlist_index("local_servers") or 1
 		local chosen = local_server_choices[math.min(local_index, #local_server_choices)] or local_server_choices[1]
-		local address = current_address ~= "" and current_address or (chosen and chosen.address) or "localhost"
-		local port = current_port or tostring((chosen and chosen.port) or 30000)
+		local address = current_address
+		local port = current_port
+		if address == "" and chosen then
+			address = chosen.address
+			port = tostring(chosen.port)
+		elseif address == "" then
+			address = "localhost"
+		end
 		retval = retval ..
 			"container[2.05,1.55]" ..
 			"label[0,0;" .. fgettext("Local Servers") .. "]" ..
@@ -369,6 +445,7 @@ local function main_button_handler(this, fields, name, tabdata)
 	end
 
 	if fields["refresh_local_servers"] then
+		start_lan_discovery(true)
 		if serverlistmgr then
 			local_server_last_sync = os.time()
 			serverlistmgr.sync()

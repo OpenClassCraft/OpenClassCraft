@@ -1063,6 +1063,10 @@ static_spawnpoint (Static spawn point) string
 
 [**Networking]
 
+#    Advertise hosted games to OpenClassCraft clients on the same local network.
+#    Discovery uses a small UDP broadcast and does not contact the public server list.
+enable_lan_discovery (Local network discovery) bool true
+
 #    Network port to listen (UDP).
 #    This value will be overridden when starting from the main menu.
 port (Server port) int 30000 1 65535

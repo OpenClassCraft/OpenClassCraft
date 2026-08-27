@@ -3,6 +3,7 @@ name: linux
 # build on c/cpp changes or workflow changes
 on:
   push:
+    branches: [Latest, main]
     paths:
       - 'lib/**.[ch]'
       - 'lib/**.cpp'
@@ -138,7 +139,7 @@ jobs:
         run: |
           ./bin/openclasscraft --run-unittests
 
-      - name: Integration test + devtest
+      - name: Integration test with bundled game
         run: |
           ./util/test_multiplayer.sh
 

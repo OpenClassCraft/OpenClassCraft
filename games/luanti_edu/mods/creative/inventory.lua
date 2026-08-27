@@ -273,7 +273,6 @@ creative.register_tab("classroom", S("Classroom"), registered_classroom)
 creative.register_tab("programming", S("Programming"), registered_programming)
 creative.register_tab("chemistry", S("Chemistry"), registered_chemistry)
 
-local old_homepage_name = sfinv.get_homepage_name
 function sfinv.get_homepage_name(player)
 	return "creative:all"
 end

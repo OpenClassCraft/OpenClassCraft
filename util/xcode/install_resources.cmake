@@ -21,6 +21,9 @@ execute_process(
 	"$ENV{SOURCE_ROOT}/builtin"
 	"${RESOURCES_DIR}/builtin"
 )
+file(COPY "$ENV{SOURCE_ROOT}/games/luanti_edu"
+	DESTINATION "${RESOURCES_DIR}/games"
+	PATTERN ".git*" EXCLUDE)
 execute_process(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	"$ENV{SOURCE_ROOT}/client/shaders"
@@ -42,9 +45,8 @@ execute_process(
 )
 set(RESOURCE_LUANTI_FILES
 	"$ENV{SOURCE_ROOT}/README.md"
-	"$ENV{SOURCE_ROOT}/doc/client_lua_api.md"
-	"$ENV{SOURCE_ROOT}/doc/lua_api.md"
-	"$ENV{SOURCE_ROOT}/doc/menu_lua_api.md"
+	"$ENV{SOURCE_ROOT}/LICENSE.txt"
+	"$ENV{SOURCE_ROOT}/COPYING.LESSER"
 	"$ENV{SOURCE_ROOT}/minetest.conf.example"
 	"$ENV{SOURCE_ROOT}/doc/texture_packs.md"
 	"$ENV{SOURCE_ROOT}/doc/world_format.md"

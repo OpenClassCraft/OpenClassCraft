@@ -36,3 +36,6 @@ files["mods/default/legacy.lua"].global = false
 
 -- Overwrites a description of a privilege
 files["mods/default/chat.lua"].globals = { "core.registered_privileges" }
+
+-- Wraps chat delivery with the optional read-aloud helper.
+files["mods/default/init.lua"].globals = { "minetest" }

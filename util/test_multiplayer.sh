@@ -1,8 +1,8 @@
 #!/bin/bash
-# Runs a multiplayer server and connects a headless client, devtest unittests are executed.
+# Runs the bundled game with a multiplayer server and headless client.
 
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-gameid=${gameid:-devtest}
+gameid=${gameid:-luanti_edu}
 executable=$dir/../bin/openclasscraft
 testspath=$dir/../tests
 conf_client1=$testspath/client1.conf
@@ -39,7 +39,7 @@ printf '%s\n' >"$testspath/server.conf" \
 ln -s "$dir/helper_mod" "$worldpath/worldmods/"
 
 echo "Starting server"
-"$executable" --debugger --server --config "$conf_server" --world "$worldpath" --gameid $gameid 2>&1 \
+"$executable" --debugger --server --config "$conf_server" --world "$worldpath" --gameid "$gameid" 2>&1 \
 	| sed -u 's/^/(server) /' | tee -a "$testspath/log.txt" &
 waitfor "$worldpath/startup"
 

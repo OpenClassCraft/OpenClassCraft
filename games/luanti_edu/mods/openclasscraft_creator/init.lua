@@ -1,11 +1,26 @@
-local S = minetest.get_translator("openclasscraft_creator")
 local storage = minetest.get_mod_storage()
 
 local styles = {
-	grass = {label = "Garden", node = "openclasscraft_creator:block_grass", texture = "openclasscraft_creator_garden.png"},
-	stone = {label = "Stone", node = "openclasscraft_creator:block_stone", texture = "openclasscraft_creator_stone.png"},
-	wood = {label = "Wood", node = "openclasscraft_creator:block_wood", texture = "openclasscraft_creator_wood.png"},
-	glass = {label = "Glass", node = "openclasscraft_creator:block_glass", texture = "openclasscraft_creator_glass.png^[opacity:165"},
+	grass = {
+		label = "Garden",
+		node = "openclasscraft_creator:block_grass",
+		texture = "openclasscraft_creator_garden.png",
+	},
+	stone = {
+		label = "Stone",
+		node = "openclasscraft_creator:block_stone",
+		texture = "openclasscraft_creator_stone.png",
+	},
+	wood = {
+		label = "Wood",
+		node = "openclasscraft_creator:block_wood",
+		texture = "openclasscraft_creator_wood.png",
+	},
+	glass = {
+		label = "Glass",
+		node = "openclasscraft_creator:block_glass",
+		texture = "openclasscraft_creator_glass.png^[opacity:165",
+	},
 }
 
 local style_order = {"grass", "stone", "wood", "glass"}
@@ -114,7 +129,8 @@ local function give_project_block(player, project)
 		minetest.chat_send_player(player:get_player_name(), "[Creator Lab] Your custom block is in your inventory.")
 	else
 		minetest.add_item(vector.offset(player:get_pos(), 0, 1, 0), stack)
-		minetest.chat_send_player(player:get_player_name(), "[Creator Lab] Your inventory is full, so the block was dropped nearby.")
+		minetest.chat_send_player(player:get_player_name(),
+			"[Creator Lab] Your inventory is full, so the block was dropped nearby.")
 	end
 end
 
@@ -129,7 +145,9 @@ local function run_block_program(pos, player)
 			delay = delay + 1
 		elseif action == "say" then
 			minetest.after(delay, function()
-				minetest.chat_send_player(player:get_player_name(), "[" .. (block_name ~= "" and block_name or "Creator Block") .. "] " .. message)
+				local display_name = block_name ~= "" and block_name or "Creator Block"
+				minetest.chat_send_player(player:get_player_name(),
+					"[" .. display_name .. "] " .. message)
 			end)
 		elseif action == "give_apple" then
 			minetest.after(delay, function()
@@ -433,7 +451,8 @@ local function clear_world_edit_area(player)
 
 	local removed_entities = remove_entities_in_flat_area(minp, maxp)
 	world_edit_selections[name] = nil
-	world_edit_marker(player, "Cleared " .. cleared_nodes .. " flat blocks and removed " .. removed_entities .. " entities.")
+	world_edit_marker(player,
+		"Cleared " .. cleared_nodes .. " flat blocks and removed " .. removed_entities .. " entities.")
 end
 
 local function use_world_edit_wand(player, pointed_thing)
@@ -447,11 +466,13 @@ local function use_world_edit_wand(player, pointed_thing)
 	local selection = world_edit_selections[name] or {}
 	if not selection.pos1 then
 		world_edit_selections[name] = {pos1 = pos}
-		world_edit_marker(player, "Corner 1 set at " .. minetest.pos_to_string(pos) .. ". Click another block for corner 2.")
+		world_edit_marker(player,
+			"Corner 1 set at " .. minetest.pos_to_string(pos) .. ". Click another block for corner 2.")
 	elseif not selection.pos2 then
 		selection.pos2 = pos
 		world_edit_selections[name] = selection
-		world_edit_marker(player, "Corner 2 set at " .. minetest.pos_to_string(pos) .. ". Click once more with the wand to clear.")
+		world_edit_marker(player,
+			"Corner 2 set at " .. minetest.pos_to_string(pos) .. ". Click once more with the wand to clear.")
 	else
 		clear_world_edit_area(player)
 	end

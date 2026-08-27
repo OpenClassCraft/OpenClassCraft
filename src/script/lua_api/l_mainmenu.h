@@ -139,6 +139,8 @@ private:
 
 	static int l_is_debug_build(lua_State  *L);
 
+	static int l_discover_lan_servers(lua_State *L);
+
 	// other
 	static int l_open_url(lua_State *L);
 

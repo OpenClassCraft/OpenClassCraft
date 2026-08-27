@@ -16,6 +16,7 @@ set(unittest_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_filesys.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_inventory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_irrptr.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_lan_discovery.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_logging.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_lbmmanager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_lua.cpp

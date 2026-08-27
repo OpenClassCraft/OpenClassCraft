@@ -56,10 +56,23 @@ on:
         default: Latest
         type: string
       publish:
-        description: Publish the validated assets as a GitHub Release
+        description: Publish validated Community Edition assets as a GitHub Release
         required: true
         default: false
         type: boolean
+      build_school_console:
+        description: Build controlled School Console packages for an owner-authorised pilot
+        required: true
+        default: false
+        type: boolean
+      release_scope:
+        description: Community platforms allowed in a public release
+        required: true
+        default: fedora-alpha
+        type: choice
+        options:
+          - fedora-alpha
+          - all-community
       tag:
         description: Existing tag to release (required when publish is enabled)
         required: false
@@ -75,6 +88,7 @@ defaults:
 jobs:
   ubuntu:
     name: Ubuntu 24.04 portable TGZ
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_scope == 'all-community' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -282,6 +296,7 @@ jobs:
 
   windows:
     name: Windows x64 portable ZIP
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_scope == 'all-community' }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 90
     env:
@@ -391,7 +406,7 @@ jobs:
           retention-days: 14
 
   desktop-linux:
-    name: Creator and Teacher Console (Linux)
+    name: Creator preview and School Console checks (Linux)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -408,52 +423,84 @@ jobs:
             creator-app/package-lock.json
             teacher-console/package-lock.json
 
-      - name: Install, syntax-check, and package
+      - name: Install, syntax-check, and package Creator preview
         run: |
-          for app in creator-app teacher-console; do
-            (
-              cd "$app"
-              npm ci --no-audit --no-fund
-              npm audit --audit-level=high
-              node --check main.js
-              node --check preload.js
-              node --check app/renderer.js
-              npm run package:linux
-            )
-          done
+          cd creator-app
+          npm ci --no-audit --no-fund
+          npm audit --audit-level=high
+          node --check main.js
+          node --check preload.js
+          node --check app/renderer.js
+          npm run package:linux
 
-      - name: Validate and checksum AppImages
+      - name: Install and syntax-check School Console
+        run: |
+          cd teacher-console
+          npm ci --no-audit --no-fund
+          npm audit --audit-level=high
+          node --check main.js
+          node --check preload.js
+          node --check app/renderer.js
+
+      - name: Package controlled School Console
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_school_console }}
+        run: |
+          cd teacher-console
+          npm run package:linux
+
+      - name: Validate and checksum Creator AppImage
         run: |
           mapfile -t creator_assets < <(find creator-app/dist -maxdepth 1 -type f \
             -name 'OpenClassCraft-Creator-*-linux-x86_64.AppImage' | sort)
-          mapfile -t teacher_assets < <(find teacher-console/dist -maxdepth 1 -type f \
-            -name 'OpenClassCraft-Teacher-Console-*-linux-x86_64.AppImage' | sort)
-          if (( ${#creator_assets[@]} != 1 || ${#teacher_assets[@]} != 1 )); then
-            printf 'Expected one Creator and one Teacher Console AppImage; found %s and %s\n' \
-              "${#creator_assets[@]}" "${#teacher_assets[@]}" >&2
+          if (( ${#creator_assets[@]} != 1 )); then
+            printf 'Expected one Creator AppImage; found %s\n' "${#creator_assets[@]}" >&2
             exit 1
           fi
-          assets=("${creator_assets[@]}" "${teacher_assets[@]}")
-          mkdir -p desktop-artifact
-          for asset in "${assets[@]}"; do
-            cp "$asset" desktop-artifact/
-          done
+          mkdir -p creator-artifact
+          cp "${creator_assets[0]}" creator-artifact/
           (
-            cd desktop-artifact
-            for asset in *.AppImage; do
-              sha256sum "$asset" > "$asset.sha256"
-            done
+            cd creator-artifact
+            asset="$(find . -maxdepth 1 -type f -name '*.AppImage' -printf '%f\n')"
+            sha256sum "$asset" > "$asset.sha256"
           )
 
-      - uses: actions/upload-artifact@v7
+      - name: Validate and checksum controlled School Console AppImage
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_school_console }}
+        run: |
+          mapfile -t teacher_assets < <(find teacher-console/dist -maxdepth 1 -type f \
+            -name 'OpenClassCraft-Teacher-Console-*-linux-x86_64.AppImage' | sort)
+          if (( ${#teacher_assets[@]} != 1 )); then
+            printf 'Expected one School Console AppImage; found %s\n' "${#teacher_assets[@]}" >&2
+            exit 1
+          fi
+          mkdir -p school-console-artifact
+          cp "${teacher_assets[0]}" school-console-artifact/
+          (
+            cd school-console-artifact
+            asset="$(find . -maxdepth 1 -type f -name '*.AppImage' -printf '%f\n')"
+            sha256sum "$asset" > "$asset.sha256"
+          )
+
+      - name: Upload Creator preview artifact
+        uses: actions/upload-artifact@v7
         with:
-          name: OpenClassCraft-Desktop-Linux-x86_64
-          path: desktop-artifact/
+          name: OpenClassCraft-Creator-Preview-Linux-x86_64
+          path: creator-artifact/
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload controlled School Console artifact
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_school_console }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: OpenClassCraft-School-Console-Internal-Linux-x86_64
+          path: school-console-artifact/
+          if-no-files-found: error
+          retention-days: 7
+
   desktop-windows:
-    name: Creator and Teacher Console (Windows)
+    name: Creator preview and School Console checks (Windows)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_scope == 'all-community' }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     defaults:
@@ -473,56 +520,100 @@ jobs:
             creator-app/package-lock.json
             teacher-console/package-lock.json
 
-      - name: Install, syntax-check, and package
+      - name: Install, syntax-check, and package Creator preview
         run: |
-          foreach ($app in @("creator-app", "teacher-console")) {
-            Push-Location $app
-            try {
-              npm ci --no-audit --no-fund
-              if ($LASTEXITCODE -ne 0) { throw "npm ci failed for $app" }
-              npm audit --audit-level=high
-              if ($LASTEXITCODE -ne 0) { throw "npm audit failed for $app" }
-              foreach ($file in @("main.js", "preload.js", "app/renderer.js")) {
-                node --check $file
-                if ($LASTEXITCODE -ne 0) { throw "Syntax check failed for $app/$file" }
-              }
-              npm run package:win
-              if ($LASTEXITCODE -ne 0) { throw "Windows packaging failed for $app" }
-            } finally {
-              Pop-Location
+          Push-Location creator-app
+          try {
+            npm ci --no-audit --no-fund
+            if ($LASTEXITCODE -ne 0) { throw "npm ci failed for Creator" }
+            npm audit --audit-level=high
+            if ($LASTEXITCODE -ne 0) { throw "npm audit failed for Creator" }
+            foreach ($file in @("main.js", "preload.js", "app/renderer.js")) {
+              node --check $file
+              if ($LASTEXITCODE -ne 0) { throw "Syntax check failed for Creator/$file" }
             }
+            npm run package:win
+            if ($LASTEXITCODE -ne 0) { throw "Windows packaging failed for Creator" }
+          } finally {
+            Pop-Location
           }
 
-      - name: Validate and checksum executables
+      - name: Install and syntax-check School Console
+        run: |
+          Push-Location teacher-console
+          try {
+            npm ci --no-audit --no-fund
+            if ($LASTEXITCODE -ne 0) { throw "npm ci failed for School Console" }
+            npm audit --audit-level=high
+            if ($LASTEXITCODE -ne 0) { throw "npm audit failed for School Console" }
+            foreach ($file in @("main.js", "preload.js", "app/renderer.js")) {
+              node --check $file
+              if ($LASTEXITCODE -ne 0) { throw "Syntax check failed for School Console/$file" }
+            }
+          } finally {
+            Pop-Location
+          }
+
+      - name: Package controlled School Console
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_school_console }}
+        run: |
+          Push-Location teacher-console
+          try {
+            npm run package:win
+            if ($LASTEXITCODE -ne 0) { throw "Windows packaging failed for School Console" }
+          } finally {
+            Pop-Location
+          }
+
+      - name: Validate and checksum Creator executable
         run: |
           $creatorAssets = @(Get-ChildItem creator-app/dist `
             -Filter "OpenClassCraft-Creator-*-windows-x64.exe" -File)
+          if ($creatorAssets.Count -ne 1) {
+            throw "Expected one Creator executable; found $($creatorAssets.Count)"
+          }
+          New-Item -ItemType Directory -Force creator-artifact | Out-Null
+          $destination = Join-Path creator-artifact $creatorAssets[0].Name
+          Copy-Item $creatorAssets[0].FullName $destination
+          $hash = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Encoding ascii "$destination.sha256" "$hash  $($creatorAssets[0].Name)"
+
+      - name: Validate and checksum controlled School Console executable
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_school_console }}
+        run: |
           $teacherAssets = @(Get-ChildItem teacher-console/dist `
             -Filter "OpenClassCraft-Teacher-Console-*-windows-x64.exe" -File)
-          if ($creatorAssets.Count -ne 1 -or $teacherAssets.Count -ne 1) {
-            throw "Expected one Creator and one Teacher Console executable; found $($creatorAssets.Count) and $($teacherAssets.Count)"
+          if ($teacherAssets.Count -ne 1) {
+            throw "Expected one School Console executable; found $($teacherAssets.Count)"
           }
-          $assets = @($creatorAssets[0], $teacherAssets[0])
-          New-Item -ItemType Directory -Force desktop-artifact | Out-Null
-          foreach ($asset in $assets) {
-            $destination = Join-Path desktop-artifact $asset.Name
-            Copy-Item $asset.FullName $destination
-            $hash = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
-            Set-Content -Encoding ascii "$destination.sha256" "$hash  $($asset.Name)"
-          }
+          New-Item -ItemType Directory -Force school-console-artifact | Out-Null
+          $destination = Join-Path school-console-artifact $teacherAssets[0].Name
+          Copy-Item $teacherAssets[0].FullName $destination
+          $hash = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Encoding ascii "$destination.sha256" "$hash  $($teacherAssets[0].Name)"
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload Creator preview artifact
+        uses: actions/upload-artifact@v7
         with:
-          name: OpenClassCraft-Desktop-Windows-x64
-          path: desktop-artifact/
+          name: OpenClassCraft-Creator-Preview-Windows-x64
+          path: creator-artifact/
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload controlled School Console artifact
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_school_console }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: OpenClassCraft-School-Console-Internal-Windows-x64
+          path: school-console-artifact/
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
-    name: Publish existing tag
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+    name: Publish Community Edition existing tag
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.publish && needs.fedora.result == 'success' && (inputs.release_scope != 'all-community' || (needs.ubuntu.result == 'success' && needs.windows.result == 'success')) }}
     runs-on: ubuntu-24.04
-    needs: [ubuntu, fedora, windows, desktop-linux, desktop-windows]
+    needs: [ubuntu, fedora, windows]
     permissions:
       contents: write
     steps:
@@ -533,12 +624,27 @@ jobs:
           fetch-tags: true
           persist-credentials: false
 
-      - uses: actions/download-artifact@v7
+      - name: Download Ubuntu Community artifact
+        if: ${{ inputs.release_scope == 'all-community' }}
+        uses: actions/download-artifact@v7
         with:
+          name: OpenClassCraft-Ubuntu-24.04-x86_64
           path: release-assets
-          merge-multiple: true
 
-      - name: Verify immutable tag and checksums
+      - name: Download Fedora Community artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: OpenClassCraft-Fedora-44-x86_64
+          path: release-assets
+
+      - name: Download Windows Community artifact
+        if: ${{ inputs.release_scope == 'all-community' }}
+        uses: actions/download-artifact@v7
+        with:
+          name: OpenClassCraft-Windows-x64
+          path: release-assets
+
+      - name: Verify immutable tag and public asset boundary
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
@@ -559,17 +665,21 @@ jobs:
             echo "Release $TAG already exists; refusing to replace it." >&2
             exit 1
           fi
-          (
-            cd release-assets
-            sha256sum -c -- *.sha256
-          )
+          bash util/ci/verify_public_release_assets.sh release-assets "${{ inputs.release_scope }}"
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
         run: |
+          release_flags=()
+          if [[ "$TAG" == *-* ]]; then
+            release_flags+=(--prerelease)
+          fi
+          release_preamble="$(<.github/COMMUNITY_RELEASE_PREAMBLE.md)"
           gh release create "$TAG" --verify-tag \
             --title "OpenClassCraft $TAG" \
             --generate-notes \
+            --notes "$release_preamble" \
+            "${release_flags[@]}" \
             release-assets/*

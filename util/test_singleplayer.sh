@@ -2,7 +2,7 @@
 # Runs a singleplayer session with software-rendering.
 
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-gameid=${gameid:-devtest}
+gameid=${gameid:-luanti_edu}
 executable=$dir/../bin/openclasscraft
 testspath=$dir/../tests
 conf_client=$testspath/client.conf
@@ -17,9 +17,11 @@ mkdir -p "$worldpath/worldmods"
 opts=(
 	screen_w=384 screen_h=256 fps_max=5
 	active_block_range=1 viewing_range=40 helper_mode=devtest
-	opengl_debug=true mip_map=true enable_waving_{leaves,plants,water}=true
+	opengl_debug=true mip_map=true
+	enable_waving_leaves=true enable_waving_plants=true enable_waving_water=true
 	antialiasing=ssaa node_highlighting=halo
-	enable_{auto_exposure,bloom,dynamic_shadows,translucent_foliage,volumetric_lighting,water_reflections}=true
+	enable_auto_exposure=true enable_bloom=true enable_dynamic_shadows=true
+	enable_translucent_foliage=true enable_volumetric_lighting=true enable_water_reflections=true
 	shadow_map_color=true
 )
 printf '%s\n' "${opts[@]}" "${clientconf:-}" >"$conf_client"

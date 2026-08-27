@@ -22,6 +22,7 @@
 #include "client/renderingengine.h"
 #include "client/texturepaths.h"
 #include "network/networkprotocol.h"
+#include "network/lan_discovery.h"
 #include "content/mod_configuration.h"
 #include "common/c_converter.h"
 #include "gui/guiOpenURL.h"
@@ -29,6 +30,7 @@
 #include "log.h"
 #include "util/string.h"
 
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -1046,6 +1048,36 @@ int ModApiMainMenu::l_is_debug_build(lua_State  *L)
 	return 1;
 }
 
+int ModApiMainMenu::l_discover_lan_servers(lua_State *L)
+{
+	const lua_Integer requested_timeout = luaL_optinteger(L, 1, 750);
+	const u32 timeout_ms = static_cast<u32>(
+			std::clamp<lua_Integer>(requested_timeout, 50, 2000));
+	const auto servers = discoverLanServers(timeout_ms);
+
+	lua_createtable(L, servers.size(), 0);
+	int index = 0;
+	for (const DiscoveredLanServer &server : servers) {
+		lua_createtable(L, 0, 7);
+		lua_pushstring(L, server.address.c_str());
+		lua_setfield(L, -2, "address");
+		lua_pushinteger(L, server.info.port);
+		lua_setfield(L, -2, "port");
+		lua_pushstring(L, server.info.name.c_str());
+		lua_setfield(L, -2, "name");
+		lua_pushstring(L, server.info.gameid.c_str());
+		lua_setfield(L, -2, "gameid");
+		lua_pushinteger(L, server.info.protocol_min);
+		lua_setfield(L, -2, "proto_min");
+		lua_pushinteger(L, server.info.protocol_max);
+		lua_setfield(L, -2, "proto_max");
+		lua_pushboolean(L, server.info.password_required);
+		lua_setfield(L, -2, "password_required");
+		lua_rawseti(L, -2, ++index);
+	}
+	return 1;
+}
+
 int ModApiMainMenu::l_open_url(lua_State *L)
 {
 	std::string url = luaL_checkstring(L, 1);
@@ -1201,6 +1233,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 /******************************************************************************/
 void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 {
+	API_FCT(discover_lan_servers);
 	API_FCT(get_worlds);
 	API_FCT(get_games);
 	API_FCT(get_mapgen_names);

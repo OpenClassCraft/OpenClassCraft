@@ -3,6 +3,7 @@ name: macos
 # build on c/cpp changes or workflow changes
 on:
   push:
+    branches: [Latest, main]
     paths:
       - 'lib/**.[ch]'
       - 'lib/**.cpp'
@@ -93,7 +94,7 @@ jobs:
       - name: Test GNU Make build
         run: |
           mkdir -p "${HOME}/Library/Application Support/minetest/games/"
-          ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
+          ln -s "${PWD}/games/luanti_edu" "${HOME}/Library/Application Support/minetest/games/"
           ./build/macos/openclasscraft.app/Contents/MacOS/openclasscraft --run-unittests
 
       - name: Test XCode build

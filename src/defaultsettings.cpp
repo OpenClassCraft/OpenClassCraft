@@ -555,6 +555,7 @@ void set_default_settings()
 	settings->setDefault("server_name", "");
 	settings->setDefault("server_description", "");
 	settings->setDefault("server_announce_send_players", "true");
+	settings->setDefault("enable_lan_discovery", "true");
 
 	settings->setDefault("enable_console", "false");
 	settings->setDefault("display_density_factor", "1");

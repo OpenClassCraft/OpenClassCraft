@@ -1,0 +1,117 @@
+name: Founding school beta application
+description: Apply for an OpenClassCraft pilot without sharing student or personal data
+title: "[School beta]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for considering the OpenClassCraft Founding School Beta.
+
+        **This application becomes a public GitHub issue.** Use only information already safe to publish about the school. Do not add student names, teacher phone numbers, personal email addresses, class lists, login details, private network information, or other personal records. If the school is shortlisted, the project team will establish a private route through an official, publicly verifiable school contact.
+
+        The first three qualified private-school pilots are planned at no charge for 90 days. Other guided pilots are proposed at ₹4,999 for eight weeks, credited toward a founding annual plan. A submitted application is not a contract, guarantee, or invoice.
+
+  - type: input
+    id: school
+    attributes:
+      label: School or organisation
+      description: Use the public institutional name only.
+      placeholder: Example Public School
+    validations:
+      required: true
+
+  - type: input
+    id: public_page
+    attributes:
+      label: Official public page
+      description: School website or public directory page the project can use to verify an official contact route.
+      placeholder: https://school.example/
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: District and state
+      placeholder: Ernakulam, Kerala
+    validations:
+      required: true
+
+  - type: dropdown
+    id: institution_type
+    attributes:
+      label: Institution type
+      options:
+        - Private school
+        - Government school
+        - Government-aided school
+        - Community learning programme or club
+        - Other educational organisation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: grades
+    attributes:
+      label: Intended learner group
+      options:
+        - Grades 5–6
+        - Grades 7–8
+        - Grades 5–8
+        - A mixed-age club
+        - Another group
+    validations:
+      required: true
+
+  - type: textarea
+    id: lab
+    attributes:
+      label: Computer lab and network
+      description: Share approximate device count, operating systems, and whether the devices can use one trusted local network. Do not include IP addresses, passwords, or network diagrams.
+      placeholder: 15 Fedora 44 desktops on one school LAN; one teacher computer can host.
+    validations:
+      required: true
+
+  - type: textarea
+    id: learning_goal
+    attributes:
+      label: Learning goal
+      description: What should students or teachers be able to do after the pilot?
+      placeholder: Students should predict, run, and debug a short robot sequence using loops and conditions.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: timing
+    attributes:
+      label: Earliest pilot window
+      options:
+        - September–October 2026
+        - November–December 2026
+        - January–March 2027
+        - Later in 2027
+    validations:
+      required: true
+
+  - type: textarea
+    id: readiness
+    attributes:
+      label: Teacher champion and pilot readiness
+      description: Describe the role—not the private contact details—of the educator who can attend setup, run at least three sessions, and provide structured feedback.
+      placeholder: One computer-science teacher can attend remote onboarding and run four 45-minute lab sessions.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Pilot acknowledgements
+      options:
+        - label: I understand this is beta software and the school must approve its installation and classroom use.
+          required: true
+        - label: I will not add student names, personal contact details, credentials, or private school records to this public issue.
+          required: true
+        - label: I understand government-school participation requires the applicable KITE and departmental approvals; this application does not provide them.
+          required: true
+        - label: I understand selection, pricing, support scope, and dates are confirmed only in a written pilot agreement.
+          required: true

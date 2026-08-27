@@ -3,6 +3,7 @@ name: png_file_checks
 # Check whether all png files are in a valid format
 on:
   push:
+    branches: [Latest, main]
     paths:
       - '**.png'
       - '.github/workflows/**.yml'
@@ -16,11 +17,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Install deps
         run: |
           sudo apt-get update
           sudo apt install -y optipng
 
       - name: Check whether all png files are optimized
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          ./util/ci/check_png_optimized.sh
+          mapfile -t files < <(
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$HEAD_SHA" -- |
+              sed -n '/\.png$/p'
+          )
+          if (( ${#files[@]} == 0 )); then
+            echo 'No PNG files changed.'
+            exit 0
+          fi
+          ./util/ci/check_png_optimized.sh "${files[@]}"

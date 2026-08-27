@@ -11,15 +11,16 @@
   <a href="https://github.com/OpenClassCraft/OpenClassCraft/issues"><img alt="Open issues" src="https://img.shields.io/github/issues/OpenClassCraft/OpenClassCraft"></a>
 </p>
 
-OpenClassCraft is an open-source, classroom-focused voxel coding environment. Students arrange programming blocks in a 3D world, run the sequence through a nearby robot, and see programming ideas such as order, repetition, sensing, and debugging become physical.
+OpenClassCraft is an offline-first, open-source voxel coding classroom. Students arrange programming blocks in a 3D world, run the sequence through a nearby robot, and see programming ideas such as order, repetition, sensing, and debugging become physical.
 
 The project combines a customized [Luanti](https://www.luanti.org/) engine, an educational game derived from Minetest Game, in-world lesson tools, a visual mod creator, and an offline-first Teacher Console.
 
-> **Project status:** OpenClassCraft is an early community preview. The main play loop and the tools described as implemented below are present, but release packaging, permissions, Creator code generation, and some logic blocks still need broader classroom testing. Review [Known limitations](#known-limitations) before using it for an assessed lesson.
+> **Project status:** OpenClassCraft is an early Community preview and is preparing a controlled Founding School Beta. Public source or a development tag is not a production release. Use only validated files attached to the Releases page, and review [Known limitations](#known-limitations) before using the project for an assessed lesson.
 
 ## Contents
 
 - [What is included](#what-is-included)
+- [Editions and founding beta](#editions-and-founding-beta)
 - [Download and play](#download-and-play)
 - [First coding lesson](#first-coding-lesson)
 - [Robot programming reference](#robot-programming-reference)
@@ -34,6 +35,27 @@ The project combines a customized [Luanti](https://www.luanti.org/) engine, an e
 - [Contributing and security](#contributing-and-security)
 - [License and credits](#license-and-credits)
 
+## Editions and founding beta
+
+The launch model keeps learner access open while giving schools a supported adoption path:
+
+| Edition | Availability | Price decision |
+| --- | --- | --- |
+| Community game | Public, free, and open source | ₹0; no student subscription |
+| Desktop Creator | Developer preview until its generation and packaging gates pass | No paid promise yet |
+| School Console beta | Separately licensed and supplied only to selected pilot schools | First three qualified private-school pilots free for 90 days; additional guided beta ₹4,999 for eight weeks |
+| Founding annual school plan | Offered only after the paid-readiness gates pass | Proposed ₹12,499 for the first campus year, then ₹24,999 per campus/year |
+
+The planned school price covers onboarding, the operational Console, teacher training, curriculum delivery, updates, and support—not a paywall around the Community game. Eligible, properly authorised Kerala government-school pilots are planned as sponsored licences, but OpenClassCraft cannot grant KITE or departmental approval.
+
+- [Launch operating plan](docs/launch/README.md)
+- [School offer and commercial guardrails](docs/launch/SCHOOL_OFFER.md)
+- [Founding beta playbook](docs/launch/PILOT_PLAYBOOK.md)
+- [30-day school and community outreach kit](docs/launch/OUTREACH_KIT.md)
+- [Release and paid-readiness gates](docs/launch/RELEASE_CHECKLIST.md)
+- [English teacher quickstart](docs/launch/TEACHER_QUICKSTART.en.md) · [Malayalam teacher quickstart](docs/launch/TEACHER_QUICKSTART.ml.md)
+- [Launch-site source](website/)
+
 ## What is included
 
 | Area | Current implementation |
@@ -44,11 +66,11 @@ The project combines a customized [Luanti](https://www.luanti.org/) engine, an e
 | Chemistry activities | A Chemistry Lab combines H, O, C, N, Na, and Cl atom items into seven supported molecules, including water, oxygen, carbon dioxide, salt, ammonia, and methane. |
 | Creative catalog | An unlimited, searchable catalog is organized into All, Nodes, Tools, Items, Classroom, Programming, and Chemistry tabs. The normal crafting grid is intentionally absent from the classroom inventory. |
 | Classroom presentation | Custom menus, loading and pause screens, student/educator skins, sky and cloud settings, ambient music, classroom textures, and learning-themed generated plants and trees. |
-| Local multiplayer | A teacher can host a normal Luanti server from the simplified start screen. Students join with the host machine's LAN address, port, name, and optional password. |
+| Local multiplayer | A teacher can host from the simplified start screen. Students discover the class on the local network or use the host's private LAN address as a fallback, then join with a name and optional password. |
 | Accessibility switches | Dyslexia-friendly font, larger UI, stronger form contrast, a more distinct selected-item color, simplified HUD, and screen-reader-friendly helper chat. See the exact behavior [below](#accessibility). |
 | Creator Lab | An in-game, form-based editor creates reusable behavior blocks and includes a flat-area World Edit Wand. |
 | Desktop Creator | A separate Electron and Blockly prototype exports an OpenClassCraft mod folder containing Lua, `mod.conf`, and project JSON. |
-| Teacher Console | A separate local Electron app manages lessons, students, groups, assignments, manual progress, CSV reports, JSON backups, and an optional loopback lesson bridge. |
+| School Console beta | A separately licensed local Electron app manages lessons, students, groups, assignments, manual progress, CSV reports, JSON backups, and an optional loopback lesson bridge. It is not part of a public Community release. |
 
 OpenClassCraft is a focused game distribution, not a replacement name for the general-purpose Luanti engine. The engine lineage and upstream notices remain important parts of the project.
 
@@ -58,11 +80,11 @@ Use only files published on the [OpenClassCraft Releases page](https://github.co
 
 | Platform | Release asset | Start it |
 | --- | --- | --- |
-| Ubuntu 24.04 x64 | `OpenClassCraft-Ubuntu-24.04-x86_64.tar.gz` | Extract it, enter its package root, and run `bin/openclasscraft`. |
 | Fedora 44 x64 | `OpenClassCraft-Fedora-44-x86_64.rpm` | Install with `sudo dnf install ./OpenClassCraft-Fedora-44-x86_64.rpm`, then run `openclasscraft`. |
+| Ubuntu 24.04 x64 | `OpenClassCraft-Ubuntu-24.04-x86_64.tar.gz` | Deferred compatibility build: extract it, enter its package root, and run `bin/openclasscraft`. |
 | Windows x64 | `OpenClassCraft-Windows-x64.zip` | `bin\openclasscraft.exe` |
 
-The release workflow also builds the optional desktop tools as separate assets: `OpenClassCraft-Creator-<version>-linux-x86_64.AppImage`, `OpenClassCraft-Teacher-Console-<version>-linux-x86_64.AppImage`, and matching `-windows-x64.exe` files. They are not required to play the game.
+Public GitHub Releases contain only the Community game archives and their checksums. The workflow creates separately named Creator preview artifacts for developer testing. School Console packages require an explicit, owner-authorised manual build option and are never selected by the public release job. Neither desktop tool is required to play the Community game.
 
 Download the matching `.sha256` file as well and verify the archive before opening it. Extract ZIP/TGZ archives completely so that the game, textures, sounds, fonts, and runtime libraries stay beside the executable. If an asset is not attached for your platform, follow [Build from source](#build-from-source); an asset name in this table is not a promise that every release contains all three builds.
 
@@ -158,16 +180,16 @@ Newly generated chunks receive OpenClassCraft's bright sky, clouds, chunky trees
 1. Create or select a world under **Singleplayer**.
 2. Enable **Host Server** and, if wanted, **Educator**.
 3. Enter the teacher name, port, and optional password, then choose **Host Game**.
-4. Allow the chosen port through the host firewall only on the trusted classroom network.
-5. Give students the host machine's private LAN address and port.
+4. Allow the chosen game port and UDP port `29999` through the host firewall only on the trusted classroom network.
+5. Keep the host running while students search from the Local Servers view.
 
 ### Join
 
 1. Open **Start Game → Local Servers**.
-2. Enter a player name, the teacher's LAN address, port, and password.
-3. Choose **Join Server**.
+2. Select **Refresh**, then select the teacher's classroom from the discovered server list.
+3. Enter a player name and password, if required, then choose **Join Server**.
 
-The Local Servers view can show suitable saved/listed private-address entries, but OpenClassCraft does not currently implement broadcast LAN discovery or a classroom join code. Manual IP entry is the dependable path.
+OpenClassCraft discovers hosts with a local UDP broadcast; it does not publish the classroom to the public server list. Discovery can be disabled with `enable_lan_discovery = false`. If network isolation or a firewall blocks broadcasts, students can still enter the teacher's private LAN address and game port manually. A short classroom join-code flow is not implemented yet.
 
 The Educator option controls host presentation and educator metadata; it is not yet a complete role-based permission system. Classroom tools and the unlimited catalog are not strictly separated by student/teacher role. Use a trusted LAN, set a password, and review server privileges before a classroom session.
 
@@ -249,6 +271,8 @@ The desktop Creator is a prototype: some palette labels and generated behavior d
 - a token-protected loopback bridge to one local OpenClassCraft host.
 
 The app stores its state as `teacher-console.json` in Electron's platform-specific user-data directory. That file and exported backups are plain JSON, not encrypted. Keep the computer account, bridge settings, reports, and backups private. Do not enter sensitive student data unless your school's policies allow this storage model.
+
+For the Founding School Beta, use classroom aliases only and follow the [privacy and classroom-safety rules](docs/launch/PRIVACY_AND_SAFETY.md). The Console source is visible in this repository, but its `UNLICENSED` notice grants no standalone redistribution permission. Project-built packages remain a controlled pilot deliverable rather than a Community release asset.
 
 ### Connect a lesson to a LAN host
 
@@ -371,14 +395,16 @@ On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually 
 | [`games/luanti_edu/mods/openclasscraft_world/`](games/luanti_edu/mods/openclasscraft_world/) | Sky, music, vegetation, and classroom world styling. |
 | [`creator-app/`](creator-app/) | Desktop Blockly Creator. |
 | [`teacher-console/`](teacher-console/) | Local Teacher Console and loopback bridge service. |
+| [`docs/launch/`](docs/launch/) | Release gates, pricing, pilot operations, press/award copy, privacy rules, and bilingual teacher material. |
+| [`website/`](website/) | Zero-dependency Founding School Beta landing page and Pages build. |
 | [`doc/`](doc/) | Engine API, protocol, compilation, and contributor reference inherited from Luanti. |
 | [`.github/workflows/`](.github/workflows/) | CI and release automation. |
 
 ### Release automation
 
-The `release-build` workflow is configured to compile and test an Ubuntu 24.04 portable archive, a Fedora 44 RPM, and a Windows x64 portable ZIP. It checks that the packaged game and core classroom mod are present, runs the packaged engine tests, starts a fresh headless OpenClassCraft world to catch mod-load errors, and generates SHA-256 files. Pull requests and pushes build artifacts without publishing; a manual publish run requires an existing tag that points to the exact built commit and refuses to replace an existing release.
+The `release-build` workflow uses Fedora 44 as the default CI and public-alpha target. It builds the RPM, checks its contents, installs it in the Fedora container, runs the packaged engine tests, starts a fresh headless OpenClassCraft world, and generates SHA-256 files. Ubuntu 24.04 and Windows x64 builds remain available only through an explicit manual `all-community` run while those platforms are deferred. A manual publish run requires an existing tag that points to the exact built commit and refuses to replace an existing release.
 
-The same workflow clean-installs, syntax-checks, and packages the Creator and Teacher Console for Linux and Windows. Their AppImage and portable executable remain distinct release assets rather than being bundled into the three engine/game packages.
+The same workflow clean-installs and checks the Linux Creator and School Console. Creator preview packages are separate CI artifacts. School Console packaging is disabled unless an owner-authorised manual run enables it, uses an internal artifact name and short retention, and is excluded by the Community release allow-list. Public publishing defaults to the Fedora-only alpha scope; a later explicit `all-community` scope can include validated Ubuntu and Windows assets. Either scope refuses every unexpected filename.
 
 ### Useful chat commands
 
@@ -407,11 +433,11 @@ The same workflow clean-installs, syntax-checks, and packages the Creator and Te
 - The in-game World Edit Wand is destructive, has no undo, and does not yet enforce a classroom-specific protection policy.
 - The desktop Creator's event labels, condition generation, wait sequencing, item identifiers, and texture portability need further work.
 - Teacher Console storage and backups are not encrypted. The bridge is local and token-protected, but is not a school identity or compliance system.
-- There is no broadcast LAN discovery or join-code flow.
+- LAN broadcast discovery requires UDP port `29999` and may be blocked by guest-network isolation or host firewalls. There is no classroom join-code flow yet.
 - Starter lesson worlds, rubrics, portfolios, PDF reports, encrypted storage, opt-in cloud sync, and an update manager are roadmap items, not current features.
 - Some inherited Luanti documentation and desktop metadata still use upstream names. Verify packaging and branding on every target platform.
 
-See [`PROJECT_CHECKLIST.md`](PROJECT_CHECKLIST.md) for the current implementation checklist. It is a roadmap/status document, not a release guarantee.
+See [`PROJECT_CHECKLIST.md`](PROJECT_CHECKLIST.md) for the current implementation checklist and [`docs/launch/RELEASE_CHECKLIST.md`](docs/launch/RELEASE_CHECKLIST.md) for candidate gates. These are roadmap and operating documents, not a release guarantee.
 
 ## Contributing and security
 
