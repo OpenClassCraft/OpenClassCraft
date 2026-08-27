@@ -2,6 +2,8 @@
 
 The Teacher Console is a local desktop application for classroom planning and assessment. It is separate from the Luanti-derived game code and stores its data on the teacher's computer.
 
+> **Distribution status:** This is a controlled Founding School Beta component, not a Community Edition release. Automated packaging requires the owner-authorised `build_school_console` workflow option, and the public release job excludes every Console artifact. Source visibility does not override the `UNLICENSED` notice below.
+
 ## Current workflows
 
 - Create lessons with objectives and checkpoints.
