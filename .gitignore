@@ -96,6 +96,9 @@ public/
 doc/mkdocs/docs/*.md
 doc/mkdocs/mkdocs.yml
 doc/mkdocs/venv/
+website/dist/
+__pycache__/
+*.py[cod]
 
 ## Build files
 build/
