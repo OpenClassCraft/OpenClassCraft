@@ -3,6 +3,7 @@ name: lua_lint
 # Lint on Lua changes in the engine or bundled educational game.
 on:
   push:
+    branches: [Latest, main]
     paths:
       - 'builtin/**.lua'
       - 'games/devtest/**.lua'
