@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>OpenClassCraft Teacher Console</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -10,23 +11,107 @@
   <aside class="sidebar">
     <div class="brand"><span class="brand-mark">OC</span><span>OpenClassCraft<br><strong>Teacher Console</strong></span></div>
     <nav aria-label="Primary navigation">
-      <button class="nav-item active" data-view="dashboard">Dashboard</button>
-      <button class="nav-item" data-view="classroom">Classroom</button>
-      <button class="nav-item" data-view="lessons">Lessons</button>
-      <button class="nav-item" data-view="students">Students</button>
-      <button class="nav-item" data-view="reports">Reports</button>
+      <button class="nav-item active" data-view="dashboard"><span>01</span>Dashboard</button>
+      <button class="nav-item" data-view="classroom"><span>02</span>Classroom</button>
+      <button class="nav-item" data-view="lessons"><span>03</span>Lessons</button>
+      <button class="nav-item" data-view="students"><span>04</span>Students</button>
+      <button class="nav-item" data-view="assessment"><span>05</span>Assessment</button>
+      <button class="nav-item" data-view="portfolios"><span>06</span>Portfolios</button>
+      <button class="nav-item" data-view="operations"><span>07</span>Operations</button>
     </nav>
-    <div class="lan-card"><span class="eyebrow">LAN classroom</span><strong>Ready for local worlds</strong><p>Host the world in OpenClassCraft, then share its join details with your class.</p></div>
+    <div class="lan-card">
+      <span class="eyebrow">Class session</span>
+      <strong id="sidebarJoinCode">Not started</strong>
+      <p id="sidebarNetwork">Local and offline by default.</p>
+    </div>
   </aside>
+
   <main>
-    <header class="topbar"><div><p class="eyebrow">Classroom workspace</p><h1 id="pageTitle">Dashboard</h1></div><div class="header-actions"><span id="saveState" class="save-state">Local data ready</span><button id="restoreButton" class="button secondary">Restore</button><button id="backupButton" class="button secondary">Back up</button><button id="saveButton" class="button secondary">Save</button><button id="newButton" class="button primary">New lesson</button></div></header>
+    <header class="topbar">
+      <div><p class="eyebrow">Classroom workspace</p><h1 id="pageTitle">Dashboard</h1></div>
+      <div class="header-actions">
+        <span id="saveState" class="save-state" role="status">Loading local data…</span>
+        <button id="restoreButton" class="button secondary">Restore</button>
+        <button id="backupButton" class="button secondary">Back up</button>
+        <button id="saveButton" class="button secondary">Save</button>
+        <button id="newButton" class="button primary">New lesson</button>
+      </div>
+    </header>
     <section id="dashboard" class="view active"></section>
     <section id="classroom" class="view"></section>
     <section id="lessons" class="view"></section>
     <section id="students" class="view"></section>
-    <section id="reports" class="view"></section>
+    <section id="assessment" class="view"></section>
+    <section id="portfolios" class="view"></section>
+    <section id="operations" class="view"></section>
   </main>
-  <dialog id="lessonDialog"><form method="dialog"><header><h2 id="lessonDialogTitle">New lesson</h2><button class="close-button" value="cancel" aria-label="Close">X</button></header><label>Lesson title<input id="lessonTitle" required maxlength="64" placeholder="e.g. Build a Rainforest"></label><label>Subject<select id="lessonSubject"><option>Coding</option><option>Chemistry</option><option>Science</option><option>Environmental Studies</option></select></label><label>Learning objectives<textarea id="lessonObjectives" maxlength="280" placeholder="What will students learn?"></textarea></label><label>Checkpoints, one per line<textarea id="lessonCheckpoints" placeholder="Meet the Class Guide&#10;Complete the activity"></textarea></label><footer><button value="cancel" class="button secondary">Cancel</button><button id="createLesson" value="default" class="button primary">Save lesson</button></footer></form></dialog>
+
+  <dialog id="unlockDialog" class="small-dialog" aria-labelledby="unlockTitle">
+    <form method="dialog">
+      <header><div><span class="eyebrow">Protected workspace</span><h2 id="unlockTitle">Unlock Teacher Console</h2></div></header>
+      <p>Your classroom file is encrypted. Its passphrase stays in memory only while this app is open.</p>
+      <label>Workspace passphrase<input id="unlockPassphrase" type="password" autocomplete="current-password" minlength="10" required></label>
+      <p id="unlockError" class="form-error" role="alert"></p>
+      <footer><button id="unlockButton" value="default" class="button primary">Unlock</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="lessonDialog" aria-labelledby="lessonDialogTitle">
+    <form method="dialog">
+      <header><div><span class="eyebrow">Lesson authoring</span><h2 id="lessonDialogTitle">New lesson</h2></div><button class="close-button" value="cancel" aria-label="Close">×</button></header>
+      <div class="form-grid two-column">
+        <label>Lesson title<input id="lessonTitle" required maxlength="120" placeholder="e.g. Build a Rainforest"></label>
+        <label>Subject<select id="lessonSubject"><option>Coding</option><option>Chemistry</option><option>Science</option><option>Environmental Studies</option><option>Geography</option><option>Biology</option><option>Physics</option><option>Mathematics</option><option>General</option></select></label>
+      </div>
+      <label>Learning objectives<textarea id="lessonObjectives" maxlength="1200" placeholder="What should students understand or demonstrate?"></textarea></label>
+      <label>Checkpoints, one per line<textarea id="lessonCheckpoints" placeholder="Talk to the guide&#10;Complete the experiment&#10;Submit your result"></textarea><small>Each checkpoint becomes trackable progress in the game and Console.</small></label>
+      <label>Attached activities, one per line<textarea id="lessonActivities" placeholder="Robot | Route challenge | Program the robot to reach the flag&#10;Chalkboard | Key idea | Read the displayed learning goal"></textarea><small>Format: Type | Title | Instructions. Types: Guide, Dialogue, Chalkboard, Flag, Chemistry, Robot, Build, Quiz.</small></label>
+      <label>Stages, one per line<textarea id="lessonStages" placeholder="Explore | 1,2 | inherit&#10;Build safely | 3 | place | default:wood,default:glass"></textarea><small>Format: Stage title | checkpoint numbers | inherit or place,dig,wand | optional allowed blocks. Stage overrides are enforced in the hosted world.</small></label>
+      <footer><button value="cancel" class="button secondary">Cancel</button><button id="createLesson" value="default" class="button primary">Save lesson</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="studentDialog" class="small-dialog" aria-labelledby="studentDialogTitle">
+    <form method="dialog">
+      <header><h2 id="studentDialogTitle">Add student</h2><button class="close-button" value="cancel" aria-label="Close">×</button></header>
+      <label>Display name<input id="studentName" maxlength="120" required placeholder="Student name"></label>
+      <label>Game username<input id="studentUsername" maxlength="80" required placeholder="Must match the Luanti player name"></label>
+      <label>Group<select id="studentGroup"></select></label>
+      <label>Role<select id="studentRole"><option>Student</option><option>Observer</option><option>Educator</option></select></label>
+      <div class="callout warning"><strong>Role safety</strong><span>Students follow staged build controls. Observers cannot change the world. Educators may perform destructive classroom actions.</span></div>
+      <footer><button value="cancel" class="button secondary">Cancel</button><button id="saveStudent" value="default" class="button primary">Save student</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="assignmentDialog" aria-labelledby="assignmentDialogTitle">
+    <form method="dialog">
+      <header><h2 id="assignmentDialogTitle">Assign lesson</h2><button class="close-button" value="cancel" aria-label="Close">×</button></header>
+      <div class="form-grid two-column">
+        <label>Group<select id="assignmentGroup"></select></label>
+        <label>Lesson<select id="assignmentLesson"></select></label>
+        <label>Starter world<select id="assignmentPreset"></select></label>
+        <label>World name<input id="assignmentWorld" maxlength="120"></label>
+      </div>
+      <fieldset><legend>Base student permissions</legend><label class="check"><input id="policyPlace" type="checkbox"> Place blocks</label><label class="check"><input id="policyDig" type="checkbox"> Dig blocks</label><label class="check"><input id="policyWand" type="checkbox"> World Edit Wand</label></fieldset>
+      <div class="form-grid two-column">
+        <label>Allowed block IDs<textarea id="policyBlocks" placeholder="default:wood&#10;default:glass"></textarea><small>Leave empty to allow every block covered by the switches above.</small></label>
+        <label>Allowed tool IDs<textarea id="policyTools" placeholder="openclasscraft_classroom:lesson_planner"></textarea><small>The current stage can narrow this list further.</small></label>
+      </div>
+      <footer><button value="cancel" class="button secondary">Cancel</button><button id="saveAssignment" value="default" class="button primary">Save assignment</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="rubricDialog" class="small-dialog" aria-labelledby="rubricDialogTitle">
+    <form method="dialog">
+      <header><h2 id="rubricDialogTitle">New rubric</h2><button class="close-button" value="cancel" aria-label="Close">×</button></header>
+      <label>Rubric title<input id="rubricTitle" maxlength="120" required></label>
+      <label>Lesson<select id="rubricLesson"></select></label>
+      <label>Criteria, one per line<textarea id="rubricCriteria" placeholder="Correct method | 4 | Uses a valid sequence&#10;Explanation | 4 | Explains the result"></textarea><small>Format: Criterion | maximum points | description.</small></label>
+      <footer><button value="cancel" class="button secondary">Cancel</button><button id="saveRubric" value="default" class="button primary">Save rubric</button></footer>
+    </form>
+  </dialog>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
   <script src="renderer.js"></script>
 </body>
 </html>

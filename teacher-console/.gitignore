@@ -2,3 +2,5 @@ node_modules/
 .electron-runtime/
 dist/
 *.log
+release/*private*.pem
+release/*.key

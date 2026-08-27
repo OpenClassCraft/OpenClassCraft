@@ -31,6 +31,56 @@ local function trim(value)
 	return (value or ""):gsub("^%s*(.-)%s*$", "%1")
 end
 
+local function get_local_role(player)
+	if not player or not player:is_player() then
+		return "student"
+	end
+	if player_api and player_api.get_openclasscraft_role then
+		return player_api.get_openclasscraft_role(player)
+	end
+	local name = player:get_player_name()
+	if minetest.check_player_privs(name, {server = true}) then
+		return "educator"
+	end
+	return "student"
+end
+
+local function has_creator_tool_access(player)
+	return get_local_role(player) == "educator"
+end
+
+local function permission_denied(player, action)
+	local name = player:get_player_name()
+	if openclasscraft_classroom and openclasscraft_classroom.world_policy_message then
+		openclasscraft_classroom.world_policy_message(player, action)
+	else
+		minetest.chat_send_player(name, "[Creator Lab] This action is not available in the current class lesson policy.")
+	end
+end
+
+local function can_perform_place(player, item_name)
+	local role = get_local_role(player)
+	if role == "educator" then
+		return true
+	end
+	if openclasscraft_classroom and openclasscraft_classroom.policy_can then
+		return openclasscraft_classroom.policy_can("place", player, item_name)
+	end
+	return false
+end
+
+local function can_use_world_edit_wand(player)
+	local role = get_local_role(player)
+	if role == "educator" then
+		return true
+	end
+	if openclasscraft_classroom and openclasscraft_classroom.policy_can then
+		return openclasscraft_classroom.policy_can(
+			"world_edit_wand", player, "openclasscraft_creator:world_edit_wand")
+	end
+	return false
+end
+
 local function get_project(player_name)
 	local raw = storage:get_string("project:" .. player_name)
 	local project = raw ~= "" and minetest.deserialize(raw) or nil
@@ -62,6 +112,10 @@ local function script_label(action)
 end
 
 local function show_creator(player)
+	if not has_creator_tool_access(player) then
+		permission_denied(player, "creator_tool")
+		return
+	end
 	local project = project_for(player)
 	local script_lines = {}
 	for index, action in ipairs(project.script) do
@@ -163,6 +217,10 @@ local function run_block_program(pos, player)
 end
 
 local function place_project_block(itemstack, placer, pointed_thing)
+	if not can_perform_place(placer, itemstack:get_name()) then
+		permission_denied(placer, "place")
+		return itemstack
+	end
 	-- item_place may consume the stack, so keep the project payload before it runs.
 	local item_meta = itemstack:get_meta()
 	local project_payload = {
@@ -456,6 +514,10 @@ local function clear_world_edit_area(player)
 end
 
 local function use_world_edit_wand(player, pointed_thing)
+	if not can_use_world_edit_wand(player) then
+		permission_denied(player, "world_edit_wand")
+		return
+	end
 	local pos = selected_node_pos(pointed_thing)
 	if not pos then
 		clear_world_edit_area(player)
@@ -487,15 +549,11 @@ minetest.register_tool("openclasscraft_creator:world_edit_wand", {
 		return itemstack
 	end,
 	on_place = function(itemstack, placer, pointed_thing)
-		if pointed_thing and pointed_thing.type == "node" then
-			use_world_edit_wand(placer, pointed_thing)
-			return itemstack
-		end
-		clear_world_edit_area(placer)
+		use_world_edit_wand(placer, pointed_thing)
 		return itemstack
 	end,
 	on_secondary_use = function(itemstack, user)
-		clear_world_edit_area(user)
+		use_world_edit_wand(user)
 		return itemstack
 	end,
 })

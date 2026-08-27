@@ -1,4 +1,5 @@
 local S = minetest.get_translator("openclasscraft_classroom")
+openclasscraft_classroom = rawget(_G, "openclasscraft_classroom") or {}
 -- The bridge is opt-in: it can only reach a token-protected server on the
 -- teacher's own computer when this mod is explicitly granted HTTP access.
 local teacher_bridge_http = minetest.request_http_api and minetest.request_http_api()
@@ -12,6 +13,50 @@ local NPC_BODY_TURN_BLEND = 0.12
 local NPC_HEAD_SMOOTH_BLEND = 0.25
 local NPC_MAX_HEAD_YAW = math.rad(70)
 local NPC_MAX_HEAD_PITCH = math.rad(35)
+local WORLD_POLICY_VERSION = 2
+local DEFAULT_WORLD_POLICY = {
+	studentsCanPlace = false,
+	studentsCanDig = false,
+	studentsCanUseWorldEditWand = false,
+	allowedBlocks = {},
+	allowedTools = {},
+}
+local OPENCLASSCRAFT_WORLD_POLICY_ACTIONS = {
+	place = true,
+	dig = true,
+	world_edit_wand = true,
+	use_tool = true,
+}
+local world_policy_warnings = {}
+local lesson_storage = minetest.get_mod_storage()
+local lesson_notifications = {}
+
+local function show_lesson_notification(player, message, color)
+	local name = player:get_player_name()
+	local old = lesson_notifications[name]
+	if old then
+		player:hud_remove(old)
+	end
+	local id = player:hud_add({
+		hud_elem_type = "text",
+		position = {x = 0.5, y = 0.16},
+		offset = {x = 0, y = 0},
+		text = message,
+		number = color or 0x7CFF8A,
+		alignment = {x = 0, y = 0},
+		scale = {x = 100, y = 22},
+	})
+	lesson_notifications[name] = id
+	minetest.after(0.08, function()
+		if lesson_notifications[name] == id then player:hud_change(id, "offset", {x = 0, y = 18}) end
+	end)
+	minetest.after(3.2, function()
+		if lesson_notifications[name] ~= id then return end
+		player:hud_change(id, "text", "")
+		lesson_notifications[name] = nil
+		player:hud_remove(id)
+	end)
+end
 
 local function clamp(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
@@ -106,6 +151,114 @@ local function trim(value)
 	return (value or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
+local function normalize_world_policy(value)
+	local function string_list(items)
+		local output = {}
+		if type(items) ~= "table" then return output end
+		for _, item in ipairs(items) do
+			if type(item) == "string" and item ~= "" then
+				output[#output + 1] = item
+			end
+		end
+		return output
+	end
+	if type(value) ~= "table" then
+		return {
+			version = WORLD_POLICY_VERSION,
+			studentsCanPlace = DEFAULT_WORLD_POLICY.studentsCanPlace,
+			studentsCanDig = DEFAULT_WORLD_POLICY.studentsCanDig,
+			studentsCanUseWorldEditWand = DEFAULT_WORLD_POLICY.studentsCanUseWorldEditWand,
+			allowedBlocks = {},
+			allowedTools = {},
+		}
+	end
+	return {
+		version = WORLD_POLICY_VERSION,
+		studentsCanPlace = value.studentsCanPlace == true,
+		studentsCanDig = value.studentsCanDig == true,
+		studentsCanUseWorldEditWand = value.studentsCanUseWorldEditWand == true,
+		allowedBlocks = string_list(value.allowedBlocks),
+		allowedTools = string_list(value.allowedTools),
+	}
+end
+
+local function role_from_player(player)
+	if not player or not player:is_player() then
+		return "student"
+	end
+	local name = player:get_player_name()
+	if minetest.check_player_privs(name, {server = true}) then
+		return "educator"
+	end
+	if player_api and player_api.get_openclasscraft_role then
+		return player_api.get_openclasscraft_role(player)
+	end
+	return "student"
+end
+
+local function list_allows(items, item_name)
+	if type(items) ~= "table" or #items == 0 then return true end
+	for _, allowed in ipairs(items) do
+		if allowed == item_name then return true end
+	end
+	return false
+end
+
+local function policy_can(action, player, item_name)
+	if OPENCLASSCRAFT_WORLD_POLICY_ACTIONS[action] == nil then
+		return true
+	end
+	local role = role_from_player(player)
+	if role == "educator" then
+		return true
+	end
+	if role ~= "student" then
+		return false
+	end
+	local policy = normalize_world_policy(minetest.deserialize(lesson_storage:get_string("active_world_policy")))
+	if action == "place" then
+		return policy.studentsCanPlace and list_allows(policy.allowedBlocks, item_name)
+	end
+	if action == "dig" then
+		return policy.studentsCanDig and list_allows(policy.allowedBlocks, item_name)
+	end
+	if action == "world_edit_wand" then
+		return policy.studentsCanUseWorldEditWand and list_allows(policy.allowedTools, item_name)
+	end
+	if action == "use_tool" then
+		return list_allows(policy.allowedTools, item_name) and #policy.allowedTools > 0
+	end
+	return true
+end
+
+local function world_policy_message(player, action)
+	if not player or not player:is_player() then
+		return
+	end
+	local name = player:get_player_name()
+	local now = minetest.get_us_time()
+	local last = world_policy_warnings[name] and world_policy_warnings[name][action]
+	if last and now - last < 1200000000 then
+		return
+	end
+	world_policy_warnings[name] = world_policy_warnings[name] or {}
+	world_policy_warnings[name][action] = now
+	local action_labels = {
+		place = "Placing blocks",
+		dig = "Removing blocks",
+		world_edit_wand = "World Edit Wand",
+		use_tool = "Using this tool",
+	}
+	local label = action_labels[action] or "This action"
+	minetest.chat_send_player(name, "[OpenClassCraft] " .. label ..
+		" is not enabled for your role in this lesson world.")
+	minetest.record_protection_violation(player:get_pos() or vector.zero(), name)
+end
+
+local function get_world_policy()
+	return normalize_world_policy(minetest.deserialize(lesson_storage:get_string("active_world_policy")))
+end
+
 local guide_dialogue_links = {}
 
 local function wrap_dialogue(text, line_width)
@@ -152,11 +305,13 @@ local function can_edit(player, owner)
 	if not player or not player:is_player() then
 		return false
 	end
+	if role_from_player(player) == "educator" then
+		return true
+	end
 	local name = player:get_player_name()
 	return owner == "" or owner == name or minetest.check_player_privs(name, {server = true})
 end
 
-local lesson_storage = minetest.get_mod_storage()
 local lesson_task_types = {
 	chalkboard = "Read chalkboard",
 	guide = "Talk to guide",
@@ -166,6 +321,74 @@ local lesson_task_types = {
 }
 local lesson_type_order = {"chalkboard", "guide", "marker", "water", "teacher"}
 local teacher_bridge_report_progress = function() end
+local teacher_bridge_report_event = function() end
+
+local function policy_check(action, player, item_name)
+	return policy_can(action, player, item_name)
+end
+
+local function wrap_student_permissions()
+	for item_name, item in pairs(minetest.registered_items) do
+		if item.type == "node" and item.on_place and not item._occ_student_permissions then
+			local original_on_place = item.on_place
+			item.on_place = function(itemstack, placer, pointed_thing)
+				if policy_can("place", placer, itemstack:get_name()) then
+					return original_on_place(itemstack, placer, pointed_thing)
+				end
+				world_policy_message(placer, "place")
+				return itemstack
+			end
+			item._occ_student_permissions = true
+		elseif item.type == "node" and not item._occ_student_permissions then
+			item.on_place = function(itemstack, placer, pointed_thing)
+				if policy_can("place", placer, itemstack:get_name()) then
+					return minetest.item_place(itemstack, placer, pointed_thing)
+				end
+				world_policy_message(placer, "place")
+				return itemstack
+			end
+			item._occ_student_permissions = true
+		elseif item.type ~= "node" and item.on_place and not item._occ_student_permissions then
+			local original_on_place = item.on_place
+			item.on_place = function(itemstack, placer, pointed_thing)
+				if policy_can("use_tool", placer, itemstack:get_name()) then
+					return original_on_place(itemstack, placer, pointed_thing)
+				end
+				world_policy_message(placer, "use_tool")
+				return itemstack
+			end
+			item._occ_student_permissions = true
+		end
+	end
+
+	for node_name, node in pairs(minetest.registered_nodes) do
+		if not node._occ_student_permissions then
+			local original_can_dig = node.can_dig
+			node.can_dig = function(pos, digger, ...)
+				if policy_can("dig", digger, minetest.get_node(pos).name) then
+					if original_can_dig then
+						return original_can_dig(pos, digger, ...)
+					end
+					return true
+				end
+				world_policy_message(digger, "dig")
+				return false
+			end
+			node._occ_student_permissions = true
+		end
+		if not node._occ_student_permissions_on_place then
+			node._occ_student_permissions_on_place = true
+		end
+	end
+end
+
+minetest.register_on_mods_loaded(function()
+	wrap_student_permissions()
+	openclasscraft_classroom.get_world_policy = get_world_policy
+	openclasscraft_classroom.get_role = role_from_player
+	openclasscraft_classroom.policy_can = policy_check
+	openclasscraft_classroom.world_policy_message = world_policy_message
+end)
 
 local function get_lesson()
 	local data = lesson_storage:get_string("active_lesson")
@@ -218,9 +441,11 @@ local function lesson_try_advance(player, source)
 	set_lesson_progress(player, lesson, progress)
 	teacher_bridge_report_progress(player, lesson, progress)
 	if progress >= #lesson.tasks then
+		show_lesson_notification(player, "LESSON COMPLETE  •  " .. lesson.title, 0x44FF77)
 		minetest.chat_send_player(player:get_player_name(),
 			"[OpenClassCraft] Lesson complete: " .. lesson.title)
 	else
+		show_lesson_notification(player, "TASK COMPLETE  •  " .. progress .. "/" .. #lesson.tasks, 0x55DDFF)
 		minetest.chat_send_player(player:get_player_name(),
 			"[OpenClassCraft] Task complete. Next: " .. lesson.tasks[progress + 1].text)
 	end
@@ -294,6 +519,10 @@ local function show_lesson_progress(player, lesson)
 		lines[1] = "Your teacher has not added tasks yet."
 	end
 	local next_task = lesson.tasks[progress + 1]
+	local total_tasks = math.max(#lesson.tasks, 1)
+	local progress_width = 10.8 * math.min(progress, total_tasks) / total_tasks
+	local progress_bar = "box[0.5,7.35;10.8,0.18;#202833]box[0.5,7.35;" ..
+		string.format("%.2f", progress_width) .. ";0.18;#55DDFF]"
 	local controls = "button_exit[9.6,7.9;2.3,0.8;close;Close]"
 	if next_task and next_task.kind == "teacher" then
 		controls = "button[7.1,7.9;2.2,0.8;complete;Mark complete]" .. controls
@@ -303,6 +532,7 @@ local function show_lesson_progress(player, lesson)
 		"label[0.5,0.5;" .. esc(lesson.title) .. "]" ..
 		"textarea[0.5,1.1;11.5,1.4;goal;Learning goal;" .. esc(lesson.goal) .. "]" ..
 		"textarea[0.5,2.85;11.5,4.3;tasks;Lesson tasks;" .. esc(table.concat(lines, "\n")) .. "]" ..
+		progress_bar ..
 		"label[0.5,7.55;Progress: " .. math.min(progress, #lesson.tasks) .. "/" .. #lesson.tasks .. "]" ..
 		controls
 	)
@@ -976,6 +1206,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 			player:get_meta():set_string("openclasscraft_selected_reaction", reaction_key)
 			local made_item, status = make_chemistry_item(player, reaction_key)
+			if made_item then
+				teacher_bridge_report_event(player, "chemistry_result", {
+					title = CHEMISTRY_REACTIONS[reaction_key].label,
+					summary = CHEMISTRY_REACTIONS[reaction_key].formula,
+					result = {
+						reaction = reaction_key,
+						formula = CHEMISTRY_REACTIONS[reaction_key].formula,
+						product = CHEMISTRY_REACTIONS[reaction_key].product,
+					},
+				})
+			end
 			if made_item and reaction_key == "water" then
 				local completed = lesson_try_advance(player, "water")
 				if not completed then
@@ -1117,7 +1358,20 @@ local function bridge_apply_lesson(payload)
 	lesson.revision = lesson.revision + 1
 	save_lesson(lesson)
 	lesson_storage:set_string("teacher_bridge_version", tostring(payload.updatedAt or ""))
-	return true, "Imported " .. lesson.title .. " from Teacher Console."
+	lesson_storage:set_string("teacher_bridge_session_code",
+		type(payload.sessionCode) == "string" and payload.sessionCode:upper() or "")
+	lesson_storage:set_string("teacher_bridge_lesson_id",
+		type(payload.lesson.id) == "string" and payload.lesson.id or "")
+	lesson_storage:set_string("teacher_bridge_roster",
+		minetest.serialize(type(payload.roster) == "table" and payload.roster or {}))
+	lesson_storage:set_string("teacher_bridge_assignment",
+		minetest.serialize(type(payload.assignment) == "table" and payload.assignment or {}))
+	lesson_storage:set_string("teacher_bridge_activities",
+		minetest.serialize(type(payload.lesson.activities) == "table" and payload.lesson.activities or {}))
+	lesson_storage:set_string("active_world_policy", minetest.serialize(normalize_world_policy(payload.policy)))
+	local stage = type(payload.assignment) == "table" and payload.assignment.activeStageTitle or ""
+	return true, "Imported " .. lesson.title .. " from Teacher Console" ..
+		(type(stage) == "string" and stage ~= "" and (" (stage: " .. stage .. ").") or ".")
 end
 
 local function bridge_fetch_lesson(notify_player)
@@ -1153,35 +1407,135 @@ local function bridge_fetch_lesson(notify_player)
 	return true
 end
 
-teacher_bridge_report_progress = function(player, lesson, progress)
+teacher_bridge_report_event = function(player, event_type, details)
 	local url = minetest.settings:get("openclasscraft_teacher_events_url") or ""
 	local token = minetest.settings:get("openclasscraft_teacher_bridge_token") or ""
 	if not teacher_bridge_http or url == "" or token == "" then
 		return
+	end
+	local lesson = get_lesson()
+	local event = {
+		type = event_type,
+		playerName = player:get_player_name(),
+		lessonId = lesson_storage:get_string("teacher_bridge_lesson_id"),
+		lessonTitle = lesson.title,
+		at = os.time(),
+	}
+	if type(details) == "table" then
+		for key, value in pairs(details) do
+			if key ~= "type" and key ~= "playerName" then
+				event[key] = value
+			end
+		end
 	end
 	teacher_bridge_http.fetch({
 		url = url,
 		method = "POST",
 		timeout = 3,
 		quiet = true,
-		data = minetest.write_json({
-			type = "lesson_progress",
-			playerName = player:get_player_name(),
-			lessonTitle = lesson.title,
-			complete = progress,
-			total = #lesson.tasks,
-			at = os.time(),
-		}),
+		data = minetest.write_json(event),
 		extra_headers = {
 			"Content-Type: application/json",
 			"X-OpenClassCraft-Token: " .. token,
 		},
 	}, function(result)
 		if not result.succeeded then
-			minetest.log("warning", "[OpenClassCraft] Teacher Console progress event was not delivered.")
+			minetest.log("warning", "[OpenClassCraft] Teacher Console classroom event was not delivered.")
 		end
 	end)
 end
+
+teacher_bridge_report_progress = function(player, lesson, progress)
+	teacher_bridge_report_event(player, "lesson_progress", {
+		lessonTitle = lesson.title,
+		complete = progress,
+		total = #lesson.tasks,
+	})
+end
+
+openclasscraft_classroom.report_event = teacher_bridge_report_event
+
+local function teacher_bridge_roster_entry(player_name)
+	local roster = minetest.deserialize(lesson_storage:get_string("teacher_bridge_roster"))
+	if type(roster) ~= "table" then return nil end
+	local lowered = player_name:lower()
+	for _, entry in ipairs(roster) do
+		if type(entry) == "table" then
+			local username = type(entry.username) == "string" and entry.username:lower() or ""
+			local display_name = type(entry.name) == "string" and entry.name:lower() or ""
+			if username == lowered or display_name == lowered then return entry end
+		end
+	end
+	return nil
+end
+
+minetest.register_chatcommand("occ_join", {
+	params = "<class code>",
+	description = "Join the active Teacher Console classroom session",
+	func = function(name, param)
+		local expected = lesson_storage:get_string("teacher_bridge_session_code"):upper()
+		local supplied = trim(param):upper()
+		if expected == "" then
+			return false, "The educator must sync the Teacher Console lesson first."
+		end
+		if supplied == "" or supplied ~= expected then
+			return false, "That class code is not valid. Ask your educator for the current code."
+		end
+		local player = minetest.get_player_by_name(name)
+		local roster_entry = teacher_bridge_roster_entry(name)
+		if not player or not roster_entry then
+			return false, "Your game username is not in the assigned group. Ask your educator to check the roster."
+		end
+		local requested_role = type(roster_entry.role) == "string" and roster_entry.role:lower() or "student"
+		local assigned_role = requested_role == "observer" and "observer" or "student"
+		local educator_warning = ""
+		if requested_role == "educator" then
+			if minetest.check_player_privs(name, {server = true}) or role_from_player(player) == "educator" then
+				assigned_role = "educator"
+			else
+				assigned_role = "observer"
+				educator_warning = " Educator elevation requires the host to run /occ_set_role."
+			end
+		end
+		if player_api and player_api.set_openclasscraft_role then
+			player_api.set_openclasscraft_role(player, assigned_role, "Teacher Console session")
+		else
+			player:get_meta():set_string("openclasscraft_role", assigned_role)
+		end
+		player:get_meta():set_string("openclasscraft_joined_session", expected)
+		player:get_meta():set_string("openclasscraft_roster_id",
+			type(roster_entry.id) == "string" and roster_entry.id or "")
+		teacher_bridge_report_event(player, "presence", {status = "online"})
+		return true, "Joined the class as " .. assigned_role .. ". Open the Lesson Planner to begin." .. educator_warning
+	end,
+})
+
+minetest.register_chatcommand("occ_submit_build", {
+	params = "[short note]",
+	description = "Send the current build as a Teacher Console submission",
+	func = function(name, param)
+		local player = minetest.get_player_by_name(name)
+		local session = lesson_storage:get_string("teacher_bridge_session_code")
+		if not player or session == "" or player:get_meta():get_string("openclasscraft_joined_session") ~= session then
+			return false, "Join the active class first with /occ_join CODE."
+		end
+		local pos = vector.round(player:get_pos())
+		local note = trim(param)
+		teacher_bridge_report_event(player, "build_submission", {
+			title = "World build submission",
+			summary = note ~= "" and note or "Student submitted the build near their current position.",
+			result = {position = pos, note = note},
+		})
+		return true, "Build submitted to the Teacher Console for review."
+	end,
+})
+
+minetest.register_on_leaveplayer(function(player)
+	local session = lesson_storage:get_string("teacher_bridge_session_code")
+	if session ~= "" and player:get_meta():get_string("openclasscraft_joined_session") == session then
+		teacher_bridge_report_event(player, "presence", {status = "left"})
+	end
+end)
 
 minetest.register_chatcommand("occ_teacher_sync", {
 	params = "",
@@ -1201,4 +1555,12 @@ minetest.register_globalstep(function(dtime)
 	end
 	teacher_bridge_timer = 0
 	bridge_fetch_lesson()
+	local session = lesson_storage:get_string("teacher_bridge_session_code")
+	if session ~= "" then
+		for _, player in ipairs(minetest.get_connected_players()) do
+			if player:get_meta():get_string("openclasscraft_joined_session") == session then
+				teacher_bridge_report_event(player, "presence", {status = "online"})
+			end
+		end
+	end
 end)

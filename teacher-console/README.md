@@ -1,88 +1,115 @@
 # OpenClassCraft Teacher Console
 
-The Teacher Console is a local desktop application for classroom planning and assessment. It is separate from the Luanti-derived game code and stores its data on the teacher's computer.
+The Teacher Console is the local-first classroom control, lesson-authoring, assessment, and recovery application for OpenClassCraft. Version 0.2.0 targets Fedora/Linux first and does not require an Internet connection for classroom operation or license verification.
 
-> **Distribution status:** This is a controlled Founding School Beta component, not a Community Edition release. Automated packaging requires the owner-authorised `build_school_console` workflow option, and the public release job excludes every Console artifact. Source visibility does not override the `UNLICENSED` notice below.
+> **Distribution status:** this remains a controlled Founding School Beta component. It is marked `UNLICENSED`; choose and document an owner-approved license before redistributing School Edition builds beyond releases made by the project owner.
 
-## Current workflows
+## Included workflows
 
-- Create lessons with objectives and checkpoints.
-- Maintain students, groups, and group-to-lesson/world assignments.
-- Import a CSV class list with a required `Name` column and optional `Group` column.
-- Track checkpoints, add teacher notes, export CSV reports, and create JSON backups.
-- Share the selected lesson with a local OpenClassCraft host through a loopback-only bridge.
+### Classroom safety
 
-## LAN lesson bridge
+- Student, Observer, and Educator roster roles with exact game-username matching.
+- Six-character classroom join code and recent connection presence.
+- Base assignment permissions plus stage-specific Place, Dig, World Edit Wand, block-ID, and tool-ID restrictions.
+- Educator elevation is never granted from a join code alone; the host must already be an educator or explicitly use `/occ_set_role`.
+- Destructive Console actions require typed confirmation, and managed-world reset/restore archives the previous world instead of deleting it.
 
-1. In **Classroom**, create a lesson assignment and choose it under **LAN lesson bridge**.
-2. Click **Start bridge**, then click **Export settings**.
-3. Copy the generated `openclasscraft-teacher-bridge.conf` entries into the teacher host's `minetest.conf`.
-4. Restart the OpenClassCraft host.
-5. In the hosted world, an educator runs `/occ_teacher_sync`.
+### Lesson authoring
 
-The bridge listens only on `127.0.0.1`, requires the generated token, and returns the active lesson plan only. The game can also post a player's name, lesson title, and completed/total task counts to the Console using the same token. It does not transmit student records, reports, or backups.
+- Objectives and ordered checkpoints.
+- Attached Guide, Dialogue, Chalkboard, Flag, Chemistry, Robot, Build, and Quiz activity descriptions.
+- Multi-stage lessons with different checkpoint sets and world policies.
+- Draft/published state, duplication, up to 25 local versions, and rollback that preserves the current version first.
+- Portable curriculum pack import/export without roster, progress, or portfolio data.
 
-## Run from source
+### Assessment and portfolios
 
-Install Node.js 22.12 or newer, then run these commands from `teacher-console`:
+- Manual checkpoint records and teacher notes.
+- Automatic LAN progress, robot result, chemistry result, and build-submission events.
+- Reusable rubrics, criterion scoring, feedback, and pending/reviewed queues.
+- Screenshot/document evidence copied into protected local app data and fingerprinted with SHA-256.
+- Group dashboard plus CSV and printable PDF reports.
+- A visible audit trail and a reconciliation queue for unknown game usernames.
+
+### Recovery, privacy, and updates
+
+- Atomic workspace saves, checksum validation, a last-known-good backup, and ten rolling recovery points.
+- Optional AES-256-GCM workspace and backup encryption with scrypt key derivation. Passphrases are never stored and cannot be recovered.
+- Explicit encrypted folder sync suitable for a mounted Nextcloud, Dropbox, Google Drive, network share, or USB folder. The Console does not contact those services itself.
+- Opt-in local crash notes and performance consent controls; nothing is uploaded automatically.
+- Redacted diagnostics export.
+- Local update-manifest verification for platform, architecture, SHA-256, and a pinned Ed25519 owner signature when the release public key is installed. The Console never auto-executes packages.
+
+## Four starter lesson worlds
+
+Assignments can install clean, playable managed worlds under the Console data directory:
+
+| World | Core activity | Evidence |
+| --- | --- | --- |
+| Coding | Program a robot through a marked route | Robot result and debugging explanation |
+| Chemistry | Model a water reaction at group benches | Reaction record and H2O explanation |
+| Science | Compare sand, gravel, and clay model zones | Consistent observations and evidence-backed claim |
+| Environmental Studies | Compare water, dry-soil, and habitat zones | Low-impact improvement proposal |
+
+Each installed world contains `TEACHER_NOTES.md`. Use **Snapshot** before an open build stage. **Reset** creates an archived copy next to the managed world before rebuilding the template.
+
+## LAN classroom bridge
+
+1. In **Classroom**, assign a lesson to a group and select **Use live**.
+2. Start the session and export `openclasscraft-teacher-bridge.conf`.
+3. Copy its settings into the teacher host's `minetest.conf`, then restart the host.
+4. An educator runs `/occ_teacher_sync` in the hosted world.
+5. Students connect to the host and run `/occ_join CODE`, using the code shown in the Console.
+
+The bridge binds only to `127.0.0.1` because the game host and Console run on the same teacher computer. Student devices connect to the Luanti game server, not directly to the Console. Requests use a random 192-bit token. The selected group roster, active lesson/stage, and policy remain on the local host.
+
+Useful in-game commands:
+
+```text
+/occ_teacher_sync                 educator: apply the selected Console assignment
+/occ_join ABC123                 student: join after exact roster matching
+/occ_submit_build Short note     student: submit a build for review
+/occ_role                        show the current classroom role
+```
+
+## Run on Fedora from source
+
+Node.js 22.12 or newer is required:
 
 ```bash
+cd teacher-console
 npm install
+npm run validate
 npm start
 ```
 
-`npm start` uses the project-local Electron dependency and works on Linux and Windows. The former `.electron-runtime` machine-local path is not required. Linux systems need a graphical desktop session.
+The application uses project-local Electron and stores data in Electron's per-user application-data directory. The exact location is shown in **Operations → Diagnostics**.
 
-## Package the desktop app
-
-Create a Linux AppImage on a Linux machine:
+## Build the Fedora/Linux AppImage
 
 ```bash
+cd teacher-console
 npm run package:linux
+chmod +x dist/OpenClassCraft-Teacher-Console-0.2.0-linux-x86_64.AppImage
+./dist/OpenClassCraft-Teacher-Console-0.2.0-linux-x86_64.AppImage
 ```
 
-For an x64 build, the distributable is:
+`package:linux` runs syntax and automated core tests before packaging. It creates the AppImage plus an unpacked staging directory; distribute the named AppImage, not the staging directory. The AppImage is not OS code-signed yet.
 
-```text
-dist/OpenClassCraft-Teacher-Console-0.1.0-linux-x86_64.AppImage
-```
+## Test student flow locally
 
-Run it on Ubuntu or Fedora with:
+1. Start the Console, create an assignment, choose **Use live**, and start the bridge.
+2. Export the host config and apply it to the local OpenClassCraft configuration.
+3. Start a hosted world and run `/occ_teacher_sync`.
+4. Connect one or two disposable student accounts whose game usernames exactly match the Console roster.
+5. Run `/occ_join CODE`, complete a checkpoint, create a chemistry item or run a robot program, and use `/occ_submit_build`.
+6. Confirm presence, progress, submissions, policy denials, and audit events in the Console.
 
-```bash
-chmod +x dist/OpenClassCraft-Teacher-Console-0.1.0-linux-x86_64.AppImage
-./dist/OpenClassCraft-Teacher-Console-0.1.0-linux-x86_64.AppImage
-```
+See [QA_CHECKLIST.md](QA_CHECKLIST.md) for the release matrix and [release/README.md](release/README.md) for update signing.
 
-Create a portable Windows executable on Windows, or on a Linux host configured with Wine:
+## Important limitations before a school release
 
-```bash
-npm run package:win
-```
-
-For an x64 build, the distributable is:
-
-```text
-dist/OpenClassCraft-Teacher-Console-0.1.0-windows-x64.exe
-```
-
-Both commands also create an unpacked staging directory under `dist/`. Release the named `.AppImage` or `.exe`, not the staging directory. Packaging is unsigned, so Windows may display a SmartScreen warning until releases are code-signed.
-
-## Local data and backups
-
-The application stores its workspace in Electron's per-user application-data directory as `teacher-console.json`. Use **Back up** before moving computers or installing an experimental build. Reports are exported as CSV, and backups are exported as JSON, only to locations selected by the teacher.
-
-The bridge token grants access to the selected local lesson session. Do not publish the generated configuration file, and regenerate the workspace or token if it is exposed. The bridge deliberately binds to loopback, so the OpenClassCraft host and Teacher Console must run on the same computer.
-
-## Development notes
-
-- `main.js` manages local persistence, CSV/JSON import and export, and the loopback lesson bridge.
-- `preload.js` exposes a narrow IPC API to the isolated renderer.
-- `app/renderer.js` implements the classroom workflows.
-- `app/index.html` and `app/style.css` define the interface.
-
-Before a release, validate JavaScript syntax, exercise backup restore and CSV import with disposable data, and package on the destination operating systems. Test the LAN bridge with an OpenClassCraft host before classroom deployment.
-
-## License status
-
-The original Teacher Console code is currently marked `UNLICENSED`; no standalone permission to copy, modify, or redistribute it has been granted. See [`NOTICE`](NOTICE). Electron and other dependencies keep their own licenses. Choose and document an owner-approved license before redistributing this component beyond builds published by the project owner.
+- The project owner must choose the Teacher Console's redistribution license.
+- A real two-device Fedora LAN rehearsal and a classroom pilot cannot be completed by automated tests.
+- Install the project owner's Ed25519 update public key before advertising signed updates.
+- Treat the starter activities as classroom models; they do not replace supervised physical science or chemistry safety procedures.

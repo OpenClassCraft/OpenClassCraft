@@ -1,0 +1,28 @@
+return {
+	id = "evs",
+	title = "Starter Environmental Studies World",
+	goal = "Compare habitat zones, identify one environmental pressure, and propose a low-impact improvement.",
+	welcome = "Environmental mission: observe the water, soil, and habitat zones before proposing one careful improvement.",
+	surface = "default:dirt_with_grass",
+	border = "default:tree",
+	spawn = {x = 0, y = 2, z = 11},
+	nodes = {
+		{x = -8, y = 1, z = -4, name = "default:water_source"},
+		{x = -7, y = 1, z = -4, name = "default:water_source"},
+		{x = -8, y = 1, z = -5, name = "default:water_source"},
+		{x = -7, y = 1, z = -5, name = "default:water_source"},
+		{x = 0, y = 1, z = -4, name = "default:dry_dirt"},
+		{x = 1, y = 1, z = -4, name = "default:dry_dirt"},
+		{x = 0, y = 1, z = -5, name = "default:dry_dirt"},
+		{x = 7, y = 1, z = -4, name = "default:tree"},
+		{x = 7, y = 2, z = -4, name = "default:tree"},
+		{x = 7, y = 3, z = -4, name = "default:leaves"},
+		{x = -8, y = 1, z = -8, name = "openclasscraft_classroom:lesson_marker"},
+		{x = 0, y = 1, z = -8, name = "openclasscraft_classroom:lesson_marker"},
+		{x = 8, y = 1, z = -8, name = "openclasscraft_classroom:lesson_marker"},
+	},
+	boards = {
+		{x = -8, y = 1, z = 11, param2 = 2, title = "OBSERVE FIRST", message = "Visit water, dry soil, and habitat zones. Record benefits, pressures, and affected living things."},
+		{x = 8, y = 1, z = 11, param2 = 2, name = "openclasscraft_classroom:whiteboard", title = "IMPROVE", message = "Propose one change that helps the habitat while using the fewest new resources."},
+	},
+}

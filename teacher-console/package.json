@@ -1,6 +1,6 @@
 {
   "name": "openclasscraft-teacher-console",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "UNLICENSED",
   "private": true,
   "author": "OpenClassCraft Contributors",
@@ -12,8 +12,10 @@
   },
   "scripts": {
     "start": "electron .",
-    "package:linux": "electron-builder --linux AppImage",
-    "package:win": "electron-builder --win portable"
+    "test": "node tests/core.test.cjs",
+    "validate": "node --check main.js && node --check preload.js && node --check console-core.cjs && node --check app/renderer.js && npm test",
+    "package:linux": "npm run validate && electron-builder --linux AppImage",
+    "package:win": "npm run validate && electron-builder --win portable"
   },
   "build": {
     "appId": "org.openclasscraft.teacherconsole",
@@ -24,9 +26,17 @@
     "files": [
       "main.js",
       "preload.js",
+      "console-core.cjs",
       "app/**/*",
+      "release/**/*",
       "package.json",
       "NOTICE"
+    ],
+    "extraResources": [
+      {
+        "from": "curriculum-packs",
+        "to": "curriculum-packs"
+      }
     ],
     "linux": {
       "target": [

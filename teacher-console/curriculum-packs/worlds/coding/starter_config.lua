@@ -1,0 +1,26 @@
+return {
+	id = "coding",
+	title = "Starter Coding World",
+	goal = "Build and run a safe sequence that guides the robot from the spawner to the finish marker.",
+	welcome = "Coding mission: inspect the sample blocks, spawn the robot, then program a route to the flag.",
+	surface = "default:stonebrick",
+	border = "default:obsidianbrick",
+	spawn = {x = 0, y = 2, z = 11},
+	nodes = {
+		{x = 0, y = 1, z = 6, name = "luanti_robot:spawner"},
+		{x = -8, y = 1, z = 8, name = "luanti_coding:start"},
+		{x = -6, y = 1, z = 8, name = "luanti_coding:move_forward"},
+		{x = -4, y = 1, z = 8, name = "luanti_coding:turn_left"},
+		{x = -2, y = 1, z = 8, name = "luanti_coding:turn_right"},
+		{x = 0, y = 1, z = 8, name = "luanti_coding:stop"},
+		{x = 0, y = 1, z = -10, name = "openclasscraft_classroom:lesson_marker"},
+		{x = -3, y = 1, z = -1, name = "default:glass"},
+		{x = -2, y = 1, z = -1, name = "default:glass"},
+		{x = 2, y = 1, z = -4, name = "default:glass"},
+		{x = 3, y = 1, z = -4, name = "default:glass"},
+	},
+	boards = {
+		{x = -8, y = 1, z = 11, param2 = 2, title = "ROBOT ROUTE", message = "Use START, MOVE, TURN, and STOP. Test, observe, and improve your sequence."},
+		{x = 8, y = 1, z = 11, param2 = 2, name = "openclasscraft_classroom:whiteboard", title = "SUCCESS", message = "Your robot reaches the finish marker without breaking the safety border."},
+	},
+}

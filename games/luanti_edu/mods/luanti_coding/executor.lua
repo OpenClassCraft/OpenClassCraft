@@ -10,6 +10,22 @@ local STEP_DELAY = 0.5
 local WAIT_DELAY = 1.0
 local WHILE_MAX_REPEAT = 16
 
+local function code_feedback(pos, color)
+    if not pos then return end
+    minetest.add_particlespawner({
+        amount = 10,
+        time = 0.16,
+        minpos = vector.subtract(pos, 0.35),
+        maxpos = vector.add(pos, 0.35),
+        minvel = {x = -0.2, y = 0.3, z = -0.2},
+        maxvel = {x = 0.2, y = 0.8, z = 0.2},
+        minsize = 1,
+        maxsize = 2,
+        texture = "default_item_smoke.png^[colorize:" .. color .. ":220",
+        glow = 5,
+    })
+end
+
 local function parse_program(start_pos)
     local instructions = {}
     local pos = vector.new(start_pos.x, start_pos.y, start_pos.z)
@@ -30,7 +46,7 @@ local function parse_program(start_pos)
 
         local action = def._coding_action
         if action == "stop" then
-            table.insert(instructions, { action = "stop" })
+            table.insert(instructions, { action = "stop", pos = vector.new(pos) })
             break
         elseif action == "loop" then
             local meta = minetest.get_meta(pos)
@@ -38,9 +54,9 @@ local function parse_program(start_pos)
             if count == 0 then
                 count = 3
             end
-            table.insert(instructions, { action = "loop_start", count = count })
+            table.insert(instructions, { action = "loop_start", count = count, pos = vector.new(pos) })
         elseif action then
-            table.insert(instructions, { action = action })
+            table.insert(instructions, { action = action, pos = vector.new(pos) })
         end
 
         local next_pos = vector.add(pos, vector.new(1, 0, 0))
@@ -95,11 +111,31 @@ local function get_forward_node(ent)
     return minetest.get_node(vector.add(pos, dir_vec))
 end
 
+local function report_program_result(player_name, success, steps, failed_step, message)
+    local player = minetest.get_player_by_name(player_name)
+    if player and openclasscraft_classroom and openclasscraft_classroom.report_event then
+        openclasscraft_classroom.report_event(player, "robot_result", {
+            title = success and "Robot program completed" or "Robot program paused",
+            summary = message,
+            result = {
+                success = success,
+                instructionCount = steps,
+                failedStep = failed_step,
+            },
+        })
+    end
+end
+
 local function execute_step(robot, instructions, index, player_name, state)
     state = state or { variables = {}, while_counts = {} }
 
     if index > #instructions then
+        local ent = robot and robot:get_luaentity()
+        if ent and ent.object then
+            code_feedback(ent.object:get_pos(), "#44ff77")
+        end
         minetest.chat_send_player(player_name, "[Luanti Edu] Program finished!")
+        report_program_result(player_name, true, #instructions, nil, "Program finished after all instructions ran.")
         return
     end
 
@@ -111,9 +147,15 @@ local function execute_step(robot, instructions, index, player_name, state)
     end
 
     local action = inst.action
+    code_feedback(inst.pos, "#55ddff")
 
     if action == "move_forward" then
-        ent:move_forward()
+        if not ent:move_forward() then
+            code_feedback(inst.pos, "#ff3344")
+            minetest.chat_send_player(player_name, "[Luanti Edu] Robot blocked at step " .. index .. ". Program paused.")
+            report_program_result(player_name, false, #instructions, index, "Robot was blocked while moving forward.")
+            return
+        end
         minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Move Forward")
 
     elseif action == "turn_left" then
@@ -125,11 +167,21 @@ local function execute_step(robot, instructions, index, player_name, state)
         minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Turn Right")
 
     elseif action == "place_block" then
-        ent:place_block()
+        if not ent:place_block() then
+            code_feedback(inst.pos, "#ff3344")
+            minetest.chat_send_player(player_name, "[Luanti Edu] Cannot place a block at step " .. index .. ". Program paused.")
+            report_program_result(player_name, false, #instructions, index, "Robot could not place a block.")
+            return
+        end
         minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Place Block")
 
     elseif action == "dig_block" then
-        ent:dig_block()
+        if not ent:dig_block() then
+            code_feedback(inst.pos, "#ff3344")
+            minetest.chat_send_player(player_name, "[Luanti Edu] Nothing to dig at step " .. index .. ". Program paused.")
+            report_program_result(player_name, false, #instructions, index, "Robot found nothing to dig.")
+            return
+        end
         minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Dig Block")
 
     elseif action == "if_clear" then
@@ -236,7 +288,12 @@ local function execute_step(robot, instructions, index, player_name, state)
         end
 
     elseif action == "stop" then
-        minetest.chat_send_player(player_name, "[Luanti Edu] Program stopped.")
+        local stop_ent = robot and robot:get_luaentity()
+        if stop_ent and stop_ent.object then
+            code_feedback(stop_ent.object:get_pos(), "#44ff77")
+        end
+        minetest.chat_send_player(player_name, "[Luanti Edu] Program complete!")
+        report_program_result(player_name, true, #instructions, nil, "Program reached its STOP block.")
         return
     end
 

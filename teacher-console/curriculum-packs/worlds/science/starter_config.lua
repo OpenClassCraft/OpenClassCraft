@@ -1,0 +1,27 @@
+return {
+	id = "science",
+	title = "Starter Science Observation World",
+	goal = "Make a fair comparison between three model materials and support a conclusion with recorded observations.",
+	welcome = "Science mission: follow the three markers, observe each model zone, and support one conclusion with evidence.",
+	surface = "default:dirt_with_grass",
+	border = "default:stonebrick",
+	spawn = {x = 0, y = 2, z = 11},
+	nodes = {
+		{x = -8, y = 1, z = -3, name = "default:sand"},
+		{x = -7, y = 1, z = -3, name = "default:sand"},
+		{x = -8, y = 1, z = -4, name = "default:sand"},
+		{x = 0, y = 1, z = -3, name = "default:gravel"},
+		{x = 1, y = 1, z = -3, name = "default:gravel"},
+		{x = 0, y = 1, z = -4, name = "default:gravel"},
+		{x = 7, y = 1, z = -3, name = "default:clay"},
+		{x = 8, y = 1, z = -3, name = "default:clay"},
+		{x = 7, y = 1, z = -4, name = "default:clay"},
+		{x = -8, y = 1, z = -7, name = "openclasscraft_classroom:lesson_marker"},
+		{x = 0, y = 1, z = -7, name = "openclasscraft_classroom:lesson_marker"},
+		{x = 8, y = 1, z = -7, name = "openclasscraft_classroom:lesson_marker"},
+	},
+	boards = {
+		{x = -8, y = 1, z = 11, param2 = 2, title = "FAIR TEST", message = "Observe sand, gravel, and clay using the same questions. Record before you conclude."},
+		{x = 8, y = 1, z = 11, param2 = 2, name = "openclasscraft_classroom:whiteboard", title = "EVIDENCE", message = "A strong conclusion names an observation and explains how it supports the claim."},
+	},
+}

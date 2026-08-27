@@ -21,14 +21,14 @@ Status: `[x]` delivered and verified, `[-] partly implemented or needs verificat
 - [-] Editable chalkboards
 - [-] Checkpoint flags
 - [-] Chemistry Lab recipes and spawned results
-- [-] Creator Lab visual editor
-- [ ] Starter lesson worlds: coding, chemistry, science, and environmental studies
+- [-] Creator Lab visual editor (Blockly behavior editor plus generic WebGL cube modeling, hierarchy rigging, per-face pixel painting/PNG UV export, keyframe animation, glTF export, state-mapped mob AI, and project reopen workflow; in-game validation still pending)
+- [x] Starter lesson worlds: coding, chemistry, science, and environmental studies, with generated arenas, policies, and teacher notes
 
 ### Educator Workflow
 - [-] Educator mode selection
 - [-] Place and edit Guides, boards, flags, robots, and chemistry labs
 - [-] Save and load local lesson worlds
-- [ ] Student-safe inventory and per-world build permissions review
+- [x] Student-safe item use and per-world build permissions (place/dig/tool/block/world-edit policy enforced by role and lesson stage)
 - [-] Local progress checkpoints
 
 ### Open Source and Release
@@ -82,38 +82,54 @@ Status: `[x]` delivered and verified, `[-] partly implemented or needs verificat
 - [-] Student records and manual groups
 - [-] CSV class-list import
 - [-] Assign groups to worlds and lessons
-- [ ] Student-friendly LAN join-code workflow
-- [ ] Educator permission controls
+- [-] Student-friendly LAN join-code workflow (rotating code, roster match, presence, and offline loopback bridge verified locally; two-device rehearsal pending)
+- [-] Educator permission controls (Student/Observer/Educator gates implemented; physical two-device role matrix pending)
 
 ### Lesson Workflow
-- [-] Create, edit, delete, save, and restore lesson plans
-- [ ] Lesson versions
-- [ ] Starter-world assignment
-- [ ] Attach NPC dialogue, boards, flags, chemistry, and activity settings
-- [ ] Lock/unlock tools and blocks by lesson stage
-- [ ] Reset a lesson world
+- [x] Create, edit, duplicate, publish, delete, save, and restore lesson plans
+- [x] Lesson versions and rollback
+- [x] Starter-world assignment for coding, chemistry, science, and EVS
+- [x] Attach Guide/dialogue, Chalkboard, Flag, Chemistry, Robot, Build, and Quiz activities
+- [x] Lock/unlock tools and blocks by lesson stage
+- [x] Install, duplicate, snapshot, reset, and restore a managed lesson world with archive-before-replace recovery
 
 ### Assessment
-- [-] Checkpoint progress and teacher notes
-- [ ] Robot program completion, chemistry results, and build submissions
-- [ ] Rubrics
-- [ ] Student portfolios and world snapshots
-- [-] CSV reports
-- [ ] PDF reports and dashboards by class/group/student
+- [x] Checkpoint progress and teacher notes
+- [x] Robot program completion, chemistry results, and build submissions
+- [x] Reusable rubrics, criterion scoring, and feedback
+- [x] Student portfolios with SHA-256 evidence records and recoverable world snapshots
+- [x] CSV reports
+- [x] Printable PDF reports and class/group/student dashboards
 
 ### School Operations
-- [-] Offline-first local storage and JSON backups
-- [ ] Encrypted local storage and encrypted backups
-- [ ] Update manager
-- [-] Teacher action audit log
-- [ ] Opt-in cloud sync
-- [ ] Support, training, and curriculum-pack delivery workflow
+- [x] Offline-first local storage and JSON backups with atomic writes, checksums, and a recoverable previous-state snapshot
+- [x] Optional AES-256-GCM encrypted local storage and encrypted backups
+- [x] Local SHA-256/platform/architecture update verification with optional pinned Ed25519 signature verification
+- [x] Teacher action audit log
+- [x] Opt-in encrypted folder sync for mounted cloud, network, or removable storage
+- [x] Privacy-safe diagnostics, explicit local error-log consent, and curriculum-pack import/export workflow
 
 ## Integration and Quality Gates
-- [-] Document a local LAN integration protocol between the game and Teacher Console
-- [ ] Authenticate educator-issued session data
-- [-] Synchronize only approved progress and lesson events
-- [ ] Automated tests for saves, imports, permissions, and reports
-- [ ] Crash reports with explicit consent
+- [x] Document the local LAN integration protocol between the game and Teacher Console
+- [-] Authenticate educator-issued session data (random 192-bit loopback token and rotating join code verified locally; two-device validation pending)
+- [x] Synchronize only assigned roster, lesson policy, presence, progress, and approved evidence events
+- [x] Automated core tests for migration, CSV, checksums, encryption, bridge scope, permissions, reports/events, and curriculum packs
+- [x] Opt-in local renderer error logs and redacted diagnostic export; no automatic upload
 - [ ] Performance profiling for classroom-size worlds
 - [ ] Run a pilot with 1-3 schools and record feedback
+
+## Current implementation checklist (2026-08-27)
+
+- [x] Versioned Teacher Console state schema with migration-safe normalization.
+- [x] Atomic state writes (temporary file, flush/sync, rename) to avoid partial classroom records.
+- [x] Automatic `.backup` snapshot of the last known-good state before each save.
+- [x] Checksum-validated state and backup envelopes with fallback recovery when the primary file is corrupt.
+- [x] Per-assignment world policy for student place, dig, and world-edit-wand access.
+- [x] Role-aware game gates: students cannot open educator tools or bypass assignment policy.
+- [x] Destructive assignment removal confirmation and bridge selection cleanup.
+- [x] CSV role import updates existing student records as well as new records.
+- [x] Starter lesson preset catalog exposed to the console and LAN bridge.
+- [x] Author and package the four playable starter worlds and their teacher notes.
+- [x] Build and launch the Fedora AppImage with a clean isolated profile.
+- [x] Exercise checksum corruption rejection, encrypted round-trip, managed-world snapshot/reset/restore, and packaged bridge integration.
+- [ ] Run the physical Fedora two-device LAN and role/policy matrix rehearsal.
