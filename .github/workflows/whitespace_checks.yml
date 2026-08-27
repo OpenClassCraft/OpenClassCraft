@@ -5,6 +5,7 @@ name: whitespace_checks
 # (luacheck already checks .lua files)
 on:
   push:
+    branches: [Latest, main]
     paths:
       - '**.txt'
       - '**.md'
@@ -32,52 +33,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       # Line endings are already ensured by .gitattributes
       - name: Check trailing whitespaces
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          if git ls-files |\
-            grep -E '\.txt$|\.md$|\.[ch]$|\.cpp$|\.hpp$|\.sh$|\.cmake$|\.glsl$' |\
-            xargs grep -n '\s$';\
-          then\
-            echo -e "\033[0;31mFound trailing whitespace";\
-            (exit 1);\
-          else\
-            (exit 0);\
-          fi
+          git diff --check "$BASE_SHA" "$HEAD_SHA" --
 
   indent_spaces:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       # Line endings are already ensured by .gitattributes
-      # Warning: Multiple multline comments in one line
-      # is not supported by this check and may misbehave.
-      # This prepare files for final check 
-      # See python script ./util/ci/indent_tab_preprocess.py for details.
-      - name: Preprocess files
+      # Keep new C++ and Lua indentation tab-based without making old style
+      # debt in otherwise untouched lines block an unrelated pull request.
+      - name: Check indentation added by this change
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          git ls-files |\
-            grep -E '^src/.*\.cpp$|^src/.*\.[ch]$' |\
-            xargs -L 1 -P $(($(nproc) + 1)) \
-              python3 ./util/ci/indent_tab_preprocess.py "/*" "*/"
-          git ls-files |\
-            grep -E '\.lua$' |\
-            xargs -L 1 -P $(($(nproc) + 1)) \
-              python3 ./util/ci/indent_tab_preprocess.py "--[[" "]]"
-      # Check for bad indent.
-      # This runs over preprocessed files.
-      # If there is any remaining space on line beginning or after tab,
-      # error is generated
-      - name: Check indent spaces
-        run: |
-          if git ls-files |\
-            grep -E '^src/.*\.cpp$|^src/.*\.[ch]$|\.lua$' |\
-            xargs grep -n -P '^\t*[ ]';\
-          then\
-            echo -e "\033[0;31mFound incorrect indent whitespaces";\
-            (exit 1);\
-          else\
-            (exit 0);\
+          mapfile -t cpp_files < <(
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$HEAD_SHA" -- |
+              sed -nE '/^src\/.*\.cpp$|^src\/.*\.[ch]$/p'
+          )
+          mapfile -t lua_files < <(
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$HEAD_SHA" -- |
+              sed -nE '/\.lua$/p'
+          )
+          files=("${cpp_files[@]}" "${lua_files[@]}")
+          if (( ${#files[@]} > 0 )) &&
+              git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- "${files[@]}" |
+                grep -n -P '^\+\t* (?!\*)'; then
+            printf '\033[0;31mFound incorrect indent whitespace\033[0m\n'
+            exit 1
           fi
 
   tabs_lua_api_files:
@@ -94,4 +87,3 @@ jobs:
           else\
             (exit 0);\
           fi
-
