@@ -21,11 +21,9 @@ execute_process(
 	"$ENV{SOURCE_ROOT}/builtin"
 	"${RESOURCES_DIR}/builtin"
 )
-execute_process(
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	"$ENV{SOURCE_ROOT}/games/luanti_edu"
-	"${RESOURCES_DIR}/games/luanti_edu"
-)
+file(COPY "$ENV{SOURCE_ROOT}/games/luanti_edu"
+	DESTINATION "${RESOURCES_DIR}/games"
+	PATTERN ".git*" EXCLUDE)
 execute_process(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	"$ENV{SOURCE_ROOT}/client/shaders"
