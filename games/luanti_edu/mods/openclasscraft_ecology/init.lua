@@ -32,14 +32,16 @@ local animal_defs = {
 		description = "Meadow Rabbit",
 		mesh = "occ_rabbit.glb",
 		textures = {"occ_rabbit_fur.png", "occ_rabbit_accent.png", "occ_rabbit_dark.png", "occ_animal_eyes.png"},
-		visual_size = {x = 8.0, y = 8.0},
+		visual_size = {x = 7.2, y = 7.2},
 		walk_speed = 1.25,
 		run_speed = 2.35,
 		acceleration = 8,
 		turn_speed = 6.5,
 		hop_strength = 3.35,
 		hop_interval = 0.62,
-		collisionbox = {-0.32, 0, -0.52, 0.32, 1.28, 0.52},
+		collisionbox = {-0.29, 0, -0.47, 0.29, 1.16, 0.47},
+		player_notice_radius = 5.5,
+		avoid_speed_factor = 1.0,
 		tameable = true,
 		observation = "Rabbits are herbivores. They depend on ground cover for food and shelter.",
 	},
@@ -54,6 +56,8 @@ local animal_defs = {
 		turn_speed = 3.4,
 		jump_strength = 4.0,
 		collisionbox = {-0.50, 0, -0.90, 0.50, 2.75, 0.90},
+		player_notice_radius = 8.0,
+		avoid_speed_factor = 1.0,
 		tameable = false,
 		observation = "Deer are primary consumers. Their browsing can change which plants grow in a forest.",
 	},
@@ -68,6 +72,8 @@ local animal_defs = {
 		turn_speed = 5.2,
 		jump_strength = 3.8,
 		collisionbox = {-0.40, 0, -0.72, 0.40, 1.45, 0.72},
+		player_notice_radius = 4.0,
+		avoid_speed_factor = 0.72,
 		tameable = true,
 		observation = "Foxes are omnivores and predators that connect several levels of a food web.",
 	},
@@ -95,6 +101,22 @@ local function smooth_yaw(current, target, amount)
 		return target
 	end
 	return current + (difference > 0 and amount or -amount)
+end
+
+local function movement_yaw(dx, dz)
+	-- The generated animal meshes face +Z. Luanti's mesh yaw basis points the
+	-- opposite way, so rotate the movement heading by 180 degrees to keep the
+	-- animal's face, rather than its tail, at the front of travel.
+	return math.atan2(dz, dx) + math.pi / 2
+end
+
+local function turn_toward(self, def, dx, dz, dtime)
+	if math.abs(dx) + math.abs(dz) < 0.001 then
+		return
+	end
+	local target_yaw = movement_yaw(dx, dz)
+	local current_yaw = self.object:get_yaw() or target_yaw
+	self.object:set_yaw(smooth_yaw(current_yaw, target_yaw, def.turn_speed * dtime))
 end
 
 local function node_is_walkable(pos)
@@ -170,13 +192,60 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	end
 	self.object:set_velocity(velocity)
 
-	-- The generated animal meshes face +Z. Luanti's mesh yaw basis points the
-	-- opposite way, so rotate the movement heading by 180 degrees to keep the
-	-- animal's face, rather than its tail, at the front of travel.
-	local target_yaw = math.atan2(dir_z, dir_x) + math.pi / 2
-	local current_yaw = self.object:get_yaw() or target_yaw
-	self.object:set_yaw(smooth_yaw(current_yaw, target_yaw, def.turn_speed * dtime))
+	turn_toward(self, def, dir_x, dir_z, dtime)
 	set_animation(self, animation)
+	return true
+end
+
+local function closest_player(pos, radius, excluded_name)
+	local closest, closest_pos, closest_distance
+	for _, player in ipairs(minetest.get_connected_players()) do
+		local player_name = player:get_player_name()
+		local player_pos = player:get_pos()
+		if player_pos and player_name ~= excluded_name
+				and math.abs(player_pos.y - pos.y) <= 3.5 then
+			local dx = player_pos.x - pos.x
+			local dz = player_pos.z - pos.z
+			local distance = math.sqrt(dx * dx + dz * dz)
+			if distance <= radius and (not closest_distance or distance < closest_distance) then
+				closest, closest_pos, closest_distance = player, player_pos, distance
+			end
+		end
+	end
+	return closest, closest_pos, closest_distance
+end
+
+local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
+	local owned = self.owner and self.owner ~= ""
+	local radius = owned and 1.7 or def.player_notice_radius
+	local player, player_pos, distance = closest_player(pos, radius, owned and self.owner or nil)
+	if not player then
+		return false
+	end
+
+	local dx = player_pos.x - pos.x
+	local dz = player_pos.z - pos.z
+	if not owned and def.tameable
+			and player:get_wielded_item():get_name() == MODNAME .. ":pet_treat" then
+		if distance > 2.0 then
+			move_toward(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
+		else
+			stop_horizontal(self, def, dtime)
+			turn_toward(self, def, dx, dz, dtime)
+			set_animation(self, "idle")
+		end
+		return true
+	end
+
+	if distance < 0.05 then
+		local yaw = self.object:get_yaw() or 0
+		dx, dz = math.sin(yaw), math.cos(yaw)
+	else
+		dx, dz = -dx, -dz
+	end
+	local speed = owned and def.walk_speed or def.run_speed * def.avoid_speed_factor
+	move_toward(self, def, dx, dz, speed, owned and "walk" or "run", dtime, moveresult)
+	self.decision_timer = 1.2
 	return true
 end
 
@@ -262,6 +331,9 @@ local function register_animal(kind)
 			if self.staying then
 				stop_horizontal(self, def, dtime)
 				set_animation(self, "sit")
+				return
+			end
+			if respond_to_nearby_player(self, def, pos, dtime, moveresult) then
 				return
 			end
 
