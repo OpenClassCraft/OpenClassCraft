@@ -145,6 +145,8 @@ Open the **Ecology** catalog for the Field Journal, seeds, companion treats, pla
 3. Use a **Companion Treat** on a rabbit or fox to set persistent ownership. The companion follows its owner; right-click it again to toggle follow/stay. Deer remain observation animals.
 4. Use the **Ecosystem Field Journal** to count nearby plants, tree nodes, water, animals, and animal species and calculate a repeatable habitat score.
 
+Wildlife uses lightweight rigged models and species-specific movement: rabbits hop, deer can graze, foxes trot, and all three blend between idle, walking, running, and resting poses. Movement accelerates and turns smoothly, avoids unsafe drops, steps or jumps over small obstacles, and lets distant companions safely catch up with their owner.
+
 Newly generated terrain can include pollinator meadow, monsoon forest, and freshwater wetland biome content. Existing explored map chunks are not regenerated, so use a new world or travel into new terrain to see map-generation changes.
 
 ## Electronics and mechanisms
@@ -417,6 +419,7 @@ On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually 
 | [`games/luanti_edu/mods/luanti_coding/`](games/luanti_edu/mods/luanti_coding/) | Programming nodes, chain parser, and executor. |
 | [`games/luanti_edu/mods/luanti_robot/`](games/luanti_edu/mods/luanti_robot/) | Robot entity, spawner, movement, sensing, placing, and digging. |
 | [`games/luanti_edu/mods/openclasscraft_ecology/`](games/luanti_edu/mods/openclasscraft_ecology/) | Habitats, plants, wildlife spawning, persistent companions, and field surveys. |
+| [`util/generate_ecology_animals.py`](util/generate_ecology_animals.py) | Reproducibly generates the lightweight rigged wildlife meshes and animation timeline. |
 | [`games/luanti_edu/mods/openclasscraft_electronics/`](games/luanti_edu/mods/openclasscraft_electronics/) | Bounded classroom power networks, batteries, switches, wires, lamps, motors, and meters. |
 | [`games/luanti_edu/mods/openclasscraft_classroom/`](games/luanti_edu/mods/openclasscraft_classroom/) | Guides, boards, lesson plans, checkpoints, chemistry, and Teacher Console bridge. |
 | [`games/luanti_edu/mods/openclasscraft_creator/`](games/luanti_edu/mods/openclasscraft_creator/) | In-game Creator Lab, custom material styles, and World Edit Wand. |

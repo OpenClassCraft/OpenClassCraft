@@ -6,11 +6,13 @@ local MODNAME = minetest.get_current_modname()
 local GRAVITY = -9.81
 local ANIMAL_LIMIT = 6
 local OBSERVATION_RADIUS = 10
-local directions = {
-	{x = 1, y = 0, z = 0},
-	{x = -1, y = 0, z = 0},
-	{x = 0, y = 0, z = 1},
-	{x = 0, y = 0, z = -1},
+local TWO_PI = math.pi * 2
+local ANIMATIONS = {
+	idle = {{x = 0.0, y = 1.9}, 1.0},
+	walk = {{x = 2.0, y = 3.0}, 1.0},
+	run = {{x = 3.1, y = 4.1}, 1.0},
+	sit = {{x = 4.2, y = 5.2}, 1.0},
+	graze = {{x = 5.3, y = 6.7}, 1.0},
 }
 
 local function protected(pos, player)
@@ -25,105 +27,177 @@ local function consume_one(player, itemstack)
 	return itemstack
 end
 
-local function register_model_node(name, description, color, boxes)
-	local texture = "default_clay.png^[colorize:" .. color .. ":175"
-	minetest.register_node(MODNAME .. ":" .. name .. "_model", {
-		description = description,
-		drawtype = "nodebox",
-		tiles = {texture},
-		paramtype = "light",
-		sunlight_propagates = true,
-		walkable = false,
-		groups = {not_in_creative_inventory = 1},
-		node_box = {type = "fixed", fixed = boxes},
-	})
-end
-
-register_model_node("rabbit", "Rabbit Model", "#C99A70", {
-	{-0.34, -0.35, -0.26, 0.22, 0.08, 0.26},
-	{0.12, -0.18, -0.24, 0.46, 0.18, 0.24},
-	{0.20, 0.12, -0.20, 0.31, 0.48, -0.05},
-	{0.20, 0.12, 0.05, 0.31, 0.48, 0.20},
-	{-0.38, -0.44, -0.22, -0.16, -0.30, -0.05},
-	{-0.38, -0.44, 0.05, -0.16, -0.30, 0.22},
-	{-0.48, -0.18, -0.13, -0.31, 0.00, 0.13},
-})
-
-register_model_node("deer", "Deer Model", "#9B6B43", {
-	{-0.38, -0.10, -0.22, 0.28, 0.28, 0.22},
-	{0.22, 0.10, -0.16, 0.46, 0.40, 0.16},
-	{0.34, 0.34, -0.20, 0.46, 0.48, -0.04},
-	{0.34, 0.34, 0.04, 0.46, 0.48, 0.20},
-	{-0.30, -0.48, -0.18, -0.17, -0.08, -0.05},
-	{-0.30, -0.48, 0.05, -0.17, -0.08, 0.18},
-	{0.12, -0.48, -0.18, 0.25, -0.08, -0.05},
-	{0.12, -0.48, 0.05, 0.25, -0.08, 0.18},
-})
-
-register_model_node("fox", "Fox Model", "#D56D32", {
-	{-0.34, -0.28, -0.24, 0.26, 0.12, 0.24},
-	{0.20, -0.14, -0.22, 0.48, 0.16, 0.22},
-	{0.29, 0.12, -0.20, 0.43, 0.40, -0.06},
-	{0.29, 0.12, 0.06, 0.43, 0.40, 0.20},
-	{-0.28, -0.46, -0.18, -0.13, -0.26, -0.04},
-	{-0.28, -0.46, 0.04, -0.13, -0.26, 0.18},
-	{0.08, -0.46, -0.18, 0.23, -0.26, -0.04},
-	{0.08, -0.46, 0.04, 0.23, -0.26, 0.18},
-	{-0.50, -0.16, -0.13, -0.28, 0.04, 0.13},
-})
-
 local animal_defs = {
 	rabbit = {
 		description = "Meadow Rabbit",
-		speed = 1.5,
-		size = {x = 0.8, y = 0.8},
-		collisionbox = {-0.32, -0.5, -0.28, 0.32, 0.2, 0.28},
+		mesh = "occ_rabbit.glb",
+		textures = {"occ_rabbit_fur.png", "occ_rabbit_accent.png", "occ_rabbit_dark.png", "occ_animal_eyes.png"},
+		walk_speed = 1.25,
+		run_speed = 2.35,
+		acceleration = 8,
+		turn_speed = 6.5,
+		hop_strength = 3.35,
+		hop_interval = 0.62,
+		collisionbox = {-0.34, 0, -0.48, 0.34, 1.35, 0.48},
 		tameable = true,
 		observation = "Rabbits are herbivores. They depend on ground cover for food and shelter.",
 	},
 	deer = {
 		description = "Forest Deer",
-		speed = 1.2,
-		size = {x = 1.05, y = 1.45},
-		collisionbox = {-0.38, -0.5, -0.28, 0.38, 0.75, 0.28},
+		mesh = "occ_deer.glb",
+		textures = {"occ_deer_fur.png", "occ_deer_accent.png", "occ_deer_dark.png", "occ_animal_eyes.png"},
+		walk_speed = 1.15,
+		run_speed = 2.65,
+		acceleration = 5,
+		turn_speed = 3.4,
+		jump_strength = 4.0,
+		collisionbox = {-0.40, 0, -0.72, 0.40, 2.30, 0.72},
 		tameable = false,
 		observation = "Deer are primary consumers. Their browsing can change which plants grow in a forest.",
 	},
 	fox = {
 		description = "Companion Fox",
-		speed = 1.65,
-		size = {x = 0.95, y = 0.95},
-		collisionbox = {-0.36, -0.5, -0.26, 0.36, 0.28, 0.26},
+		mesh = "occ_fox.glb",
+		textures = {"occ_fox_fur.png", "occ_fox_accent.png", "occ_fox_dark.png", "occ_animal_eyes.png"},
+		walk_speed = 1.5,
+		run_speed = 3.0,
+		acceleration = 7,
+		turn_speed = 5.2,
+		jump_strength = 3.8,
+		collisionbox = {-0.36, 0, -0.62, 0.36, 1.38, 0.62},
 		tameable = true,
 		observation = "Foxes are omnivores and predators that connect several levels of a food web.",
 	},
 }
 
-local function set_horizontal_velocity(self, x, z)
-	local velocity = self.object:get_velocity() or {x = 0, y = 0, z = 0}
-	self.object:set_velocity({x = x, y = velocity.y, z = z})
+local function set_animation(self, name)
+	if self.animation_state == name then
+		return
+	end
+	local animation = ANIMATIONS[name] or ANIMATIONS.idle
+	self.object:set_animation(animation[1], animation[2], 0.18, true)
+	self.animation_state = name
 end
 
-local function safe_ground_ahead(pos, dx, dz)
-	local ahead = {x = pos.x + dx, y = pos.y, z = pos.z + dz}
+local function approach(current, target, amount)
+	if current < target then
+		return math.min(current + amount, target)
+	end
+	return math.max(current - amount, target)
+end
+
+local function smooth_yaw(current, target, amount)
+	local difference = math.atan2(math.sin(target - current), math.cos(target - current))
+	if math.abs(difference) <= amount then
+		return target
+	end
+	return current + (difference > 0 and amount or -amount)
+end
+
+local function node_is_walkable(pos)
+	local node = minetest.get_node_or_nil(pos)
+	local def = node and minetest.registered_nodes[node.name]
+	return def and def.walkable == true
+end
+
+local function navigation_ahead(pos, dx, dz)
+	local length = math.sqrt(dx * dx + dz * dz)
+	if length < 0.001 then
+		return true, false
+	end
+	local ahead = {
+		x = pos.x + dx / length * 0.62,
+		y = pos.y,
+		z = pos.z + dz / length * 0.62,
+	}
 	local floor = {x = ahead.x, y = ahead.y - 0.55, z = ahead.z}
-	local body = minetest.get_node_or_nil(ahead)
-	local below = minetest.get_node_or_nil(floor)
-	if not body or not below then
+	if not node_is_walkable(ahead) then
+		return node_is_walkable(floor), false
+	end
+	local above = {x = ahead.x, y = ahead.y + 1.0, z = ahead.z}
+	return not node_is_walkable(above), true
+end
+
+local function grounded(self, moveresult)
+	if moveresult and moveresult.touching_ground ~= nil then
+		return moveresult.touching_ground
+	end
+	local velocity = self.object:get_velocity() or {y = 0}
+	return math.abs(velocity.y) < 0.08
+end
+
+local function stop_horizontal(self, def, dtime)
+	local velocity = self.object:get_velocity() or {x = 0, y = 0, z = 0}
+	local change = def.acceleration * dtime
+	self.object:set_velocity({
+		x = approach(velocity.x, 0, change),
+		y = velocity.y,
+		z = approach(velocity.z, 0, change),
+	})
+end
+
+local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresult)
+	local distance = math.sqrt(dx * dx + dz * dz)
+	if distance < 0.01 then
+		stop_horizontal(self, def, dtime)
+		set_animation(self, "idle")
 		return false
 	end
-	local body_def = minetest.registered_nodes[body.name]
-	local floor_def = minetest.registered_nodes[below.name]
-	return body_def and not body_def.walkable and floor_def and floor_def.walkable
+	local dir_x, dir_z = dx / distance, dz / distance
+	local clear, needs_jump = navigation_ahead(self.object:get_pos(), dir_x, dir_z)
+	if not clear then
+		stop_horizontal(self, def, dtime)
+		set_animation(self, "idle")
+		return false
+	end
+
+	local velocity = self.object:get_velocity() or {x = 0, y = 0, z = 0}
+	local change = def.acceleration * dtime
+	velocity.x = approach(velocity.x, dir_x * speed, change)
+	velocity.z = approach(velocity.z, dir_z * speed, change)
+	local is_grounded = grounded(self, moveresult)
+	if needs_jump and is_grounded and def.jump_strength then
+		velocity.y = def.jump_strength
+	elseif def.hop_strength and is_grounded then
+		self.hop_timer = (self.hop_timer or 0) - dtime
+		if self.hop_timer <= 0 then
+			velocity.y = def.hop_strength
+			self.hop_timer = def.hop_interval
+		end
+	end
+	self.object:set_velocity(velocity)
+
+	local target_yaw = math.atan2(dir_z, dir_x) - math.pi / 2
+	local current_yaw = self.object:get_yaw() or target_yaw
+	self.object:set_yaw(smooth_yaw(current_yaw, target_yaw, def.turn_speed * dtime))
+	set_animation(self, animation)
+	return true
+end
+
+local function teleport_near_owner(self, owner_pos)
+	local offsets = {
+		{x = 2, z = 0}, {x = -2, z = 0}, {x = 0, z = 2}, {x = 0, z = -2},
+		{x = 2, z = 2}, {x = -2, z = 2}, {x = 2, z = -2}, {x = -2, z = -2},
+	}
+	for _, offset in ipairs(offsets) do
+		local candidate = {x = owner_pos.x + offset.x, y = owner_pos.y, z = owner_pos.z + offset.z}
+		if not node_is_walkable(candidate)
+				and node_is_walkable({x = candidate.x, y = candidate.y - 0.55, z = candidate.z}) then
+			self.object:set_pos(candidate)
+			self.object:set_velocity({x = 0, y = 0, z = 0})
+			return true
+		end
+	end
+	return false
 end
 
 local function update_nametag(self)
-	local label = animal_defs[self.kind].description
+	local label = ""
 	if self.owner and self.owner ~= "" then
-		label = label .. " · " .. self.owner
-	end
-	if self.staying then
-		label = label .. " · staying"
+		label = animal_defs[self.kind].description .. " · " .. self.owner
+		if self.staying then
+			label = label .. " · staying"
+		end
 	end
 	self.object:set_properties({nametag = label, nametag_color = "#EAF7EE"})
 end
@@ -137,19 +211,25 @@ local function register_animal(kind)
 			collide_with_objects = true,
 			collisionbox = def.collisionbox,
 			selectionbox = def.collisionbox,
-			visual = "wielditem",
-			wield_item = MODNAME .. ":" .. kind .. "_model",
-			visual_size = def.size,
+			visual = "mesh",
+			mesh = def.mesh,
+			textures = def.textures,
+			visual_size = {x = 1, y = 1},
 			static_save = true,
 			stepheight = 1.1,
 			hp_max = 10,
+			makes_footstep_sound = true,
+			backface_culling = true,
 		},
 		kind = kind,
 		owner = "",
 		staying = false,
 		decision_timer = 0,
-		move_x = 0,
-		move_z = 0,
+		move_dir_x = 0,
+		move_dir_z = 0,
+		idle_animation = "idle",
+		animation_state = "",
+		hop_timer = 0,
 
 		on_activate = function(self, staticdata)
 			self.object:set_armor_groups({immortal = 1})
@@ -159,21 +239,23 @@ local function register_animal(kind)
 				self.owner = type(data.owner) == "string" and data.owner or ""
 				self.staying = data.staying == true
 			end
-			self.decision_timer = math.random() * 2
+			self.decision_timer = 0.4 + math.random() * 1.6
 			update_nametag(self)
+			set_animation(self, self.staying and "sit" or "idle")
 		end,
 
 		get_staticdata = function(self)
 			return minetest.serialize({owner = self.owner, staying = self.staying})
 		end,
 
-		on_step = function(self, dtime)
+		on_step = function(self, dtime, moveresult)
 			local pos = self.object:get_pos()
 			if not pos then
 				return
 			end
 			if self.staying then
-				set_horizontal_velocity(self, 0, 0)
+				stop_horizontal(self, def, dtime)
+				set_animation(self, "sit")
 				return
 			end
 
@@ -184,18 +266,18 @@ local function register_animal(kind)
 					local dx = owner_pos.x - pos.x
 					local dz = owner_pos.z - pos.z
 					local distance = math.sqrt(dx * dx + dz * dz)
-					if distance > 2.2 and distance < 24 then
-						local move_x = dx / distance * def.speed
-						local move_z = dz / distance * def.speed
-						if safe_ground_ahead(pos, move_x * 0.5, move_z * 0.5) then
-							set_horizontal_velocity(self, move_x, move_z)
-							self.object:set_yaw(math.atan2(move_z, move_x) - math.pi / 2)
-						else
-							set_horizontal_velocity(self, 0, 0)
-						end
+					if distance > 28 and teleport_near_owner(self, owner_pos) then
+						set_animation(self, "idle")
 						return
-					elseif distance <= 2.2 then
-						set_horizontal_velocity(self, 0, 0)
+					elseif distance > 2.8 then
+						local running = distance > 7
+						move_toward(self, def, dx, dz,
+							running and def.run_speed or def.walk_speed,
+							running and "run" or "walk", dtime, moveresult)
+						return
+					elseif distance <= 2.8 then
+						stop_horizontal(self, def, dtime)
+						set_animation(self, "idle")
 						return
 					end
 				end
@@ -203,24 +285,27 @@ local function register_animal(kind)
 
 			self.decision_timer = self.decision_timer - dtime
 			if self.decision_timer <= 0 then
-				self.decision_timer = 2.5 + math.random() * 3.5
-				if math.random() < 0.35 then
-					self.move_x, self.move_z = 0, 0
+				self.decision_timer = 2.2 + math.random() * 3.8
+				local choice = math.random()
+				if choice < 0.42 then
+					self.move_dir_x, self.move_dir_z = 0, 0
+					self.idle_animation = kind == "deer" and math.random() < 0.55 and "graze" or "idle"
 				else
-					local direction = directions[math.random(1, #directions)]
-					self.move_x = direction.x * def.speed * 0.55
-					self.move_z = direction.z * def.speed * 0.55
+					local angle = math.random() * TWO_PI
+					self.move_dir_x = math.cos(angle)
+					self.move_dir_z = math.sin(angle)
+					self.idle_animation = "idle"
 				end
 			end
-			if safe_ground_ahead(pos, self.move_x * 0.5, self.move_z * 0.5) then
-				set_horizontal_velocity(self, self.move_x, self.move_z)
-				if self.move_x ~= 0 or self.move_z ~= 0 then
-					self.object:set_yaw(math.atan2(self.move_z, self.move_x) - math.pi / 2)
+			if self.move_dir_x ~= 0 or self.move_dir_z ~= 0 then
+				if not move_toward(self, def, self.move_dir_x, self.move_dir_z,
+						def.walk_speed * 0.72, "walk", dtime, moveresult) then
+					self.move_dir_x, self.move_dir_z = 0, 0
+					self.decision_timer = 0
 				end
 			else
-				self.move_x, self.move_z = 0, 0
-				self.decision_timer = 0
-				set_horizontal_velocity(self, 0, 0)
+				stop_horizontal(self, def, dtime)
+				set_animation(self, self.idle_animation)
 			end
 		end,
 
@@ -253,7 +338,7 @@ local function register_animal(kind)
 
 	minetest.register_craftitem(MODNAME .. ":spawn_" .. kind, {
 		description = def.description .. " Habitat Egg\nPlace on open ground to introduce one animal",
-		inventory_image = "default_mese_crystal.png^[colorize:#78C56A:150",
+		inventory_image = "occ_spawn_" .. kind .. ".png",
 		groups = {craftitem = 1, ecology = 1, occ_classroom_safe = 1},
 		on_place = function(itemstack, placer, pointed_thing)
 			if not pointed_thing or pointed_thing.type ~= "node" then
