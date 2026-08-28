@@ -40,6 +40,30 @@ local ANIMATIONS = {
 	climb = {{x = 10.6, y = 11.6}, 1.2, 0.14},
 	swim = {{x = 11.7, y = 12.7}, 1.05, 0.20},
 }
+local DEFAULT_HEAD_TRACKING = {
+	yaw = math.rad(54),
+	up = math.rad(34),
+	down = math.rad(28),
+}
+local HEAD_TRACKING = {
+	rabbit = {yaw = math.rad(62), up = math.rad(38), down = math.rad(30)},
+	deer = {yaw = math.rad(50), up = math.rad(30), down = math.rad(28)},
+	fox = {yaw = math.rad(58), up = math.rad(32), down = math.rad(28)},
+	squirrel = {yaw = math.rad(64), up = math.rad(38), down = math.rad(30)},
+	duck = {yaw = math.rad(68), up = math.rad(40), down = math.rad(32)},
+	cow = {yaw = math.rad(46), up = math.rad(26), down = math.rad(25)},
+	chicken = {yaw = math.rad(72), up = math.rad(42), down = math.rad(34)},
+	dog = {yaw = math.rad(58), up = math.rad(34), down = math.rad(30)},
+	cat = {yaw = math.rad(62), up = math.rad(38), down = math.rad(32)},
+	frog = {yaw = math.rad(34), up = math.rad(24), down = math.rad(20)},
+	otter = {yaw = math.rad(56), up = math.rad(34), down = math.rad(28)},
+	boar = {yaw = math.rad(44), up = math.rad(26), down = math.rad(24)},
+	tahr = {yaw = math.rad(48), up = math.rad(28), down = math.rad(26)},
+	turtle = {yaw = math.rad(36), up = math.rad(22), down = math.rad(18)},
+}
+local HEAD_UPDATE_INTERVAL = 0.12
+local HEAD_RETURN_DELAY = 0.34
+local HEAD_INTERPOLATION = 0.18
 
 local function protected(pos, player)
 	local name = player and player:get_player_name() or ""
@@ -1023,9 +1047,82 @@ local function update_species_calls(self)
 	self.next_call_at = now + base + math.random() * 18
 end
 
-local function watch_target(self, def, dx, dz, dtime, state)
+local function set_head_rotation(self, pitch, yaw)
+	local now = self.behavior_clock or 0
+	self.head_tracking_until = now + HEAD_RETURN_DELAY
+	self.head_tracking_active = true
+	if now < (self.next_head_update_at or 0) then
+		return
+	end
+	self.next_head_update_at = now + HEAD_UPDATE_INTERVAL
+	if math.abs(pitch - (self.head_pitch or 0)) < 0.012
+			and math.abs(yaw - (self.head_yaw or 0)) < 0.012 then
+		return
+	end
+	self.object:set_bone_override("head", {
+		rotation = {
+			vec = {x = pitch, y = yaw, z = 0},
+			interpolation = HEAD_INTERPOLATION,
+			absolute = false,
+		},
+	})
+	self.head_pitch = pitch
+	self.head_yaw = yaw
+end
+
+local function aim_head_at(self, def, pos, target_pos)
+	if not target_pos then
+		return false
+	end
+	local dx = target_pos.x - pos.x
+	local dz = target_pos.z - pos.z
+	local horizontal = math.sqrt(dx * dx + dz * dz)
+	if horizontal < 0.05 then
+		return false
+	end
+	local profile = HEAD_TRACKING[self.kind] or DEFAULT_HEAD_TRACKING
+	local body_yaw = self.object:get_yaw() or movement_yaw(dx, dz)
+	local target_yaw = movement_yaw(dx, dz)
+	local object_delta = math.atan2(
+		math.sin(target_yaw - body_yaw),
+		math.cos(target_yaw - body_yaw))
+	-- Entity yaw is right-handed while bone overrides are left-handed. Negating
+	-- the relative entity yaw makes a positive head turn point toward model +X.
+	local yaw = clamp(-object_delta, -profile.yaw, profile.yaw)
+	if math.abs(object_delta) > math.pi * 0.72
+			and self.head_tracking_active and math.abs(self.head_yaw or 0) > 0.1 then
+		-- Keep looking over the same shoulder while a target crosses directly
+		-- behind the animal instead of snapping through a 100-degree arc.
+		yaw = self.head_yaw > 0 and profile.yaw or -profile.yaw
+	end
+	local head_y = pos.y + (def.collisionbox[5] or 1) * 0.72
+	local pitch = -math.atan2(target_pos.y - head_y, horizontal)
+	pitch = clamp(pitch, -profile.up, profile.down)
+	set_head_rotation(self, pitch, yaw)
+	return true
+end
+
+local function relax_head_tracking(self)
+	local now = self.behavior_clock or 0
+	if not self.head_tracking_active or now < (self.head_tracking_until or 0) then
+		return
+	end
+	self.object:set_bone_override("head", {
+		rotation = {
+			vec = {x = 0, y = 0, z = 0},
+			interpolation = 0.26,
+			absolute = false,
+		},
+	})
+	self.head_tracking_active = false
+	self.head_pitch = 0
+	self.head_yaw = 0
+	self.next_head_update_at = now + 0.26
+end
+
+local function watch_target(self, def, pos, target_pos, dtime, state)
 	stop_horizontal(self, def, dtime)
-	turn_toward(self, def, dx, dz, dtime)
+	aim_head_at(self, def, pos, target_pos)
 	set_animation(self, "idle")
 	self.behavior_state = state
 	self.decision_timer = 0.8
@@ -1357,13 +1454,18 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 
 	local dx = player_pos.x - pos.x
 	local dz = player_pos.z - pos.z
+	local player_focus = {
+		x = player_pos.x,
+		y = player_pos.y + 1.45,
+		z = player_pos.z,
+	}
 	if not owned and def.tameable
 			and player:get_wielded_item():get_name() == MODNAME .. ":pet_treat" then
 		if distance > 2.0 then
 			move_with_steering(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
 			self.behavior_state = "approaching_treat"
 		else
-			watch_target(self, def, dx, dz, dtime, "waiting_for_treat")
+			watch_target(self, def, pos, player_focus, dtime, "waiting_for_treat")
 		end
 		return true
 	end
@@ -1386,10 +1488,8 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 			flee_from(self, def, pos, player_pos, def.run_speed * def.avoid_speed_factor,
 				0, dtime, moveresult, "escaping_player", "swim")
 		else
-			stop_horizontal(self, def, dtime)
-			turn_toward(self, def, -dx, -dz, dtime)
+			watch_target(self, def, pos, player_focus, dtime, "withdrawn_from_player")
 			set_animation(self, "alert")
-			self.behavior_state = "withdrawn_from_player"
 		end
 		return true
 	end
@@ -1399,7 +1499,7 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 			move_with_steering(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
 			self.behavior_state = "greeting_player"
 		else
-			watch_target(self, def, dx, dz, dtime, "near_player")
+			watch_target(self, def, pos, player_focus, dtime, "near_player")
 		end
 		return true
 	end
@@ -1410,7 +1510,7 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 			move_with_steering(self, def, dx, dz, def.walk_speed * 0.78, "walk", dtime, moveresult)
 			self.behavior_state = "curiously_approaching"
 		else
-			watch_target(self, def, dx, dz, dtime, "watching_player")
+			watch_target(self, def, pos, player_focus, dtime, "watching_player")
 		end
 		return true
 	end
@@ -1420,13 +1520,13 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 			flee_from(self, def, pos, player_pos, def.walk_speed * 0.72, 0,
 				dtime, moveresult, "stepping_away", "walk")
 		else
-			watch_target(self, def, dx, dz, dtime, "watching_player")
+			watch_target(self, def, pos, player_focus, dtime, "watching_player")
 		end
 		return true
 	end
 
 	if distance > def.player_flee_radius then
-		watch_target(self, def, dx, dz, dtime, "watching_player")
+		watch_target(self, def, pos, player_focus, dtime, "watching_player")
 		return true
 	end
 	flee_from(self, def, pos, player_pos, def.run_speed * def.avoid_speed_factor,
@@ -1478,6 +1578,12 @@ local function hunt_nearby_prey(self, def, pos, dtime, moveresult)
 		return false
 	end
 	local prey_kind = prey_entity.kind
+	local prey_def = animal_defs[prey_kind]
+	local prey_focus = {
+		x = prey_pos.x,
+		y = prey_pos.y + (prey_def.collisionbox[5] or 1) * 0.72,
+		z = prey_pos.z,
+	}
 	self.hunt_target = prey
 	self.hunt_target_kind = prey_kind
 	self.hunt_last_pos = {x = prey_pos.x, y = prey_pos.y, z = prey_pos.z}
@@ -1504,7 +1610,7 @@ local function hunt_nearby_prey(self, def, pos, dtime, moveresult)
 			move_with_steering(self, def, dx, dz, def.walk_speed * 0.62, "walk", dtime, moveresult)
 			self.behavior_state = "stalking_" .. prey_kind
 		else
-			watch_target(self, def, dx, dz, dtime, "watching_" .. prey_kind)
+			watch_target(self, def, pos, prey_focus, dtime, "watching_" .. prey_kind)
 			set_animation(self, "alert")
 		end
 	else
@@ -1583,6 +1689,11 @@ local function register_animal(kind)
 		fatigue = 0.2,
 		next_call_at = 0,
 		next_sound_at = 0,
+		head_tracking_active = false,
+		head_tracking_until = 0,
+		next_head_update_at = 0,
+		head_pitch = 0,
+		head_yaw = 0,
 		stuck_count = 0,
 		natural_spawn = false,
 
@@ -1612,6 +1723,11 @@ local function register_animal(kind)
 			self.next_need_search_at = 0
 			self.next_call_at = 8 + math.random() * 18
 			self.next_sound_at = 0
+			self.head_tracking_active = false
+			self.head_tracking_until = 0
+			self.next_head_update_at = 0
+			self.head_pitch = 0
+			self.head_yaw = 0
 			self.hunt_target = nil
 			self.hunt_target_kind = nil
 			self.hunt_last_pos = nil
@@ -1637,12 +1753,24 @@ local function register_animal(kind)
 			})
 		end,
 
+		look_at_position = function(self, target_pos)
+			if type(target_pos) ~= "table"
+					or type(target_pos.x) ~= "number"
+					or type(target_pos.y) ~= "number"
+					or type(target_pos.z) ~= "number" then
+				return false
+			end
+			local pos = self.object:get_pos()
+			return pos and aim_head_at(self, def, pos, target_pos) or false
+		end,
+
 		on_step = function(self, dtime, moveresult)
 			local pos = self.object:get_pos()
 			if not pos then
 				return
 			end
 			self.behavior_clock = (self.behavior_clock or 0) + dtime
+			relax_head_tracking(self)
 			update_life_needs(self, dtime)
 			update_collision_avoidance(self, moveresult)
 			update_buoyancy(self, def, pos, dtime)

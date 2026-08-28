@@ -665,9 +665,34 @@ def generate(kind):
     time_accessor = binary.add_accessor(times, 5126, "SCALAR", "f",
                                         minimum=(min(times),), maximum=(max(times),))
 
-    nodes = [{"name": f"{kind}_skeleton", "children": list(range(1, len(bones) + 1))}]
+    # Ears are articulated independently for idle/alert animation, but remain
+    # children of the head so runtime gaze tracking turns the complete head
+    # silhouette instead of leaving detached ears behind in world space.
+    bone_parents = {
+        name: "head" for name in ("ear_l", "ear_r") if name in bones
+    }
+    root_children = [
+        index + 1 for index, name in enumerate(bone_names)
+        if name not in bone_parents
+    ]
+    nodes = [{"name": f"{kind}_skeleton", "children": root_children}]
     for name in bone_names:
-        nodes.append({"name": name, "translation": list(bones[name])})
+        translation = bones[name]
+        parent = bone_parents.get(name)
+        if parent:
+            parent_position = bones[parent]
+            translation = tuple(
+                value - parent_value
+                for value, parent_value in zip(translation, parent_position)
+            )
+        nodes.append({"name": name, "translation": list(translation)})
+    for parent in set(bone_parents.values()):
+        parent_node = nodes[bone_indices[parent] + 1]
+        parent_node["children"] = [
+            bone_indices[name] + 1
+            for name, bone_parent in bone_parents.items()
+            if bone_parent == parent
+        ]
     mesh_node = len(nodes)
     nodes.append({"name": f"{kind}_mesh", "mesh": 0, "skin": 0})
 

@@ -77,6 +77,18 @@ def validate_model(species: str):
         if primitive.get("material") == detail_material
     )
     check(detail_vertices >= 48, f"two visible eye details are required in {path}")
+    nodes = document.get("nodes", [])
+    node_indices = {node.get("name"): index for index, node in enumerate(nodes)}
+    check("head" in node_indices, f"runtime head bone is missing in {path}")
+    head_children = {
+        nodes[index].get("name")
+        for index in nodes[node_indices["head"]].get("children", [])
+    }
+    expected_head_children = {
+        name for name in ("ear_l", "ear_r") if name in node_indices
+    }
+    check(expected_head_children <= head_children,
+          f"articulated ears must inherit runtime head tracking in {path}")
 
 
 def validate_texture_set(species: str):
@@ -122,8 +134,9 @@ def main():
     for sound in AMBIENCE:
         validate_wave(WORLD / "sounds" / f"{sound}.wav")
     validate_fonts()
-    print("Living-world media validation passed: 14 species, 10 animations, "
-          "interaction audio, five ambience layers, and Noto Malayalam fonts.")
+    print("Living-world media validation passed: 14 species, head-tracking rigs, "
+          "10 animations, interaction audio, five ambience layers, and Noto "
+          "Malayalam fonts.")
 
 
 if __name__ == "__main__":
