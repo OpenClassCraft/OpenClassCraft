@@ -1,5 +1,5 @@
 -- OpenClassCraft Ecology
--- Persistent classroom-safe wildlife, plant growth, habitat observation, and
+-- Persistent classroom-safe animals, plant growth, habitat observation, and
 -- biome content designed for hands-on ecosystem lessons.
 
 local MODNAME = minetest.get_current_modname()
@@ -46,6 +46,8 @@ local animal_defs = {
 		avoid_speed_factor = 1.38,
 		predator_notice_radius = 8.0,
 		predator_escape_speed_factor = 1.65,
+		fox_prey = true,
+		player_behavior = "skittish",
 		tameable = true,
 		observation = "Rabbits often freeze when they first notice danger, then bolt in an evasive path when it comes close.",
 	},
@@ -63,6 +65,8 @@ local animal_defs = {
 		player_notice_radius = 14.0,
 		player_flee_radius = 8.0,
 		avoid_speed_factor = 1.20,
+		player_behavior = "skittish",
+		forage_chance = 0.55,
 		tameable = false,
 		observation = "Deer pause to watch distant movement, but run when a person comes too close. Their browsing shapes forest plants.",
 	},
@@ -80,12 +84,153 @@ local animal_defs = {
 		player_notice_radius = 9.0,
 		player_flee_radius = 4.5,
 		avoid_speed_factor = 0.85,
-		rabbit_hunt_radius = 12.0,
-		rabbit_chase_radius = 8.0,
+		prey_hunt_radius = 12.0,
+		prey_chase_radius = 8.0,
+		player_behavior = "wary",
 		tameable = true,
-		observation = "Wild foxes cautiously watch people, avoid close contact, and stalk rabbits before breaking into a chase.",
+		observation = "Wild foxes cautiously watch people, avoid close contact, and stalk nearby small animals before breaking into a chase.",
+	},
+	squirrel = {
+		description = "Forest Squirrel",
+		mesh = "occ_squirrel.glb",
+		textures = {"occ_squirrel_fur.png", "occ_squirrel_accent.png", "occ_squirrel_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 6.4, y = 6.4},
+		walk_speed = 1.4,
+		run_speed = 3.1,
+		acceleration = 9,
+		turn_speed = 7.0,
+		hop_strength = 2.7,
+		hop_interval = 0.72,
+		collisionbox = {-0.25, 0, -0.38, 0.25, 0.96, 0.38},
+		player_notice_radius = 10.0,
+		player_flee_radius = 6.0,
+		avoid_speed_factor = 1.15,
+		predator_notice_radius = 8.5,
+		predator_escape_speed_factor = 1.25,
+		fox_prey = true,
+		player_behavior = "skittish",
+		forage_chance = 0.35,
+		tameable = false,
+		observation = "Squirrels pause upright to assess danger, then escape in quick bounds. They disperse seeds through forests.",
+	},
+	duck = {
+		description = "Pond Duck",
+		mesh = "occ_duck.glb",
+		textures = {"occ_duck_fur.png", "occ_duck_accent.png", "occ_duck_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 7.0, y = 7.0},
+		walk_speed = 1.05,
+		run_speed = 2.15,
+		acceleration = 6,
+		turn_speed = 4.8,
+		jump_strength = 2.6,
+		collisionbox = {-0.31, 0, -0.46, 0.31, 0.98, 0.46},
+		player_notice_radius = 9.0,
+		player_flee_radius = 5.5,
+		avoid_speed_factor = 1.08,
+		predator_notice_radius = 7.5,
+		predator_escape_speed_factor = 1.32,
+		fox_prey = true,
+		player_behavior = "skittish",
+		forage_chance = 0.42,
+		can_swim = true,
+		tameable = false,
+		observation = "Ducks float and forage in wetlands, watch unfamiliar people, and hurry away from predators or close approaches.",
+	},
+	cow = {
+		description = "Farm Cow",
+		mesh = "occ_cow.glb",
+		textures = {"occ_cow_fur.png", "occ_cow_accent.png", "occ_cow_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 11.5, y = 11.5},
+		walk_speed = 0.82,
+		run_speed = 1.8,
+		acceleration = 3.5,
+		turn_speed = 2.4,
+		jump_strength = 3.2,
+		collisionbox = {-0.64, 0, -1.00, 0.64, 2.20, 1.00},
+		player_notice_radius = 10.0,
+		player_flee_radius = 2.8,
+		avoid_speed_factor = 0.72,
+		player_behavior = "calm",
+		forage_chance = 0.70,
+		domestic = true,
+		tameable = false,
+		observation = "Cows are calm herd animals and ruminant herbivores. They usually watch people and step away when crowded.",
+	},
+	chicken = {
+		description = "Farm Chicken",
+		mesh = "occ_chicken.glb",
+		textures = {"occ_chicken_fur.png", "occ_chicken_accent.png", "occ_chicken_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 6.6, y = 6.6},
+		walk_speed = 1.15,
+		run_speed = 2.1,
+		acceleration = 7,
+		turn_speed = 7.0,
+		jump_strength = 2.8,
+		collisionbox = {-0.27, 0, -0.35, 0.27, 1.02, 0.35},
+		player_notice_radius = 8.0,
+		player_flee_radius = 4.5,
+		avoid_speed_factor = 1.12,
+		predator_notice_radius = 7.0,
+		predator_escape_speed_factor = 1.32,
+		fox_prey = true,
+		player_behavior = "skittish",
+		forage_chance = 0.65,
+		domestic = true,
+		tameable = false,
+		observation = "Chickens scratch and peck while foraging, stay alert to sudden movement, and run from foxes.",
+	},
+	dog = {
+		description = "Friendly Dog",
+		mesh = "occ_dog.glb",
+		textures = {"occ_dog_fur.png", "occ_dog_accent.png", "occ_dog_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 9.8, y = 9.8},
+		walk_speed = 1.6,
+		run_speed = 3.4,
+		acceleration = 8,
+		turn_speed = 6.0,
+		jump_strength = 4.0,
+		collisionbox = {-0.42, 0, -0.67, 0.42, 1.48, 0.67},
+		player_notice_radius = 10.0,
+		player_flee_radius = 0,
+		avoid_speed_factor = 1.0,
+		player_behavior = "social",
+		greeting_distance = 2.3,
+		follow_distance = 2.2,
+		run_follow_distance = 7.0,
+		pet = true,
+		tameable = true,
+		observation = "Domestic dogs are social animals that read human movement closely and often approach in a friendly way.",
+	},
+	cat = {
+		description = "House Cat",
+		mesh = "occ_cat.glb",
+		textures = {"occ_cat_fur.png", "occ_cat_accent.png", "occ_cat_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 8.0, y = 8.0},
+		walk_speed = 1.45,
+		run_speed = 3.0,
+		acceleration = 8,
+		turn_speed = 7.0,
+		jump_strength = 4.0,
+		collisionbox = {-0.31, 0, -0.52, 0.31, 1.18, 0.52},
+		player_notice_radius = 8.0,
+		player_flee_radius = 0,
+		avoid_speed_factor = 1.0,
+		player_behavior = "curious",
+		greeting_distance = 2.2,
+		follow_distance = 3.2,
+		run_follow_distance = 8.5,
+		pet = true,
+		tameable = true,
+		observation = "Domestic cats often observe first, approach when curious, and keep more personal space than dogs.",
 	},
 }
+
+local FOX_PREY = {}
+for kind, def in pairs(animal_defs) do
+	if def.fox_prey then
+		FOX_PREY[kind] = true
+	end
+end
 
 local function set_animation(self, name)
 	if self.animation_state == name then
@@ -131,6 +276,32 @@ local function node_is_walkable(pos)
 	local node = minetest.get_node_or_nil(pos)
 	local def = node and minetest.registered_nodes[node.name]
 	return def and def.walkable == true
+end
+
+local function node_is_water(pos)
+	local node = minetest.get_node_or_nil(pos)
+	return node and minetest.get_item_group(node.name, "water") > 0
+end
+
+local function update_buoyancy(self, def, pos, dtime)
+	if not def.can_swim then
+		return false
+	end
+	local in_water = node_is_water(pos) or node_is_water({x = pos.x, y = pos.y + 0.35, z = pos.z})
+	if in_water then
+		self.object:set_acceleration({x = 0, y = 0, z = 0})
+		local velocity = self.object:get_velocity() or {x = 0, y = 0, z = 0}
+		local submerged = node_is_water({x = pos.x, y = pos.y + 0.85, z = pos.z})
+		velocity.y = approach(velocity.y, submerged and 1.25 or 0, 4.5 * dtime)
+		self.object:set_velocity(velocity)
+		self.in_water = true
+		return true
+	end
+	if self.in_water then
+		self.object:set_acceleration({x = 0, y = GRAVITY, z = 0})
+		self.in_water = false
+	end
+	return false
 end
 
 local function navigation_ahead(pos, dx, dz)
@@ -247,23 +418,24 @@ local function closest_player(pos, radius, excluded_name)
 end
 
 local function closest_animal(pos, kind, radius, excluded_object)
-	local closest, closest_pos, closest_distance
+	local closest, closest_pos, closest_distance, closest_entity
 	for _, object in ipairs(minetest.get_objects_inside_radius(pos, radius)) do
 		if object ~= excluded_object then
 			local entity = object:get_luaentity()
 			local object_pos = object:get_pos()
-			if entity and entity.kind == kind and object_pos
+			local matches_kind = entity and (type(kind) == "table" and kind[entity.kind] or entity.kind == kind)
+			if matches_kind and object_pos
 					and math.abs(object_pos.y - pos.y) <= 2.5 then
 				local dx = object_pos.x - pos.x
 				local dz = object_pos.z - pos.z
 				local distance = math.sqrt(dx * dx + dz * dz)
 				if not closest_distance or distance < closest_distance then
-					closest, closest_pos, closest_distance = object, object_pos, distance
+					closest, closest_pos, closest_distance, closest_entity = object, object_pos, distance, entity
 				end
 			end
 		end
 	end
-	return closest, closest_pos, closest_distance
+	return closest, closest_pos, closest_distance, closest_entity
 end
 
 local function watch_target(self, def, dx, dz, dtime, state)
@@ -274,7 +446,7 @@ local function watch_target(self, def, dx, dz, dtime, state)
 	self.decision_timer = 0.8
 end
 
-local function flee_from(self, def, pos, target_pos, speed, weave, dtime, moveresult, state)
+local function flee_from(self, def, pos, target_pos, speed, weave, dtime, moveresult, state, animation)
 	local dx = pos.x - target_pos.x
 	local dz = pos.z - target_pos.z
 	local distance = math.sqrt(dx * dx + dz * dz)
@@ -286,13 +458,13 @@ local function flee_from(self, def, pos, target_pos, speed, weave, dtime, movere
 		dx = away_x - away_z * weave
 		dz = away_z + away_x * weave
 	end
-	move_with_steering(self, def, dx, dz, speed, "run", dtime, moveresult)
+	move_with_steering(self, def, dx, dz, speed, animation or "run", dtime, moveresult)
 	self.behavior_state = state
 	self.decision_timer = 1.2
 end
 
 local function respond_to_predator(self, def, pos, dtime, moveresult)
-	if self.kind ~= "rabbit" then
+	if not def.predator_notice_radius then
 		return false
 	end
 	local fox, fox_pos = closest_animal(pos, "fox", def.predator_notice_radius, self.object)
@@ -300,7 +472,8 @@ local function respond_to_predator(self, def, pos, dtime, moveresult)
 		return false
 	end
 	local phase = (self.behavior_clock or 0) * 4.8 + (self.behavior_phase or 0)
-	local weave = math.sin(phase) * 0.42
+	local weave_amount = self.kind == "rabbit" and 0.42 or (def.evasion_weave or 0.30)
+	local weave = math.sin(phase) * weave_amount
 	flee_from(self, def, pos, fox_pos, def.run_speed * def.predator_escape_speed_factor,
 		weave, dtime, moveresult, "escaping_fox")
 	return true
@@ -319,7 +492,7 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 	if not owned and def.tameable
 			and player:get_wielded_item():get_name() == MODNAME .. ":pet_treat" then
 		if distance > 2.0 then
-			move_toward(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
+			move_with_steering(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
 			self.behavior_state = "approaching_treat"
 		else
 			watch_target(self, def, dx, dz, dtime, "waiting_for_treat")
@@ -327,34 +500,71 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 		return true
 	end
 
-	if not owned and distance > def.player_flee_radius then
+	if owned then
+		flee_from(self, def, pos, player_pos, def.walk_speed, 0, dtime, moveresult,
+			"avoiding_stranger", "walk")
+		return true
+	end
+
+	if def.player_behavior == "social" then
+		if distance > (def.greeting_distance or 2.3) then
+			move_with_steering(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
+			self.behavior_state = "greeting_player"
+		else
+			watch_target(self, def, dx, dz, dtime, "near_player")
+		end
+		return true
+	end
+
+	if def.player_behavior == "curious" then
+		local curious_now = math.sin((self.behavior_clock or 0) * 0.8 + (self.behavior_phase or 0)) > -0.15
+		if distance <= 4.6 and distance > (def.greeting_distance or 2.2) and curious_now then
+			move_with_steering(self, def, dx, dz, def.walk_speed * 0.78, "walk", dtime, moveresult)
+			self.behavior_state = "curiously_approaching"
+		else
+			watch_target(self, def, dx, dz, dtime, "watching_player")
+		end
+		return true
+	end
+
+	if def.player_behavior == "calm" then
+		if distance <= def.player_flee_radius then
+			flee_from(self, def, pos, player_pos, def.walk_speed * 0.72, 0,
+				dtime, moveresult, "stepping_away", "walk")
+		else
+			watch_target(self, def, dx, dz, dtime, "watching_player")
+		end
+		return true
+	end
+
+	if distance > def.player_flee_radius then
 		watch_target(self, def, dx, dz, dtime, "watching_player")
 		return true
 	end
-	local speed = owned and def.walk_speed or def.run_speed * def.avoid_speed_factor
-	flee_from(self, def, pos, player_pos, speed, 0, dtime, moveresult,
-		owned and "avoiding_stranger" or "escaping_player")
+	flee_from(self, def, pos, player_pos, def.run_speed * def.avoid_speed_factor,
+		0, dtime, moveresult, "escaping_player")
 	return true
 end
 
-local function hunt_nearby_rabbit(self, def, pos, dtime, moveresult)
+local function hunt_nearby_prey(self, def, pos, dtime, moveresult)
 	if self.kind ~= "fox" or (self.owner and self.owner ~= "") then
 		return false
 	end
-	local rabbit, rabbit_pos, distance = closest_animal(pos, "rabbit", def.rabbit_hunt_radius, self.object)
-	if not rabbit then
+	local prey, prey_pos, distance, prey_entity = closest_animal(pos, FOX_PREY, def.prey_hunt_radius, self.object)
+	if not prey then
 		return false
 	end
-	local dx = rabbit_pos.x - pos.x
-	local dz = rabbit_pos.z - pos.z
+	local prey_kind = prey_entity.kind
+	local dx = prey_pos.x - pos.x
+	local dz = prey_pos.z - pos.z
 	if distance <= 1.15 then
-		watch_target(self, def, dx, dz, dtime, "watching_rabbit")
-	elseif distance > def.rabbit_chase_radius then
+		watch_target(self, def, dx, dz, dtime, "watching_" .. prey_kind)
+	elseif distance > def.prey_chase_radius then
 		move_with_steering(self, def, dx, dz, def.walk_speed * 0.72, "walk", dtime, moveresult)
-		self.behavior_state = "stalking_rabbit"
+		self.behavior_state = "stalking_" .. prey_kind
 	else
 		move_with_steering(self, def, dx, dz, def.run_speed, "run", dtime, moveresult)
-		self.behavior_state = "chasing_rabbit"
+		self.behavior_state = "chasing_" .. prey_kind
 	end
 	self.decision_timer = 0.8
 	return true
@@ -446,6 +656,7 @@ local function register_animal(kind)
 				return
 			end
 			self.behavior_clock = (self.behavior_clock or 0) + dtime
+			update_buoyancy(self, def, pos, dtime)
 			if respond_to_predator(self, def, pos, dtime, moveresult) then
 				return
 			end
@@ -466,18 +677,20 @@ local function register_animal(kind)
 					local dx = owner_pos.x - pos.x
 					local dz = owner_pos.z - pos.z
 					local distance = math.sqrt(dx * dx + dz * dz)
+					local follow_distance = def.follow_distance or 2.8
+					local run_follow_distance = def.run_follow_distance or 7.0
 					if distance > 28 and teleport_near_owner(self, owner_pos) then
 						set_animation(self, "idle")
 						self.behavior_state = "following_owner"
 						return
-					elseif distance > 2.8 then
-						local running = distance > 7
-						move_toward(self, def, dx, dz,
+					elseif distance > follow_distance then
+						local running = distance > run_follow_distance
+						move_with_steering(self, def, dx, dz,
 							running and def.run_speed or def.walk_speed,
 							running and "run" or "walk", dtime, moveresult)
 						self.behavior_state = "following_owner"
 						return
-					elseif distance <= 2.8 then
+					elseif distance <= follow_distance then
 						stop_horizontal(self, def, dtime)
 						set_animation(self, "idle")
 						self.behavior_state = "near_owner"
@@ -486,7 +699,7 @@ local function register_animal(kind)
 				end
 			end
 
-			if hunt_nearby_rabbit(self, def, pos, dtime, moveresult) then
+			if hunt_nearby_prey(self, def, pos, dtime, moveresult) then
 				return
 			end
 
@@ -496,7 +709,8 @@ local function register_animal(kind)
 				local choice = math.random()
 				if choice < 0.42 then
 					self.move_dir_x, self.move_dir_z = 0, 0
-					self.idle_animation = kind == "deer" and math.random() < 0.55 and "graze" or "idle"
+					self.idle_animation = def.forage_chance and math.random() < def.forage_chance
+						and "graze" or "idle"
 				else
 					local angle = math.random() * TWO_PI
 					self.move_dir_x = math.cos(angle)
@@ -545,8 +759,11 @@ local function register_animal(kind)
 		end,
 	})
 
+	local introduction_item = def.pet and "Adoption Token"
+		or (def.domestic and "Farm Animal Token" or "Habitat Egg")
 	minetest.register_craftitem(MODNAME .. ":spawn_" .. kind, {
-		description = def.description .. " Habitat Egg\nPlace on open ground to introduce one animal",
+		description = def.description .. " " .. introduction_item ..
+			"\nPlace on open ground to introduce one animal",
 		inventory_image = "occ_spawn_" .. kind .. ".png",
 		groups = {craftitem = 1, ecology = 1, occ_classroom_safe = 1},
 		on_place = function(itemstack, placer, pointed_thing)
@@ -570,7 +787,7 @@ for kind in pairs(animal_defs) do
 end
 
 minetest.register_craftitem(MODNAME .. ":pet_treat", {
-	description = "Companion Treat\nUse on a rabbit or fox to make it your persistent companion",
+	description = "Companion Treat\nUse on a rabbit, fox, dog, or cat to make it your persistent companion",
 	inventory_image = "default_apple.png^[colorize:#F0A84A:80",
 	groups = {craftitem = 1, ecology = 1, occ_classroom_safe = 1},
 })
@@ -782,11 +999,18 @@ minetest.register_abm({
 			return
 		end
 		local biome = minetest.get_biome_data(pos)
+		local humidity = biome and (biome.humidity or 0) or 0
+		local roll = math.random(1, 100)
 		local kind = "rabbit"
-		if biome and (biome.humidity or 0) > 78 then
-			kind = "deer"
-		elseif math.random(1, 8) == 1 then
+		if humidity > 90 and pos.y <= 15 and roll <= 55
+				and minetest.find_node_near(pos, 7, {"group:water"}) then
+			kind = "duck"
+		elseif humidity > 78 then
+			kind = roll <= 36 and "squirrel" or "deer"
+		elseif roll <= 12 then
 			kind = "fox"
+		elseif roll <= 38 then
+			kind = "squirrel"
 		end
 		minetest.add_entity(vector.add(above, {x = 0, y = 0.2, z = 0}), MODNAME .. ":" .. kind)
 	end,
@@ -802,4 +1026,4 @@ minetest.register_craft({
 	recipe = {{"default:book", "default:stick"}},
 })
 
-minetest.log("action", "[OpenClassCraft Ecology] Loaded persistent wildlife, plants, habitats, and field tools")
+minetest.log("action", "[OpenClassCraft Ecology] Loaded persistent animals, plants, habitats, and field tools")

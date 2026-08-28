@@ -64,7 +64,7 @@ The planned school price covers onboarding, the operational Console, teacher tra
 | --- | --- |
 | Physical block coding | A `START` block reads a line of programming blocks and drives a nearby robot. Movement, turning, bounded repetition, conditions, sensing, waiting, placing, digging, variables, and stopping are represented in-world. |
 | Programmable robot | A persistent robot entity can move, rotate, inspect the node ahead, place stone, and dig. |
-| Ecology and habitats | Meadow, monsoon-forest, and freshwater-wetland biome content supports growable pollinator plants, bounded wildlife spawning, persistent companion animals, and measurable habitat surveys. |
+| Ecology and habitats | Meadow, monsoon-forest, and freshwater-wetland biome content supports growable pollinator plants, bounded wildlife spawning, farm animals, persistent real-life pets, predator–prey behavior, and measurable habitat surveys. |
 | Classroom electronics | Deterministic, bounded power networks connect batteries, switches, wires, lamps, and rotating motors. A multimeter reports component state. |
 | Lesson authoring | Placeable Guides, blackboards, whiteboards, a Lesson Planner, and checkpoint flags let an educator build instructions and progress tasks into a world. |
 | Chemistry activities | A Chemistry Lab combines H, O, C, N, Na, and Cl atom items into seven supported molecules, including water, oxygen, carbon dioxide, salt, ammonia, and methane. |
@@ -141,11 +141,11 @@ The closest robot is chosen relative to the player who starts the program. Keep 
 Open the **Ecology** catalog for the Field Journal, seeds, companion treats, plants, and habitat eggs.
 
 1. Plant **Learning Garden Seeds** on a soil node. A seedling grows into a pollinator flower when it has enough light.
-2. Place a rabbit, deer, or fox habitat egg on open ground. New terrain can also spawn a bounded number of animals naturally.
-3. Use a **Companion Treat** on a rabbit or fox to set persistent ownership. The companion follows its owner; right-click it again to toggle follow/stay. Deer remain observation animals.
+2. Place a habitat or farm token for a rabbit, deer, fox, squirrel, duck, cow, or chicken. New terrain can also spawn a bounded mix of appropriate wildlife naturally.
+3. Place a dog or cat **Adoption Token**, then use a **Companion Treat** to set persistent ownership. Rabbits and foxes can also become companions. The companion follows its owner; right-click it again to toggle follow/stay. Other species remain observation animals.
 4. Use the **Ecosystem Field Journal** to count nearby plants, tree nodes, water, animals, and animal species and calculate a repeatable habitat score.
 
-Wildlife uses lightweight rigged models with distinct world sizes: rabbits are compact, foxes are medium-sized, and deer stand clearly taller than both. Their behavior is species-specific: rabbits freeze when they first notice danger and bolt in a weaving escape when a fox or player closes in; deer watch movement from farther away, then run when approached; wild foxes cautiously observe players while stalking and chasing nearby rabbits. Predator–prey chases remain classroom-safe and do not damage either animal. A held Companion Treat attracts rabbits and foxes, while tamed companions otherwise continue to follow or stay for their owner. Movement accelerates and turns smoothly, avoids unsafe drops, steps or jumps over small obstacles, and lets distant companions safely catch up without crowding other players.
+All nine species use lightweight rigged models, species-appropriate scales, and distinct movement. Rabbits and squirrels freeze before bounding away; deer watch from farther off and then run; ducks waddle on land, float and swim in water, and forage near wetlands; cows calmly graze and step away when crowded; chickens peck and flee sudden danger. Wild foxes stalk and chase rabbits, squirrels, ducks, and chickens, while prey use evasive escape paths. These chases remain classroom-safe and do not damage either animal. Unowned dogs greet players socially, while cats tend to observe before approaching. A held Companion Treat attracts tameable animals, and owned companions follow or stay for their owner. Movement accelerates and turns smoothly, avoids unsafe drops, preserves momentum through hops, and steers around blocked routes.
 
 Newly generated terrain can include pollinator meadow, monsoon forest, and freshwater wetland biome content. Existing explored map chunks are not regenerated, so use a new world or travel into new terrain to see map-generation changes.
 
@@ -418,8 +418,8 @@ On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually 
 | [`games/luanti_edu/`](games/luanti_edu/) | Bundled educational game and its media. |
 | [`games/luanti_edu/mods/luanti_coding/`](games/luanti_edu/mods/luanti_coding/) | Programming nodes, chain parser, and executor. |
 | [`games/luanti_edu/mods/luanti_robot/`](games/luanti_edu/mods/luanti_robot/) | Robot entity, spawner, movement, sensing, placing, and digging. |
-| [`games/luanti_edu/mods/openclasscraft_ecology/`](games/luanti_edu/mods/openclasscraft_ecology/) | Habitats, plants, wildlife spawning, persistent companions, and field surveys. |
-| [`util/generate_ecology_animals.py`](util/generate_ecology_animals.py) | Reproducibly generates the lightweight rigged wildlife meshes and animation timeline. |
+| [`games/luanti_edu/mods/openclasscraft_ecology/`](games/luanti_edu/mods/openclasscraft_ecology/) | Habitats, plants, wildlife, farm animals, persistent pets, and field surveys. |
+| [`util/generate_ecology_animals.py`](util/generate_ecology_animals.py) | Reproducibly generates all lightweight rigged animal meshes and their shared animation timeline. |
 | [`games/luanti_edu/mods/openclasscraft_electronics/`](games/luanti_edu/mods/openclasscraft_electronics/) | Bounded classroom power networks, batteries, switches, wires, lamps, motors, and meters. |
 | [`games/luanti_edu/mods/openclasscraft_classroom/`](games/luanti_edu/mods/openclasscraft_classroom/) | Guides, boards, lesson plans, checkpoints, chemistry, and Teacher Console bridge. |
 | [`games/luanti_edu/mods/openclasscraft_creator/`](games/luanti_edu/mods/openclasscraft_creator/) | In-game Creator Lab, custom material styles, and World Edit Wand. |
