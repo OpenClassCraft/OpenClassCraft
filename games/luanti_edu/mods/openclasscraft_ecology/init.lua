@@ -1950,7 +1950,6 @@ local function register_animal(kind)
 			end
 			local object = minetest.add_entity(pos, entity_name)
 			if object then
-				activity_particles(pos, "trust")
 				minetest.sound_play("occ_" .. kind .. "_call", {
 					object = object,
 					gain = 0.5,
