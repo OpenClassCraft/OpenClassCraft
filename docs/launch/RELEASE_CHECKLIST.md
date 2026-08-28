@@ -94,7 +94,7 @@ All items block delivery to a pilot school.
 
 - [ ] A school decision-maker approves beta installation and classroom use in writing.
 - [ ] The pilot agreement names the campus, teacher champion, term, support scope, price/waiver, exit, and data responsibilities.
-- [ ] Government-school deployment has the applicable school, KITE, and departmental approvals for the exact package.
+- [ ] Government-school deployment has the applicable school, education-authority, security, privacy, procurement, and software-installation approvals for the exact package and region.
 - [ ] The teacher receives [PRIVACY_AND_SAFETY.md](PRIVACY_AND_SAFETY.md) and agrees to the alias-only pilot rule.
 
 ### Technical readiness

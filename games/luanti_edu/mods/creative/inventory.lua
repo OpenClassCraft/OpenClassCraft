@@ -236,6 +236,8 @@ local registered_craftitems = {}
 local registered_classroom = {}
 local registered_programming = {}
 local registered_chemistry = {}
+local registered_ecology = {}
+local registered_electronics = {}
 
 minetest.register_on_mods_loaded(function()
 	for name, def in pairs(minetest.registered_items) do
@@ -262,6 +264,12 @@ minetest.register_on_mods_loaded(function()
 		if name:match("^luanti_coding:") or name:match("^luanti_robot:") then
 			registered_programming[name] = def
 		end
+		if name:match("^openclasscraft_ecology:") and group.not_in_creative_inventory ~= 1 then
+			registered_ecology[name] = def
+		end
+		if name:match("^openclasscraft_electronics:") and group.not_in_creative_inventory ~= 1 then
+			registered_electronics[name] = def
+		end
 	end
 end)
 
@@ -272,6 +280,8 @@ creative.register_tab("craftitems", S("Items"), registered_craftitems)
 creative.register_tab("classroom", S("Classroom"), registered_classroom)
 creative.register_tab("programming", S("Programming"), registered_programming)
 creative.register_tab("chemistry", S("Chemistry"), registered_chemistry)
+creative.register_tab("ecology", S("Ecology"), registered_ecology)
+creative.register_tab("electronics", S("Electronics"), registered_electronics)
 
 function sfinv.get_homepage_name(player)
 	return "creative:all"

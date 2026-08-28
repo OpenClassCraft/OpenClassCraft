@@ -11,7 +11,7 @@
   <a href="https://github.com/OpenClassCraft/OpenClassCraft/issues"><img alt="Open issues" src="https://img.shields.io/github/issues/OpenClassCraft/OpenClassCraft"></a>
 </p>
 
-OpenClassCraft is an offline-first, open-source voxel coding classroom. Students arrange programming blocks in a 3D world, run the sequence through a nearby robot, and see programming ideas such as order, repetition, sensing, and debugging become physical.
+OpenClassCraft is an offline-first, open-source voxel learning world. Students arrange programming blocks and run a nearby robot, investigate habitats and persistent wildlife, grow plants, and build working classroom circuits with batteries, switches, lamps, and motors.
 
 The project combines a customized [Luanti](https://www.luanti.org/) engine, an educational game derived from Minetest Game, in-world lesson tools, a visual mod creator, and an offline-first Teacher Console.
 
@@ -24,6 +24,8 @@ The project combines a customized [Luanti](https://www.luanti.org/) engine, an e
 - [Download and play](#download-and-play)
 - [First coding lesson](#first-coding-lesson)
 - [Robot programming reference](#robot-programming-reference)
+- [Ecology and companion animals](#ecology-and-companion-animals)
+- [Electronics and mechanisms](#electronics-and-mechanisms)
 - [Classroom and lesson tools](#classroom-and-lesson-tools)
 - [Local classroom multiplayer](#local-classroom-multiplayer)
 - [Accessibility](#accessibility)
@@ -46,7 +48,7 @@ The launch model keeps learner access open while giving schools a supported adop
 | School Console beta | Separately licensed and supplied only to selected pilot schools | First three qualified private-school pilots free for 90 days; additional guided beta ₹4,999 for eight weeks |
 | Founding annual school plan | Offered only after the paid-readiness gates pass | Proposed ₹12,499 for the first campus year, then ₹24,999 per campus/year |
 
-The planned school price covers onboarding, the operational Console, teacher training, curriculum delivery, updates, and support—not a paywall around the Community game. Eligible, properly authorised Kerala government-school pilots are planned as sponsored licences, but OpenClassCraft cannot grant KITE or departmental approval.
+The planned school price covers onboarding, the operational Console, teacher training, curriculum delivery, updates, and support—not a paywall around the Community game. Eligible, properly authorised government schools in any region may apply for sponsored licences, but OpenClassCraft cannot grant the local approvals required by a school or education authority.
 
 - [Launch operating plan](docs/launch/README.md)
 - [School offer and commercial guardrails](docs/launch/SCHOOL_OFFER.md)
@@ -62,9 +64,11 @@ The planned school price covers onboarding, the operational Console, teacher tra
 | --- | --- |
 | Physical block coding | A `START` block reads a line of programming blocks and drives a nearby robot. Movement, turning, bounded repetition, conditions, sensing, waiting, placing, digging, variables, and stopping are represented in-world. |
 | Programmable robot | A persistent robot entity can move, rotate, inspect the node ahead, place stone, and dig. |
+| Ecology and habitats | Meadow, monsoon-forest, and freshwater-wetland biome content supports growable pollinator plants, bounded wildlife spawning, persistent companion animals, and measurable habitat surveys. |
+| Classroom electronics | Deterministic, bounded power networks connect batteries, switches, wires, lamps, and rotating motors. A multimeter reports component state. |
 | Lesson authoring | Placeable Guides, blackboards, whiteboards, a Lesson Planner, and checkpoint flags let an educator build instructions and progress tasks into a world. |
 | Chemistry activities | A Chemistry Lab combines H, O, C, N, Na, and Cl atom items into seven supported molecules, including water, oxygen, carbon dioxide, salt, ammonia, and methane. |
-| Creative catalog | An unlimited, searchable catalog is organized into All, Nodes, Tools, Items, Classroom, Programming, and Chemistry tabs. The normal crafting grid is intentionally absent from the classroom inventory. |
+| Creative catalog | An unlimited, searchable catalog is organized into All, Nodes, Tools, Items, Classroom, Programming, Chemistry, Ecology, and Electronics tabs. The normal crafting grid is intentionally absent from the classroom inventory. |
 | Classroom presentation | Custom menus, loading and pause screens, student/educator skins, sky and cloud settings, ambient music, classroom textures, and learning-themed generated plants and trees. |
 | Local multiplayer | A teacher can host from the simplified start screen. Students discover the class on the local network or use the host's private LAN address as a fallback, then join with a name and optional password. |
 | Accessibility switches | Dyslexia-friendly font, larger UI, stronger form contrast, a more distinct selected-item color, simplified HUD, and screen-reader-friendly helper chat. See the exact behavior [below](#accessibility). |
@@ -93,7 +97,7 @@ Download the matching `.sha256` file as well and verify the archive before openi
 1. Open **Start Game** and choose **Singleplayer**.
 2. Select **New World**, name it, and create it with the OpenClassCraft game.
 3. Select the world and choose **Play Game**.
-4. Open the inventory (the default key is <kbd>I</kbd>) and use the **Programming**, **Classroom**, or **Chemistry** category.
+4. Open the inventory (the default key is <kbd>I</kbd>) and choose **Programming**, **Classroom**, **Chemistry**, **Ecology**, or **Electronics**.
 
 New players intentionally start with an empty hotbar. The unlimited catalog contains the lesson items; `/givetools` is also available when a quick teaching kit is useful.
 
@@ -131,6 +135,28 @@ The current executor is deliberately small. A loop or condition acts on the next
 | Coding Wire | Extends the linear connection between instruction blocks. |
 
 The closest robot is chosen relative to the player who starts the program. Keep only the intended robot nearby when several groups work in the same area.
+
+## Ecology and companion animals
+
+Open the **Ecology** catalog for the Field Journal, seeds, companion treats, plants, and habitat eggs.
+
+1. Plant **Learning Garden Seeds** on a soil node. A seedling grows into a pollinator flower when it has enough light.
+2. Place a rabbit, deer, or fox habitat egg on open ground. New terrain can also spawn a bounded number of animals naturally.
+3. Use a **Companion Treat** on a rabbit or fox to set persistent ownership. The companion follows its owner; right-click it again to toggle follow/stay. Deer remain observation animals.
+4. Use the **Ecosystem Field Journal** to count nearby plants, tree nodes, water, animals, and animal species and calculate a repeatable habitat score.
+
+Newly generated terrain can include pollinator meadow, monsoon forest, and freshwater wetland biome content. Existing explored map chunks are not regenerated, so use a new world or travel into new terrain to see map-generation changes.
+
+## Electronics and mechanisms
+
+Open the **Electronics** catalog for a classroom battery, switch, wire, lamp, motor, and multimeter.
+
+1. Place a battery and right-click it to enable its simplified safe output.
+2. Connect adjacent wire nodes from the battery to a lamp or motor. Add a switch anywhere in the path.
+3. Close the switch. Powered wires glow, the lamp lights, and the motor rotates. Opening the switch or disabling the battery updates the network immediately.
+4. Use the **Classroom Multimeter** on any component to report whether the source, switch, or device is powered.
+
+Circuit traversal is capped at 512 connected components to protect classroom servers from accidental unbounded networks. This is a conceptual low-voltage learning model, not an electrical engineering simulator and not guidance for wiring physical hardware.
 
 ## Classroom and lesson tools
 
@@ -377,7 +403,7 @@ Run the inherited engine unit tests:
 ./bin/openclasscraft --run-unittests
 ```
 
-On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually create a fresh OpenClassCraft world and check the robot sequence, catalog, Guide/board editing, Lesson Planner, Chemistry Lab, accessibility settings, and LAN join flow. The custom game and Electron apps do not yet have complete automated end-to-end coverage.
+On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually create a fresh OpenClassCraft world and check the robot sequence, Ecology pet/growth/survey loop, Electronics battery/switch/lamp/motor loop, catalog, Guide/board editing, Lesson Planner, Chemistry Lab, accessibility settings, and LAN join flow. The custom game and Electron apps do not yet have complete automated end-to-end coverage.
 
 ## Developer guide
 
@@ -390,6 +416,8 @@ On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually 
 | [`games/luanti_edu/`](games/luanti_edu/) | Bundled educational game and its media. |
 | [`games/luanti_edu/mods/luanti_coding/`](games/luanti_edu/mods/luanti_coding/) | Programming nodes, chain parser, and executor. |
 | [`games/luanti_edu/mods/luanti_robot/`](games/luanti_edu/mods/luanti_robot/) | Robot entity, spawner, movement, sensing, placing, and digging. |
+| [`games/luanti_edu/mods/openclasscraft_ecology/`](games/luanti_edu/mods/openclasscraft_ecology/) | Habitats, plants, wildlife spawning, persistent companions, and field surveys. |
+| [`games/luanti_edu/mods/openclasscraft_electronics/`](games/luanti_edu/mods/openclasscraft_electronics/) | Bounded classroom power networks, batteries, switches, wires, lamps, motors, and meters. |
 | [`games/luanti_edu/mods/openclasscraft_classroom/`](games/luanti_edu/mods/openclasscraft_classroom/) | Guides, boards, lesson plans, checkpoints, chemistry, and Teacher Console bridge. |
 | [`games/luanti_edu/mods/openclasscraft_creator/`](games/luanti_edu/mods/openclasscraft_creator/) | In-game Creator Lab, custom material styles, and World Edit Wand. |
 | [`games/luanti_edu/mods/openclasscraft_world/`](games/luanti_edu/mods/openclasscraft_world/) | Sky, music, vegetation, and classroom world styling. |
@@ -410,7 +438,7 @@ The same workflow clean-installs and checks the Linux Creator and School Console
 
 | Command | Purpose |
 | --- | --- |
-| `/givetools` | Give the current classroom/programming teaching kit. |
+| `/givetools` | Give the current programming, classroom, ecology, and electronics teaching kit. |
 | `/student_skin` | Select the student skin. |
 | `/educator_skin` | Select the educator skin. |
 | `/professor_skin` | Select the professor-style skin; this is a skin alias, not a separate permission role. |

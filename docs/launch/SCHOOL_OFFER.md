@@ -18,7 +18,7 @@ The Community game remains free. The paid offer makes adoption dependable for a 
 | Founding annual | ₹12,499 | First campus year | Pilot schools converting after paid-readiness gates pass |
 | Standard school annual | ₹24,999 | Campus/year | Planned standard renewal or later new-school price |
 | Extra remote training | ₹3,999 | 90 minutes | Optional session outside the included training scope |
-| Authorised government-school sponsorship | ₹0 | Agreed pilot/licence term | Eligible Kerala government or Little KITEs schools with required approvals |
+| Authorised government-school sponsorship | ₹0 | Agreed pilot/licence term | Eligible government schools in any region with required local approvals |
 
 Taxes, if applicable, must be stated separately and handled using qualified Indian accounting advice. Do not advertise a tax-inclusive or tax-exclusive interpretation until that review is complete.
 
@@ -65,11 +65,11 @@ A founding pilot requires:
 
 Free private-school pilots are selected for fit and evidence value, not merely arrival order. Prefer variation in school size and device setup while keeping travel practical.
 
-## Government and Little KITEs schools
+## Government-school sponsorship
 
-OpenClassCraft plans to sponsor the School Edition licence for eligible, authorised Kerala government-school pilots. This does not bypass KITE, school, department, privacy, network, or installation requirements. It is not an endorsement, partnership, certification, or procurement commitment by KITE or the Government of Kerala.
+Eligible, properly authorised government schools in any region may apply for a sponsored School Edition licence at no charge. Sponsorship covers the agreed licence term and does not bypass the school, education department, privacy, security, network, procurement, or software-installation requirements that apply in that region. It is an OpenClassCraft programme, not an endorsement, partnership, certification, or procurement commitment by any government or education authority.
 
-Do not install or demonstrate on managed school systems until the responsible authority approves the exact package and procedure.
+Do not install or demonstrate on managed school systems until the responsible local authority approves the exact package and procedure. Record the approval scope and licence term in the written pilot agreement.
 
 ## Commercial guardrails
 

@@ -90,4 +90,4 @@ Private software reports: <https://github.com/OpenClassCraft/OpenClassCraft/secu
 
 ## Government-school note
 
-Installation on Kerala government-school systems must follow the applicable school, KITE, and departmental approval, privacy, security, network, and software procedures. A free OpenClassCraft sponsorship does not provide that approval and should never be presented as doing so.
+Installation on government-managed school systems must follow the applicable school, education-authority, privacy, security, network, procurement, and software procedures in that region. A free OpenClassCraft sponsorship does not provide those approvals and should never be presented as doing so.

@@ -226,6 +226,9 @@ local function policy_can(action, player, item_name)
 		return policy.studentsCanUseWorldEditWand and list_allows(policy.allowedTools, item_name)
 	end
 	if action == "use_tool" then
+		if minetest.get_item_group(item_name, "occ_classroom_safe") > 0 then
+			return true
+		end
 		return list_allows(policy.allowedTools, item_name) and #policy.allowedTools > 0
 	end
 	return true

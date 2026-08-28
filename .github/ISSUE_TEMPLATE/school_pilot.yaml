@@ -111,7 +111,7 @@ body:
           required: true
         - label: I will not add student names, personal contact details, credentials, or private school records to this public issue.
           required: true
-        - label: I understand government-school participation requires the applicable KITE and departmental approvals; this application does not provide them.
+        - label: I understand government-school participation requires the applicable local school and education-authority approvals; this application does not provide them.
           required: true
         - label: I understand selection, pricing, support scope, and dates are confirmed only in a written pilot agreement.
           required: true

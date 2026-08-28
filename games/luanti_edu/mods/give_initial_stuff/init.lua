@@ -23,6 +23,18 @@ local STARTER_ITEMS = {
     "openclasscraft_classroom:lesson_planner",
     "openclasscraft_classroom:lesson_marker 3",
     "openclasscraft_creator:world_edit_wand",
+	"openclasscraft_ecology:field_journal",
+	"openclasscraft_ecology:learning_seeds 8",
+	"openclasscraft_ecology:pet_treat 4",
+	"openclasscraft_ecology:spawn_rabbit 2",
+	"openclasscraft_ecology:spawn_deer",
+	"openclasscraft_ecology:spawn_fox",
+	"openclasscraft_electronics:battery_off 2",
+	"openclasscraft_electronics:switch_off 2",
+	"openclasscraft_electronics:wire 16",
+	"openclasscraft_electronics:lamp 2",
+	"openclasscraft_electronics:motor 2",
+	"openclasscraft_electronics:multimeter",
 
     -- All Coding Blocks (5 of each)
     "luanti_coding:start",
@@ -57,6 +69,8 @@ local function give_stuff(player)
         "  - A Robot Spawner\n" ..
         "  - Guide NPC, Classroom Boards, Chemistry Lab, and Lesson Planner\n" ..
         "  - All Programming Blocks\n" ..
+		"  - Ecology field kit, animals, pets, seeds, and habitat tools\n" ..
+		"  - Battery, switch, wires, lamps, motors, and multimeter\n" ..
         "Place the Robot Spawner, right-click to spawn your robot,\n" ..
         "then place a START block and connect programming blocks to the right!\n" ..
         "Right-click the START block to run your program."
