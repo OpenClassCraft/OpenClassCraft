@@ -7,7 +7,7 @@ local GRAVITY = -9.81
 local ANIMAL_LIMIT = 6
 local OBSERVATION_RADIUS = 10
 local TWO_PI = math.pi * 2
-local STEERING_OFFSETS = {math.pi / 4, -math.pi / 4, math.pi / 2, -math.pi / 2}
+local STEERING_ANGLES = {math.pi / 6, math.pi / 3, math.pi / 2, math.pi * 0.78}
 local ANIMATIONS = {
 	idle = {{x = 0.0, y = 1.9}, 1.0},
 	walk = {{x = 2.0, y = 3.0}, 1.0},
@@ -110,8 +110,10 @@ local animal_defs = {
 		fox_prey = true,
 		player_behavior = "skittish",
 		forage_chance = 0.35,
+		climb_speed = 2.15,
+		tree_search_radius = 8,
 		tameable = false,
-		observation = "Squirrels pause upright to assess danger, then escape in quick bounds. They disperse seeds through forests.",
+		observation = "Squirrels pause upright to assess danger, escape in quick bounds, and climb a nearby tree when pursued. They disperse seeds through forests.",
 	},
 	duck = {
 		description = "Pond Duck",
@@ -278,9 +280,13 @@ local function node_is_walkable(pos)
 	return def and def.walkable == true
 end
 
-local function node_is_water(pos)
+local function node_has_group(pos, group)
 	local node = minetest.get_node_or_nil(pos)
-	return node and minetest.get_item_group(node.name, "water") > 0
+	return node and minetest.get_item_group(node.name, group) > 0
+end
+
+local function node_is_water(pos)
+	return node_has_group(pos, "water")
 end
 
 local function update_buoyancy(self, def, pos, dtime)
@@ -304,22 +310,112 @@ local function update_buoyancy(self, def, pos, dtime)
 	return false
 end
 
-local function navigation_ahead(pos, dx, dz)
+local function body_column_clear(pos, def, x, z, lift)
+	local collisionbox = def.collisionbox
+	local low = pos.y + collisionbox[2] + 0.08 + (lift or 0)
+	local high = pos.y + collisionbox[5] - 0.08 + (lift or 0)
+	if high < low then
+		high = low
+	end
+
+	local y = low
+	while y < high do
+		if node_is_walkable({x = x, y = y, z = z}) then
+			return false
+		end
+		y = y + 0.72
+	end
+	return not node_is_walkable({x = x, y = high, z = z})
+end
+
+local function route_probe(pos, def, x, z)
+	local collisionbox = def.collisionbox
+	local body_bottom = pos.y + collisionbox[2] + 0.08
+	local ground = {x = x, y = pos.y + collisionbox[2] - 0.56, z = z}
+	local lower_ground = {x = x, y = ground.y - 1.0, z = z}
+	local body_pos = {x = x, y = body_bottom, z = z}
+
+	if not def.can_swim and (node_is_water(body_pos) or node_is_water(ground)) then
+		return false, false
+	end
+
+	if body_column_clear(pos, def, x, z, 0) then
+		if node_is_walkable(ground) or node_is_walkable(lower_ground) then
+			return true, false
+		end
+		if def.can_swim and (node_is_water(body_pos) or node_is_water(ground)) then
+			return true, false
+		end
+		return false, false
+	end
+
+	local can_step = def.jump_strength or def.hop_strength
+	if can_step and node_is_walkable(body_pos)
+			and body_column_clear(pos, def, x, z, 1.0) then
+		return true, true
+	end
+	return false, false
+end
+
+local function navigation_ahead(pos, def, dx, dz, speed)
 	local length = math.sqrt(dx * dx + dz * dz)
 	if length < 0.001 then
 		return true, false
 	end
-	local ahead = {
-		x = pos.x + dx / length * 0.62,
-		y = pos.y,
-		z = pos.z + dz / length * 0.62,
-	}
-	local floor = {x = ahead.x, y = ahead.y - 0.55, z = ahead.z}
-	if not node_is_walkable(ahead) then
-		return node_is_walkable(floor), false
+
+	local dir_x, dir_z = dx / length, dz / length
+	local side_x, side_z = -dir_z, dir_x
+	local collisionbox = def.collisionbox
+	local half_x = math.max(math.abs(collisionbox[1]), math.abs(collisionbox[4]))
+	local half_z = math.max(math.abs(collisionbox[3]), math.abs(collisionbox[6]))
+	local forward_extent = math.abs(dir_x) * half_x + math.abs(dir_z) * half_z
+	local side_extent = math.abs(side_x) * half_x + math.abs(side_z) * half_z
+	local first_distance = forward_extent + 0.12
+	local final_distance = forward_extent + math.min(0.82, 0.30 + (speed or 0) * 0.14)
+	local distances = {first_distance}
+	if final_distance - first_distance > 0.12 then
+		distances[#distances + 1] = final_distance
 	end
-	local above = {x = ahead.x, y = ahead.y + 1.0, z = ahead.z}
-	return not node_is_walkable(above), true
+	local lateral = math.max(0.12, side_extent * 0.92)
+	local lateral_offsets = {0, lateral, -lateral}
+	local needs_jump = false
+
+	for _, distance in ipairs(distances) do
+		for _, side_offset in ipairs(lateral_offsets) do
+			local x = pos.x + dir_x * distance + side_x * side_offset
+			local z = pos.z + dir_z * distance + side_z * side_offset
+			local clear, probe_needs_jump = route_probe(pos, def, x, z)
+			if not clear then
+				return false, false
+			end
+			needs_jump = needs_jump or probe_needs_jump
+		end
+	end
+	return true, needs_jump
+end
+
+local function horizontal_collision(moveresult)
+	if not moveresult or not moveresult.collides then
+		return false
+	end
+	for _, collision in ipairs(moveresult.collisions or {}) do
+		if collision.axis == "x" or collision.axis == "z" then
+			return true
+		end
+	end
+	return false
+end
+
+local function update_collision_avoidance(self, moveresult)
+	if not horizontal_collision(moveresult) then
+		return
+	end
+	local now = self.behavior_clock or 0
+	if now >= (self.next_avoid_flip or 0) then
+		self.avoid_side = -(self.avoid_side or 1)
+		self.next_avoid_flip = now + 0.65
+	end
+	self.avoid_until = now + 0.9
 end
 
 local function grounded(self, moveresult)
@@ -340,7 +436,7 @@ local function stop_horizontal(self, def, dtime)
 	})
 end
 
-local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresult)
+local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresult, route_check)
 	local distance = math.sqrt(dx * dx + dz * dz)
 	if distance < 0.01 then
 		stop_horizontal(self, def, dtime)
@@ -351,7 +447,11 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	local is_grounded = grounded(self, moveresult)
 	local clear, needs_jump = true, false
 	if is_grounded then
-		clear, needs_jump = navigation_ahead(self.object:get_pos(), dir_x, dir_z)
+		if route_check then
+			clear, needs_jump = route_check.clear, route_check.needs_jump
+		else
+			clear, needs_jump = navigation_ahead(self.object:get_pos(), def, dir_x, dir_z, speed)
+		end
 	end
 	if not clear then
 		stop_horizontal(self, def, dtime)
@@ -363,8 +463,9 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	local change = def.acceleration * dtime
 	velocity.x = approach(velocity.x, dir_x * speed, change)
 	velocity.z = approach(velocity.z, dir_z * speed, change)
-	if needs_jump and is_grounded and def.jump_strength then
-		velocity.y = def.jump_strength
+	if needs_jump and is_grounded and (def.jump_strength or def.hop_strength) then
+		velocity.y = def.jump_strength or def.hop_strength
+		self.hop_timer = def.hop_interval or 0.65
 	elseif def.hop_strength and is_grounded then
 		self.hop_timer = (self.hop_timer or 0) - dtime
 		if self.hop_timer <= 0 then
@@ -373,6 +474,8 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 		end
 	end
 	self.object:set_velocity(velocity)
+	self.last_move_dir_x = dir_x
+	self.last_move_dir_z = dir_z
 
 	turn_toward(self, def, dir_x, dir_z, dtime)
 	set_animation(self, animation)
@@ -380,22 +483,41 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 end
 
 local function move_with_steering(self, def, dx, dz, speed, animation, dtime, moveresult)
-	if move_toward(self, def, dx, dz, speed, animation, dtime, moveresult) then
-		return true
-	end
 	local length = math.sqrt(dx * dx + dz * dz)
 	if length < 0.01 then
+		stop_horizontal(self, def, dtime)
+		set_animation(self, "idle")
 		return false
 	end
+	if not grounded(self, moveresult) then
+		return move_toward(self, def, dx, dz, speed, animation, dtime, moveresult)
+	end
+
 	local angle = math.atan2(dz, dx)
-	local preferred_side = math.sin(self.behavior_phase or 0) >= 0 and 1 or -1
-	for _, offset in ipairs(STEERING_OFFSETS) do
-		local steered_angle = angle + offset * preferred_side
-		if move_toward(self, def, math.cos(steered_angle), math.sin(steered_angle),
-				speed, animation, dtime, moveresult) then
-			return true
+	local preferred_side = self.avoid_side
+		or (math.sin(self.behavior_phase or 0) >= 0 and 1 or -1)
+	local offsets = {}
+	if (self.behavior_clock or 0) >= (self.avoid_until or 0) then
+		offsets[#offsets + 1] = 0
+	end
+	for _, steering_angle in ipairs(STEERING_ANGLES) do
+		offsets[#offsets + 1] = steering_angle * preferred_side
+		offsets[#offsets + 1] = -steering_angle * preferred_side
+	end
+	offsets[#offsets + 1] = math.pi
+
+	local pos = self.object:get_pos()
+	for _, offset in ipairs(offsets) do
+		local steered_angle = angle + offset
+		local steered_x, steered_z = math.cos(steered_angle), math.sin(steered_angle)
+		local clear, needs_jump = navigation_ahead(pos, def, steered_x, steered_z, speed)
+		if clear then
+			return move_toward(self, def, steered_x, steered_z, speed, animation,
+				dtime, moveresult, {clear = true, needs_jump = needs_jump})
 		end
 	end
+	stop_horizontal(self, def, dtime)
+	set_animation(self, "idle")
 	return false
 end
 
@@ -463,6 +585,285 @@ local function flee_from(self, def, pos, target_pos, speed, weave, dtime, movere
 	self.decision_timer = 1.2
 end
 
+local TREE_SIDES = {
+	{x = 1, z = 0},
+	{x = -1, z = 0},
+	{x = 0, z = 1},
+	{x = 0, z = -1},
+}
+
+local function tree_node(pos)
+	return node_has_group(pos, "tree")
+end
+
+local function find_ground_origin(x, z, near_y)
+	local center_y = math.floor(near_y + 0.5)
+	for y = center_y + 2, center_y - 4, -1 do
+		local ground = {x = x, y = y, z = z}
+		local above = {x = x, y = y + 1, z = z}
+		if node_is_walkable(ground) and not tree_node(ground)
+				and not node_has_group(ground, "leaves")
+				and not node_is_walkable(above) then
+			return y + 0.5
+		end
+	end
+	return nil
+end
+
+local function lowest_contiguous_trunk(node_pos)
+	local base = {x = node_pos.x, y = node_pos.y, z = node_pos.z}
+	for _ = 1, 7 do
+		local below = {x = base.x, y = base.y - 1, z = base.z}
+		if not tree_node(below) then
+			break
+		end
+		base.y = base.y - 1
+	end
+	return base
+end
+
+local function highest_contiguous_trunk(base)
+	local top_y = base.y
+	for _ = 1, 8 do
+		if not tree_node({x = base.x, y = top_y + 1, z = base.z}) then
+			break
+		end
+		top_y = top_y + 1
+	end
+	return top_y
+end
+
+local function reachable_tree_height(def, trunk, side, ground_y, top_y)
+	local climb_x = trunk.x + side.x
+	local climb_z = trunk.z + side.z
+	local height_limit = math.min(ground_y + 3.4, top_y + 0.35)
+	local reachable_y = ground_y
+	local probe_y = ground_y + 0.35
+	while probe_y <= height_limit + 0.01 do
+		local grip_y = math.floor(probe_y + 0.35)
+		if not tree_node({x = trunk.x, y = grip_y, z = trunk.z})
+				or not body_column_clear({x = climb_x, y = probe_y, z = climb_z},
+					def, climb_x, climb_z, 0) then
+			break
+		end
+		reachable_y = probe_y
+		probe_y = probe_y + 0.35
+	end
+	return reachable_y
+end
+
+local function find_escape_tree(pos, threat_pos, def)
+	local radius = def.tree_search_radius or 8
+	local minp = {
+		x = math.floor(pos.x - radius),
+		y = math.floor(pos.y - 2),
+		z = math.floor(pos.z - radius),
+	}
+	local maxp = {
+		x = math.floor(pos.x + radius),
+		y = math.floor(pos.y + 7),
+		z = math.floor(pos.z + radius),
+	}
+	local trunks = minetest.find_nodes_in_area(minp, maxp, {"group:tree"})
+	local visited = {}
+	local best, best_score
+
+	for _, tree_pos in ipairs(trunks) do
+		local trunk = lowest_contiguous_trunk(tree_pos)
+		local key = trunk.x .. ":" .. trunk.y .. ":" .. trunk.z
+		if not visited[key] then
+			visited[key] = true
+			local top_y = highest_contiguous_trunk(trunk)
+			if top_y - trunk.y >= 2 then
+				for _, side in ipairs(TREE_SIDES) do
+					local climb_x = trunk.x + side.x
+					local climb_z = trunk.z + side.z
+					local ground_y = find_ground_origin(climb_x, climb_z, trunk.y - 0.5)
+					if ground_y and math.abs(ground_y - pos.y) <= 2.2
+							and body_column_clear({x = climb_x, y = ground_y, z = climb_z},
+								def, climb_x, climb_z, 0) then
+						local target_y = reachable_tree_height(def, trunk, side, ground_y, top_y)
+						if target_y - ground_y >= 1.55 then
+							local dx = climb_x - pos.x
+							local dz = climb_z - pos.z
+							local distance = math.sqrt(dx * dx + dz * dz)
+							local threat_dx = climb_x - threat_pos.x
+							local threat_dz = climb_z - threat_pos.z
+							local threat_distance = math.sqrt(threat_dx * threat_dx + threat_dz * threat_dz)
+							local score = distance - math.min(threat_distance, 20) * 0.12
+							if not best_score or score < best_score then
+								best_score = score
+								best = {
+									trunk = trunk,
+									climb_x = climb_x,
+									climb_z = climb_z,
+									ground_y = ground_y,
+									target_y = target_y,
+								}
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return best
+end
+
+local function player_is_chasing(player, player_pos, animal_pos, distance)
+	if distance <= 2.8 then
+		return true
+	end
+	local velocity = player:get_velocity() or {x = 0, z = 0}
+	local toward_x = animal_pos.x - player_pos.x
+	local toward_z = animal_pos.z - player_pos.z
+	local length = math.sqrt(toward_x * toward_x + toward_z * toward_z)
+	if length < 0.01 then
+		return true
+	end
+	local approach_speed = (velocity.x * toward_x + velocity.z * toward_z) / length
+	return approach_speed > 0.45
+end
+
+local function begin_squirrel_tree_escape(self, def, pos, player, player_pos)
+	if self.tree_escape then
+		return true
+	end
+	local now = self.behavior_clock or 0
+	if now < (self.tree_search_after or 0) then
+		return false
+	end
+	local tree = find_escape_tree(pos, player_pos, def)
+	if not tree then
+		self.tree_search_after = now + 2.5
+		return false
+	end
+	tree.phase = "approach"
+	tree.started_at = now
+	tree.threat_name = player:get_player_name()
+	tree.safe_since = nil
+	self.tree_escape = tree
+	return true
+end
+
+local function finish_squirrel_tree_escape(self)
+	self.tree_escape = nil
+	self.tree_search_after = (self.behavior_clock or 0) + 2.0
+	self.object:set_acceleration({x = 0, y = GRAVITY, z = 0})
+end
+
+local function tree_escape_threat(self, escape)
+	if not escape.threat_name or escape.threat_name == "" then
+		return nil, nil
+	end
+	local player = minetest.get_player_by_name(escape.threat_name)
+	return player, player and player:get_pos() or nil
+end
+
+local function update_squirrel_tree_escape(self, def, pos, dtime, moveresult)
+	local escape = self.tree_escape
+	if self.kind ~= "squirrel" or not escape then
+		return false
+	end
+	if not tree_node(escape.trunk) then
+		finish_squirrel_tree_escape(self)
+		return false
+	end
+
+	local now = self.behavior_clock or 0
+	local player, player_pos = tree_escape_threat(self, escape)
+	local threat_distance
+	if player_pos then
+		local threat_dx = player_pos.x - pos.x
+		local threat_dz = player_pos.z - pos.z
+		threat_distance = math.sqrt(threat_dx * threat_dx + threat_dz * threat_dz)
+	end
+
+	if escape.phase == "approach" then
+		if now - escape.started_at > 9.0 then
+			finish_squirrel_tree_escape(self)
+			return false
+		end
+		local dx = escape.climb_x - pos.x
+		local dz = escape.climb_z - pos.z
+		local distance = math.sqrt(dx * dx + dz * dz)
+		if distance <= 0.65 then
+			self.object:set_pos({x = escape.climb_x, y = pos.y, z = escape.climb_z})
+			self.object:set_velocity({x = 0, y = 0, z = 0})
+			self.object:set_acceleration({x = 0, y = 0, z = 0})
+			escape.phase = "climb"
+		else
+			move_with_steering(self, def, dx, dz, def.run_speed * 1.08,
+				"run", dtime, moveresult)
+		end
+		self.behavior_state = "running_to_tree"
+		self.decision_timer = 1.0
+		return true
+	end
+
+	if escape.phase == "climb" then
+		self.object:set_acceleration({x = 0, y = 0, z = 0})
+		if pos.y >= escape.target_y then
+			self.object:set_pos({x = escape.climb_x, y = escape.target_y, z = escape.climb_z})
+			self.object:set_velocity({x = 0, y = 0, z = 0})
+			escape.phase = "hide"
+			escape.safe_since = nil
+		else
+			local align_x = math.max(-1.2, math.min(1.2, (escape.climb_x - pos.x) * 4.0))
+			local align_z = math.max(-1.2, math.min(1.2, (escape.climb_z - pos.z) * 4.0))
+			self.object:set_velocity({x = align_x, y = def.climb_speed, z = align_z})
+		end
+		turn_toward(self, def, escape.trunk.x - pos.x, escape.trunk.z - pos.z, dtime)
+		set_animation(self, "run")
+		self.behavior_state = "climbing_tree"
+		return true
+	end
+
+	if escape.phase == "hide" then
+		self.object:set_acceleration({x = 0, y = 0, z = 0})
+		self.object:set_pos({x = escape.climb_x, y = escape.target_y, z = escape.climb_z})
+		self.object:set_velocity({x = 0, y = 0, z = 0})
+		if player_pos then
+			turn_toward(self, def, player_pos.x - pos.x, player_pos.z - pos.z, dtime)
+		end
+		set_animation(self, "idle")
+		self.behavior_state = "hiding_in_tree"
+		if threat_distance and threat_distance <= def.player_notice_radius + 2 then
+			escape.safe_since = nil
+		elseif not escape.safe_since then
+			escape.safe_since = now
+		elseif now - escape.safe_since >= 2.3 then
+			escape.phase = "descend"
+		end
+		return true
+	end
+
+	if escape.phase == "descend" then
+		if threat_distance and threat_distance <= def.player_flee_radius + 1 then
+			escape.phase = "climb"
+			return true
+		end
+		if pos.y <= escape.ground_y + 0.08 then
+			self.object:set_pos({x = escape.climb_x, y = escape.ground_y, z = escape.climb_z})
+			self.object:set_velocity({x = 0, y = 0, z = 0})
+			finish_squirrel_tree_escape(self)
+			self.behavior_state = "left_tree"
+			return true
+		end
+		self.object:set_acceleration({x = 0, y = 0, z = 0})
+		local align_x = math.max(-0.9, math.min(0.9, (escape.climb_x - pos.x) * 4.0))
+		local align_z = math.max(-0.9, math.min(0.9, (escape.climb_z - pos.z) * 4.0))
+		self.object:set_velocity({x = align_x, y = -1.35, z = align_z})
+		turn_toward(self, def, escape.trunk.x - pos.x, escape.trunk.z - pos.z, dtime)
+		set_animation(self, "walk")
+		self.behavior_state = "descending_tree"
+		return true
+	end
+
+	finish_squirrel_tree_escape(self)
+	return false
+end
+
 local function respond_to_predator(self, def, pos, dtime, moveresult)
 	if not def.predator_notice_radius then
 		return false
@@ -504,6 +905,12 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 		flee_from(self, def, pos, player_pos, def.walk_speed, 0, dtime, moveresult,
 			"avoiding_stranger", "walk")
 		return true
+	end
+
+	if self.kind == "squirrel" and distance <= def.player_flee_radius
+			and player_is_chasing(player, player_pos, pos, distance)
+			and begin_squirrel_tree_escape(self, def, pos, player, player_pos) then
+		return update_squirrel_tree_escape(self, def, pos, dtime, moveresult)
 	end
 
 	if def.player_behavior == "social" then
@@ -629,6 +1036,10 @@ local function register_animal(kind)
 		behavior_clock = 0,
 		behavior_phase = 0,
 		behavior_state = "idle",
+		avoid_side = 1,
+		avoid_until = 0,
+		next_avoid_flip = 0,
+		tree_search_after = 0,
 
 		on_activate = function(self, staticdata)
 			self.object:set_armor_groups({immortal = 1})
@@ -642,6 +1053,11 @@ local function register_animal(kind)
 			self.behavior_clock = 0
 			self.behavior_phase = math.random() * TWO_PI
 			self.behavior_state = self.staying and "staying" or "idle"
+			self.avoid_side = math.random() < 0.5 and -1 or 1
+			self.avoid_until = 0
+			self.next_avoid_flip = 0
+			self.tree_escape = nil
+			self.tree_search_after = 0
 			update_nametag(self)
 			set_animation(self, self.staying and "sit" or "idle")
 		end,
@@ -656,7 +1072,11 @@ local function register_animal(kind)
 				return
 			end
 			self.behavior_clock = (self.behavior_clock or 0) + dtime
+			update_collision_avoidance(self, moveresult)
 			update_buoyancy(self, def, pos, dtime)
+			if update_squirrel_tree_escape(self, def, pos, dtime, moveresult) then
+				return
+			end
 			if respond_to_predator(self, def, pos, dtime, moveresult) then
 				return
 			end
@@ -719,8 +1139,11 @@ local function register_animal(kind)
 				end
 			end
 			if self.move_dir_x ~= 0 or self.move_dir_z ~= 0 then
-				if not move_toward(self, def, self.move_dir_x, self.move_dir_z,
+				if move_with_steering(self, def, self.move_dir_x, self.move_dir_z,
 						def.walk_speed * 0.72, "walk", dtime, moveresult) then
+					self.move_dir_x = self.last_move_dir_x or self.move_dir_x
+					self.move_dir_z = self.last_move_dir_z or self.move_dir_z
+				else
 					self.move_dir_x, self.move_dir_z = 0, 0
 					self.decision_timer = 0
 				end
