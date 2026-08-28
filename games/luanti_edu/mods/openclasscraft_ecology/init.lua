@@ -113,7 +113,8 @@ local animal_defs = {
 		climb_speed = 2.15,
 		tree_search_radius = 8,
 		tameable = false,
-		observation = "Squirrels pause upright to assess danger, escape in quick bounds, and climb a nearby tree when pursued. They disperse seeds through forests.",
+		observation = "Squirrels pause upright to assess danger, escape in quick bounds, and climb a nearby tree " ..
+			"when pursued. They disperse seeds through forests.",
 	},
 	duck = {
 		description = "Pond Duck",
@@ -771,7 +772,7 @@ local function update_squirrel_tree_escape(self, def, pos, dtime, moveresult)
 	end
 
 	local now = self.behavior_clock or 0
-	local player, player_pos = tree_escape_threat(self, escape)
+	local _, player_pos = tree_escape_threat(self, escape)
 	local threat_distance
 	if player_pos then
 		local threat_dx = player_pos.x - pos.x
