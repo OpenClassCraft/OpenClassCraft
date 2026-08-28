@@ -32,13 +32,14 @@ local animal_defs = {
 		description = "Meadow Rabbit",
 		mesh = "occ_rabbit.glb",
 		textures = {"occ_rabbit_fur.png", "occ_rabbit_accent.png", "occ_rabbit_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 8.0, y = 8.0},
 		walk_speed = 1.25,
 		run_speed = 2.35,
 		acceleration = 8,
 		turn_speed = 6.5,
 		hop_strength = 3.35,
 		hop_interval = 0.62,
-		collisionbox = {-0.34, 0, -0.48, 0.34, 1.35, 0.48},
+		collisionbox = {-0.32, 0, -0.52, 0.32, 1.28, 0.52},
 		tameable = true,
 		observation = "Rabbits are herbivores. They depend on ground cover for food and shelter.",
 	},
@@ -46,12 +47,13 @@ local animal_defs = {
 		description = "Forest Deer",
 		mesh = "occ_deer.glb",
 		textures = {"occ_deer_fur.png", "occ_deer_accent.png", "occ_deer_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 12.0, y = 12.0},
 		walk_speed = 1.15,
 		run_speed = 2.65,
 		acceleration = 5,
 		turn_speed = 3.4,
 		jump_strength = 4.0,
-		collisionbox = {-0.40, 0, -0.72, 0.40, 2.30, 0.72},
+		collisionbox = {-0.50, 0, -0.90, 0.50, 2.75, 0.90},
 		tameable = false,
 		observation = "Deer are primary consumers. Their browsing can change which plants grow in a forest.",
 	},
@@ -59,12 +61,13 @@ local animal_defs = {
 		description = "Companion Fox",
 		mesh = "occ_fox.glb",
 		textures = {"occ_fox_fur.png", "occ_fox_accent.png", "occ_fox_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 10.0, y = 10.0},
 		walk_speed = 1.5,
 		run_speed = 3.0,
 		acceleration = 7,
 		turn_speed = 5.2,
 		jump_strength = 3.8,
-		collisionbox = {-0.36, 0, -0.62, 0.36, 1.38, 0.62},
+		collisionbox = {-0.40, 0, -0.72, 0.40, 1.45, 0.72},
 		tameable = true,
 		observation = "Foxes are omnivores and predators that connect several levels of a food web.",
 	},
@@ -167,7 +170,10 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	end
 	self.object:set_velocity(velocity)
 
-	local target_yaw = math.atan2(dir_z, dir_x) - math.pi / 2
+	-- The generated animal meshes face +Z. Luanti's mesh yaw basis points the
+	-- opposite way, so rotate the movement heading by 180 degrees to keep the
+	-- animal's face, rather than its tail, at the front of travel.
+	local target_yaw = math.atan2(dir_z, dir_x) + math.pi / 2
 	local current_yaw = self.object:get_yaw() or target_yaw
 	self.object:set_yaw(smooth_yaw(current_yaw, target_yaw, def.turn_speed * dtime))
 	set_animation(self, animation)
@@ -214,7 +220,7 @@ local function register_animal(kind)
 			visual = "mesh",
 			mesh = def.mesh,
 			textures = def.textures,
-			visual_size = {x = 1, y = 1},
+			visual_size = def.visual_size,
 			static_save = true,
 			stepheight = 1.1,
 			hp_max = 10,
