@@ -21,7 +21,7 @@ Status: `[x]` delivered and verified, `[-] partly implemented or needs verificat
 - [-] Editable chalkboards
 - [-] Checkpoint flags
 - [-] Chemistry Lab recipes and spawned results
-- [-] Creator Lab visual editor (Blockly behavior editor plus generic WebGL cube modeling, hierarchy rigging, per-face pixel painting/PNG UV export, keyframe animation, glTF export, state-mapped mob AI, and project reopen workflow; in-game validation still pending)
+- [-] Desktop Creator visual editor (Blockly behavior editor plus generic WebGL cube modeling, hierarchy rigging, per-face pixel painting/PNG UV export, keyframe animation, glTF export, state-mapped mob AI, and project reopen workflow; core export and game-runtime loading verified, wider cross-platform validation remains)
 - [x] Starter lesson worlds: coding, chemistry, science, and environmental studies, with generated arenas, policies, and teacher notes
 
 ### Educator Workflow

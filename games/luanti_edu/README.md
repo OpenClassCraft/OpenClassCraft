@@ -12,7 +12,6 @@ For downloads, complete platform build instructions, Teacher Console setup, priv
 - Editable Class Guide NPCs, blackboards, and whiteboards.
 - A four-task Lesson Planner, per-player progress, teacher checks, and checkpoint flags.
 - A Chemistry Lab supporting H₂O, O₂, H₂, CO₂, NaCl, NH₃, and CH₄.
-- An in-game Creator Lab with four material styles and simple stored actions.
 - A flat-area World Edit Wand intended for backed-up lesson worlds.
 - Student and educator presentation, custom sky and music, learning-themed vegetation, and classroom textures.
 - A deterministic Valleys learning world with a safe central campus, eight connected field trails, marked habitat checkpoints, rivers, coasts, mountains, snow, and biome-specific ecology.
@@ -37,6 +36,7 @@ Programs are linear and limited to 256 instructions. Loop, IF, and WHILE nodes a
 - Press <kbd>/</kbd> to open the clickable Actions center for a starter kit, appearance, role, class joining, submissions, sky, music, and educator controls.
 - Press <kbd>T</kbd> to open the larger OpenClassCraft class-chat card.
 - New-player hotbars start empty; the inventory provides the curated Build, Classroom, Programming, Chemistry, Ecology, and Electronics catalogs.
+- Use the separate desktop OpenClassCraft Creator for custom blocks, models, animations, and behavior; the game has no authoring lab.
 
 The current creative catalog and editing tools are not strictly role-gated. Use trusted classroom servers and backed-up worlds.
 
@@ -47,7 +47,7 @@ The current creative catalog and editing tools are not strictly role-gated. Use 
 | `luanti_coding` | Programming blocks, wires, parsing, and execution. |
 | `luanti_robot` | Robot entity, spawner, movement, sensing, placing, and digging. |
 | `openclasscraft_classroom` | Guides, boards, lesson progress, checkpoints, chemistry, and Teacher Console bridge. |
-| `openclasscraft_creator` | Creator Lab materials/actions and World Edit Wand. |
+| `openclasscraft_creator` | Shared visual assets, hidden legacy-block compatibility, and World Edit Wand. |
 | `openclasscraft_world` | Sky, music, vegetation, and generated world details. |
 | `openclasscraft_mapgen` | Curated biomes, safe campus terrain, connected field trails, habitat markers, and map-generation safety rules. |
 | `openclasscraft_interface` | Class chat, clickable Actions, class joining, submissions, and host role controls. |
@@ -86,7 +86,7 @@ Stock Luanti will load the Lua game, but OpenClassCraft's customized main menu, 
 
 - Lua source is under `mods/`; textures, models, and sounds live in each mod's media directories.
 - Newly generated chunks use the curated OpenClassCraft habitat, campus, trail, vegetation, and wildlife systems without survival ores or dungeons. Existing generated terrain is not rewritten; use a new world when validating map-generation changes.
-- Creator desktop exports use textures supplied by `openclasscraft_creator`, so they are not fully self-contained outside this game.
+- Desktop Creator exports use textures supplied by `openclasscraft_creator`, so they are not fully self-contained outside this game.
 - The nested `.github/` directory came from the game lineage; repository CI workflows must live in the root `.github/workflows/` directory to run on GitHub.
 - Custom game logic does not yet have complete automated end-to-end tests. Validate a fresh world, robot chain, lesson sequence, chemistry reaction, and multiplayer permission model after changes.
 

@@ -44,7 +44,7 @@ OpenClassCraft is not affiliated with, endorsed by, or approved by KITE, Little 
 - Guides, boards, lesson planning, checkpoint flags, and a chemistry activity
 - Singleplayer and teacher-hosted local multiplayer with LAN discovery plus manual-address fallback
 - Accessibility switches for font, scale, form contrast, selection colour, simplified HUD, and screen-reader-labelled helper text
-- An in-game Creator Lab and separate Blockly/Electron Creator prototype
+- A separate Blockly/Electron Creator for custom blocks, models, animations, and behavior
 - A separate local Teacher Console for lessons, groups, assignments, manual progress, CSV reports, JSON backups, and an optional loopback lesson bridge
 
 Do not describe every item as production-ready. Permissions, experimental robot branches, destructive-tool recovery, Creator generation, storage encryption, packaging, and classroom-scale validation remain active work.

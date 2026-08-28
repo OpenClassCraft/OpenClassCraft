@@ -1,6 +1,7 @@
-local storage = minetest.get_mod_storage()
-
-local styles = {
+-- The desktop OpenClassCraft Creator is the only supported authoring surface.
+-- These definitions remain registered, but hidden, so existing lesson worlds
+-- containing old Creator Lab blocks continue to load without unknown nodes.
+local legacy_styles = {
 	grass = {
 		label = "Garden",
 		node = "openclasscraft_creator:block_grass",
@@ -23,13 +24,7 @@ local styles = {
 	},
 }
 
-local style_order = {"grass", "stone", "wood", "glass"}
-local sessions = {}
 local world_edit_selections = {}
-
-local function trim(value)
-	return (value or ""):gsub("^%s*(.-)%s*$", "%1")
-end
 
 local function get_local_role(player)
 	if not player or not player:is_player() then
@@ -45,16 +40,12 @@ local function get_local_role(player)
 	return "student"
 end
 
-local function has_creator_tool_access(player)
-	return get_local_role(player) == "educator"
-end
-
 local function permission_denied(player, action)
 	local name = player:get_player_name()
 	if openclasscraft_classroom and openclasscraft_classroom.world_policy_message then
 		openclasscraft_classroom.world_policy_message(player, action)
 	else
-		minetest.chat_send_player(name, "[Creator Lab] This action is not available in the current class lesson policy.")
+		minetest.chat_send_player(name, "[World Edit] This action is not available in the current class lesson policy.")
 	end
 end
 
@@ -79,113 +70,6 @@ local function can_use_world_edit_wand(player)
 			"world_edit_wand", player, "openclasscraft_creator:world_edit_wand")
 	end
 	return false
-end
-
-local function get_project(player_name)
-	local raw = storage:get_string("project:" .. player_name)
-	local project = raw ~= "" and minetest.deserialize(raw) or nil
-	if type(project) ~= "table" then
-		project = {name = "My Learning Block", style = "grass", message = "Hello, explorer!", script = {"say"}}
-	end
-	project.style = styles[project.style] and project.style or "grass"
-	project.script = type(project.script) == "table" and project.script or {"say"}
-	return project
-end
-
-local function save_project(player_name, project)
-	storage:set_string("project:" .. player_name, minetest.serialize(project))
-end
-
-local function project_for(player)
-	local player_name = player:get_player_name()
-	sessions[player_name] = sessions[player_name] or get_project(player_name)
-	return sessions[player_name]
-end
-
-local function script_label(action)
-	local labels = {
-		say = "Say message",
-		wait = "Wait 1 second",
-		give_apple = "Give an apple",
-	}
-	return labels[action] or action
-end
-
-local function show_creator(player)
-	if not has_creator_tool_access(player) then
-		permission_denied(player, "creator_tool")
-		return
-	end
-	local project = project_for(player)
-	local script_lines = {}
-	for index, action in ipairs(project.script) do
-		script_lines[index] = index .. ". " .. script_label(action)
-	end
-	local style_index = 1
-	for index, style in ipairs(style_order) do
-		if style == project.style then
-			style_index = index
-			break
-		end
-	end
-	local preview = styles[project.style].node
-	local fs = table.concat({
-		"formspec_version[4]size[14,9]",
-		"bgcolor[#17212b;true]",
-		"label[0.6,0.45;OpenClassCraft Creator Lab]",
-		"label[0.6,0.85;Build a safe mini-mod with visual blocks. No Lua is used.]",
-		"box[0.45,1.25;4.35,7.2;#243646]",
-		"label[0.75,1.55;1. Design your custom block]",
-		"field[0.75,2.1;3.65,0.7;block_name;Block name;", minetest.formspec_escape(project.name), "]",
-		"dropdown[0.75,2.95;3.65,0.7;style;Grass,Stone,Wood,Glass;", style_index, "]",
-		"textarea[0.75,3.65;3.65,2.0;message;Message to say;", minetest.formspec_escape(project.message), "]",
-		"button[0.75,6.05;3.65,0.75;save;Save project]",
-		"button[0.75,7.0;3.65,0.75;create;Get custom block]",
-		"box[5.05,1.25;5.35,7.2;#243646]",
-		"label[5.35,1.55;2. Visual program]",
-		"label[5.35,1.9;When a player right-clicks this block:]",
-		"textlist[5.35,2.3;4.75,3.45;script;", minetest.formspec_escape(table.concat(script_lines, ",")), ";1;false]",
-		"button[5.35,6.05;1.45,0.7;add_say;+ Say]",
-		"button[6.95,6.05;1.45,0.7;add_wait;+ Wait]",
-		"button[8.55,6.05;1.2,0.7;add_gift;+ Gift]",
-		"button[5.35,6.95;1.45,0.7;move_up;Up]",
-		"button[6.95,6.95;1.45,0.7;move_down;Down]",
-		"button[8.55,6.95;1.2,0.7;remove;Remove]",
-		"label[5.35,7.95;Click actions to build the order. Drag-and-drop workspace comes next.]",
-		"box[10.65,1.25;2.9,7.2;#243646]",
-		"label[10.95,1.55;Preview]",
-		"item_image[11.6,2.0;1.4,1.4;", preview, "]",
-		"label[10.95,3.75;Right-click your placed\nblock to run its program.]",
-		"button_exit[10.95,7.35;2.1,0.75;close;Done]",
-	})
-	minetest.show_formspec(player:get_player_name(), "openclasscraft_creator:lab", fs)
-end
-
-local function selected_index(fields, project)
-	if not fields.script then
-		return #project.script
-	end
-	local event = minetest.explode_textlist_event(fields.script)
-	return event.index > 0 and event.index or #project.script
-end
-
-local function give_project_block(player, project)
-	local style = styles[project.style]
-	local stack = ItemStack(style.node)
-	local meta = stack:get_meta()
-	meta:set_string("creator_name", project.name)
-	meta:set_string("creator_message", project.message)
-	meta:set_string("creator_script", minetest.serialize(project.script))
-	meta:set_string("description", project.name .. "\nCreator Lab block")
-	local inventory = player:get_inventory()
-	if inventory:room_for_item("main", stack) then
-		inventory:add_item("main", stack)
-		minetest.chat_send_player(player:get_player_name(), "[Creator Lab] Your custom block is in your inventory.")
-	else
-		minetest.add_item(vector.offset(player:get_pos(), 0, 1, 0), stack)
-		minetest.chat_send_player(player:get_player_name(),
-			"[Creator Lab] Your inventory is full, so the block was dropped nearby.")
-	end
 end
 
 local function run_block_program(pos, player)
@@ -390,7 +274,6 @@ minetest.register_on_mods_loaded(function()
 		["openclasscraft_classroom:ammonia"] = "openclasscraft_icon_ammonia_alpha.png",
 		["openclasscraft_classroom:methane"] = "openclasscraft_icon_methane_alpha.png",
 		["openclasscraft_classroom:lesson_planner"] = "openclasscraft_icon_lesson_planner_alpha.png",
-		["openclasscraft_creator:lab"] = "openclasscraft_icon_creator_lab_alpha.png",
 	}
 	for name, image in pairs(item_icons) do
 		if minetest.registered_items[name] then
@@ -415,12 +298,17 @@ minetest.register_on_mods_loaded(function()
 	end
 end)
 
-for style_name, style in pairs(styles) do
+for _, style in pairs(legacy_styles) do
 	minetest.register_node(style.node, {
-		description = "Creator Block (" .. style.label .. ")",
+		description = "Legacy Learning Block (" .. style.label .. ")",
 		tiles = {style.texture},
-		groups = {crumbly = 2, oddly_breakable_by_hand = 2},
+		groups = {
+			crumbly = 2,
+			oddly_breakable_by_hand = 2,
+			not_in_creative_inventory = 1,
+		},
 		is_ground_content = false,
+		drop = "",
 		on_place = place_project_block,
 		on_rightclick = function(pos, node, clicker)
 			run_block_program(pos, clicker)
@@ -428,15 +316,9 @@ for style_name, style in pairs(styles) do
 	})
 end
 
-minetest.register_craftitem("openclasscraft_creator:lab", {
-	description = "Creator Lab\nBuild blocks with visual programming",
-	inventory_image = "default_book.png^[colorize:#28b6f6:100",
-	groups = {classroom = 1},
-	on_use = function(itemstack, user)
-		show_creator(user)
-		return itemstack
-	end,
-})
+-- Old Creator Lab items turn into an ordinary book. No authoring form or
+-- creator item is registered in the game anymore.
+minetest.register_alias("openclasscraft_creator:lab", "default:book")
 
 local function world_edit_marker(player, message)
 	minetest.chat_send_player(player:get_player_name(), "[World Edit] " .. message)
@@ -557,47 +439,3 @@ minetest.register_tool("openclasscraft_creator:world_edit_wand", {
 		return itemstack
 	end,
 })
-
-minetest.register_on_player_receive_fields(function(player, formname, fields)
-	if formname ~= "openclasscraft_creator:lab" or fields.quit then
-		return
-	end
-	local project = project_for(player)
-	if fields.block_name then
-		project.name = trim(fields.block_name):sub(1, 40)
-	end
-	if fields.message then
-		project.message = trim(fields.message):sub(1, 160)
-	end
-	if fields.style then
-		project.style = string.lower(fields.style)
-	end
-	local index = selected_index(fields, project)
-	if fields.add_say then
-		project.script[#project.script + 1] = "say"
-	elseif fields.add_wait then
-		project.script[#project.script + 1] = "wait"
-	elseif fields.add_gift then
-		project.script[#project.script + 1] = "give_apple"
-	elseif fields.remove and #project.script > 0 then
-		table.remove(project.script, index)
-	elseif fields.move_up and index > 1 then
-		project.script[index], project.script[index - 1] = project.script[index - 1], project.script[index]
-	elseif fields.move_down and index < #project.script then
-		project.script[index], project.script[index + 1] = project.script[index + 1], project.script[index]
-	elseif fields.save then
-		if project.name == "" then
-			project.name = "My Learning Block"
-		end
-		save_project(player:get_player_name(), project)
-		minetest.chat_send_player(player:get_player_name(), "[Creator Lab] Project saved for this world.")
-	elseif fields.create then
-		if project.name == "" then
-			project.name = "My Learning Block"
-		end
-		save_project(player:get_player_name(), project)
-		give_project_block(player, project)
-	end
-	show_creator(player)
-	return true
-end)

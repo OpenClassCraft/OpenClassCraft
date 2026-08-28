@@ -72,8 +72,7 @@ The planned school price covers onboarding, the operational Console, teacher tra
 | Classroom presentation | Custom menus, loading and pause screens, student/educator skins, sky and cloud settings, ambient music, classroom textures, and learning-themed generated plants and trees. |
 | Local multiplayer | A teacher can host from the simplified start screen. Students discover the class on the local network or use the host's private LAN address as a fallback, then join with a name and optional password. |
 | Accessibility switches | Dyslexia-friendly font, larger UI, stronger form contrast, a more distinct selected-item color, simplified HUD, and screen-reader-friendly helper chat. See the exact behavior [below](#accessibility). |
-| Creator Lab | An in-game, form-based editor creates reusable behavior blocks and includes a flat-area World Edit Wand. |
-| Desktop Creator | A separate Electron and Blockly prototype exports an OpenClassCraft mod folder containing Lua, `mod.conf`, and project JSON. |
+| Desktop Creator | The separate Electron and Blockly application exports an OpenClassCraft mod folder containing Lua, `mod.conf`, and project JSON. |
 | School Console beta | A separately licensed local Electron app manages lessons, students, groups, assignments, manual progress, CSV reports, JSON backups, and an optional loopback lesson bridge. It is not part of a public Community release. |
 
 OpenClassCraft is a focused game distribution, not a replacement name for the general-purpose Luanti engine. The engine lineage and upstream notices remain important parts of the project.
@@ -242,17 +241,11 @@ These options are aids, not certifications against a particular accessibility st
 
 ## Creator tools
 
-OpenClassCraft currently has two different creator experiences.
-
-### In-game Creator Lab
-
-The Creator Lab is a forms-based editor stored inside each world, per player. It creates a shared custom block using one of four styles—Garden, Stone, Wood, or Glass—and a reorderable action list. Implemented actions are **Say**, **Wait 1 second**, and **Give apple**. Right-clicking the created block runs its stored actions.
-
-This is not yet drag-and-drop and it does not write a standalone Lua mod. The associated **World Edit Wand** selects two flat corners and removes one layer of nodes plus nearby non-player entities, with a 4,096-node limit. The operation has no undo and should be restricted to backed-up teaching worlds.
+Custom blocks, models, animations, and behavior are authored only in the separate desktop application. The game no longer exposes the former Creator Lab or its custom-block editor.
 
 ### Desktop OpenClassCraft Creator
 
-[`creator-app/`](creator-app/) is an Electron/Blockly prototype. Its palette contains placement/proximity events, say/give/change/wait actions, logic, sensors, loops, and variables. Export creates:
+[`creator-app/`](creator-app/) is the separate Electron/Blockly authoring application. Its palette contains placement/proximity events, say/give/change/wait actions, logic, sensors, loops, and variables. Export creates:
 
 ```text
 openclasscraft_<project-id>/
@@ -285,9 +278,13 @@ npm install
 npm run package:win
 ```
 
+### In-game teacher tools
+
+The **World Edit Wand** remains a teacher world-layout tool. It selects two flat corners and removes one layer of nodes plus nearby non-player entities, with a 4,096-node limit. The operation has no undo and should be restricted to backed-up teaching worlds. Legacy Creator Lab nodes stay registered but hidden only so existing lesson worlds load without unknown blocks; the game cannot create new ones.
+
 See [`creator-app/README.md`](creator-app/README.md) for the current output names and usage notes. Linux AppImages are usable on supported Ubuntu and Fedora desktops; packaging remains unsigned.
 
-The desktop Creator is a prototype: some palette labels and generated behavior do not yet match completely, and condition/wait sequencing needs validation. Inspect and test generated Lua before sharing a mod with students.
+Automated smoke coverage verifies project editing, texture painting and undo/redo, keyframe animation, glTF loading, PNG export, generated mob behavior, and loading a generated mod in OpenClassCraft. Review lesson-specific generated behavior before sharing it with students.
 
 ## Teacher Console and lesson bridge
 
@@ -426,7 +423,7 @@ On Windows, use `bin\Release\openclasscraft.exe --run-unittests`. Then manually 
 | [`util/generate_ecology_animals.py`](util/generate_ecology_animals.py) | Reproducibly generates all lightweight rigged animal meshes and their shared animation timeline. |
 | [`games/luanti_edu/mods/openclasscraft_electronics/`](games/luanti_edu/mods/openclasscraft_electronics/) | Bounded classroom power networks, batteries, switches, wires, lamps, motors, and meters. |
 | [`games/luanti_edu/mods/openclasscraft_classroom/`](games/luanti_edu/mods/openclasscraft_classroom/) | Guides, boards, lesson plans, checkpoints, chemistry, and Teacher Console bridge. |
-| [`games/luanti_edu/mods/openclasscraft_creator/`](games/luanti_edu/mods/openclasscraft_creator/) | In-game Creator Lab, custom material styles, and World Edit Wand. |
+| [`games/luanti_edu/mods/openclasscraft_creator/`](games/luanti_edu/mods/openclasscraft_creator/) | Shared visual assets, hidden legacy-block compatibility, and the World Edit Wand. |
 | [`games/luanti_edu/mods/openclasscraft_world/`](games/luanti_edu/mods/openclasscraft_world/) | Sky, music, vegetation, and classroom world styling. |
 | [`creator-app/`](creator-app/) | Desktop Blockly Creator. |
 | [`teacher-console/`](teacher-console/) | Local Teacher Console and loopback bridge service. |
