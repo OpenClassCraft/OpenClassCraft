@@ -7,6 +7,7 @@ local GRAVITY = -9.81
 local ANIMAL_LIMIT = 6
 local OBSERVATION_RADIUS = 10
 local TWO_PI = math.pi * 2
+local STEERING_OFFSETS = {math.pi / 4, -math.pi / 4, math.pi / 2, -math.pi / 2}
 local ANIMATIONS = {
 	idle = {{x = 0.0, y = 1.9}, 1.0},
 	walk = {{x = 2.0, y = 3.0}, 1.0},
@@ -40,10 +41,13 @@ local animal_defs = {
 		hop_strength = 3.35,
 		hop_interval = 0.62,
 		collisionbox = {-0.29, 0, -0.47, 0.29, 1.16, 0.47},
-		player_notice_radius = 5.5,
-		avoid_speed_factor = 1.0,
+		player_notice_radius = 9.0,
+		player_flee_radius = 5.5,
+		avoid_speed_factor = 1.38,
+		predator_notice_radius = 8.0,
+		predator_escape_speed_factor = 1.65,
 		tameable = true,
-		observation = "Rabbits are herbivores. They depend on ground cover for food and shelter.",
+		observation = "Rabbits often freeze when they first notice danger, then bolt in an evasive path when it comes close.",
 	},
 	deer = {
 		description = "Forest Deer",
@@ -56,10 +60,11 @@ local animal_defs = {
 		turn_speed = 3.4,
 		jump_strength = 4.0,
 		collisionbox = {-0.50, 0, -0.90, 0.50, 2.75, 0.90},
-		player_notice_radius = 8.0,
-		avoid_speed_factor = 1.0,
+		player_notice_radius = 14.0,
+		player_flee_radius = 8.0,
+		avoid_speed_factor = 1.20,
 		tameable = false,
-		observation = "Deer are primary consumers. Their browsing can change which plants grow in a forest.",
+		observation = "Deer pause to watch distant movement, but run when a person comes too close. Their browsing shapes forest plants.",
 	},
 	fox = {
 		description = "Companion Fox",
@@ -72,10 +77,13 @@ local animal_defs = {
 		turn_speed = 5.2,
 		jump_strength = 3.8,
 		collisionbox = {-0.40, 0, -0.72, 0.40, 1.45, 0.72},
-		player_notice_radius = 4.0,
-		avoid_speed_factor = 0.72,
+		player_notice_radius = 9.0,
+		player_flee_radius = 4.5,
+		avoid_speed_factor = 0.85,
+		rabbit_hunt_radius = 12.0,
+		rabbit_chase_radius = 8.0,
 		tameable = true,
-		observation = "Foxes are omnivores and predators that connect several levels of a food web.",
+		observation = "Wild foxes cautiously watch people, avoid close contact, and stalk rabbits before breaking into a chase.",
 	},
 }
 
@@ -169,7 +177,11 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 		return false
 	end
 	local dir_x, dir_z = dx / distance, dz / distance
-	local clear, needs_jump = navigation_ahead(self.object:get_pos(), dir_x, dir_z)
+	local is_grounded = grounded(self, moveresult)
+	local clear, needs_jump = true, false
+	if is_grounded then
+		clear, needs_jump = navigation_ahead(self.object:get_pos(), dir_x, dir_z)
+	end
 	if not clear then
 		stop_horizontal(self, def, dtime)
 		set_animation(self, "idle")
@@ -180,7 +192,6 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	local change = def.acceleration * dtime
 	velocity.x = approach(velocity.x, dir_x * speed, change)
 	velocity.z = approach(velocity.z, dir_z * speed, change)
-	local is_grounded = grounded(self, moveresult)
 	if needs_jump and is_grounded and def.jump_strength then
 		velocity.y = def.jump_strength
 	elseif def.hop_strength and is_grounded then
@@ -195,6 +206,26 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	turn_toward(self, def, dir_x, dir_z, dtime)
 	set_animation(self, animation)
 	return true
+end
+
+local function move_with_steering(self, def, dx, dz, speed, animation, dtime, moveresult)
+	if move_toward(self, def, dx, dz, speed, animation, dtime, moveresult) then
+		return true
+	end
+	local length = math.sqrt(dx * dx + dz * dz)
+	if length < 0.01 then
+		return false
+	end
+	local angle = math.atan2(dz, dx)
+	local preferred_side = math.sin(self.behavior_phase or 0) >= 0 and 1 or -1
+	for _, offset in ipairs(STEERING_OFFSETS) do
+		local steered_angle = angle + offset * preferred_side
+		if move_toward(self, def, math.cos(steered_angle), math.sin(steered_angle),
+				speed, animation, dtime, moveresult) then
+			return true
+		end
+	end
+	return false
 end
 
 local function closest_player(pos, radius, excluded_name)
@@ -215,6 +246,66 @@ local function closest_player(pos, radius, excluded_name)
 	return closest, closest_pos, closest_distance
 end
 
+local function closest_animal(pos, kind, radius, excluded_object)
+	local closest, closest_pos, closest_distance
+	for _, object in ipairs(minetest.get_objects_inside_radius(pos, radius)) do
+		if object ~= excluded_object then
+			local entity = object:get_luaentity()
+			local object_pos = object:get_pos()
+			if entity and entity.kind == kind and object_pos
+					and math.abs(object_pos.y - pos.y) <= 2.5 then
+				local dx = object_pos.x - pos.x
+				local dz = object_pos.z - pos.z
+				local distance = math.sqrt(dx * dx + dz * dz)
+				if not closest_distance or distance < closest_distance then
+					closest, closest_pos, closest_distance = object, object_pos, distance
+				end
+			end
+		end
+	end
+	return closest, closest_pos, closest_distance
+end
+
+local function watch_target(self, def, dx, dz, dtime, state)
+	stop_horizontal(self, def, dtime)
+	turn_toward(self, def, dx, dz, dtime)
+	set_animation(self, "idle")
+	self.behavior_state = state
+	self.decision_timer = 0.8
+end
+
+local function flee_from(self, def, pos, target_pos, speed, weave, dtime, moveresult, state)
+	local dx = pos.x - target_pos.x
+	local dz = pos.z - target_pos.z
+	local distance = math.sqrt(dx * dx + dz * dz)
+	if distance < 0.05 then
+		local yaw = self.object:get_yaw() or 0
+		dx, dz = math.sin(yaw), math.cos(yaw)
+	elseif weave and weave ~= 0 then
+		local away_x, away_z = dx / distance, dz / distance
+		dx = away_x - away_z * weave
+		dz = away_z + away_x * weave
+	end
+	move_with_steering(self, def, dx, dz, speed, "run", dtime, moveresult)
+	self.behavior_state = state
+	self.decision_timer = 1.2
+end
+
+local function respond_to_predator(self, def, pos, dtime, moveresult)
+	if self.kind ~= "rabbit" then
+		return false
+	end
+	local fox, fox_pos = closest_animal(pos, "fox", def.predator_notice_radius, self.object)
+	if not fox then
+		return false
+	end
+	local phase = (self.behavior_clock or 0) * 4.8 + (self.behavior_phase or 0)
+	local weave = math.sin(phase) * 0.42
+	flee_from(self, def, pos, fox_pos, def.run_speed * def.predator_escape_speed_factor,
+		weave, dtime, moveresult, "escaping_fox")
+	return true
+end
+
 local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 	local owned = self.owner and self.owner ~= ""
 	local radius = owned and 1.7 or def.player_notice_radius
@@ -229,23 +320,43 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 			and player:get_wielded_item():get_name() == MODNAME .. ":pet_treat" then
 		if distance > 2.0 then
 			move_toward(self, def, dx, dz, def.walk_speed, "walk", dtime, moveresult)
+			self.behavior_state = "approaching_treat"
 		else
-			stop_horizontal(self, def, dtime)
-			turn_toward(self, def, dx, dz, dtime)
-			set_animation(self, "idle")
+			watch_target(self, def, dx, dz, dtime, "waiting_for_treat")
 		end
 		return true
 	end
 
-	if distance < 0.05 then
-		local yaw = self.object:get_yaw() or 0
-		dx, dz = math.sin(yaw), math.cos(yaw)
-	else
-		dx, dz = -dx, -dz
+	if not owned and distance > def.player_flee_radius then
+		watch_target(self, def, dx, dz, dtime, "watching_player")
+		return true
 	end
 	local speed = owned and def.walk_speed or def.run_speed * def.avoid_speed_factor
-	move_toward(self, def, dx, dz, speed, owned and "walk" or "run", dtime, moveresult)
-	self.decision_timer = 1.2
+	flee_from(self, def, pos, player_pos, speed, 0, dtime, moveresult,
+		owned and "avoiding_stranger" or "escaping_player")
+	return true
+end
+
+local function hunt_nearby_rabbit(self, def, pos, dtime, moveresult)
+	if self.kind ~= "fox" or (self.owner and self.owner ~= "") then
+		return false
+	end
+	local rabbit, rabbit_pos, distance = closest_animal(pos, "rabbit", def.rabbit_hunt_radius, self.object)
+	if not rabbit then
+		return false
+	end
+	local dx = rabbit_pos.x - pos.x
+	local dz = rabbit_pos.z - pos.z
+	if distance <= 1.15 then
+		watch_target(self, def, dx, dz, dtime, "watching_rabbit")
+	elseif distance > def.rabbit_chase_radius then
+		move_with_steering(self, def, dx, dz, def.walk_speed * 0.72, "walk", dtime, moveresult)
+		self.behavior_state = "stalking_rabbit"
+	else
+		move_with_steering(self, def, dx, dz, def.run_speed, "run", dtime, moveresult)
+		self.behavior_state = "chasing_rabbit"
+	end
+	self.decision_timer = 0.8
 	return true
 end
 
@@ -305,6 +416,9 @@ local function register_animal(kind)
 		idle_animation = "idle",
 		animation_state = "",
 		hop_timer = 0,
+		behavior_clock = 0,
+		behavior_phase = 0,
+		behavior_state = "idle",
 
 		on_activate = function(self, staticdata)
 			self.object:set_armor_groups({immortal = 1})
@@ -315,6 +429,9 @@ local function register_animal(kind)
 				self.staying = data.staying == true
 			end
 			self.decision_timer = 0.4 + math.random() * 1.6
+			self.behavior_clock = 0
+			self.behavior_phase = math.random() * TWO_PI
+			self.behavior_state = self.staying and "staying" or "idle"
 			update_nametag(self)
 			set_animation(self, self.staying and "sit" or "idle")
 		end,
@@ -328,9 +445,14 @@ local function register_animal(kind)
 			if not pos then
 				return
 			end
+			self.behavior_clock = (self.behavior_clock or 0) + dtime
+			if respond_to_predator(self, def, pos, dtime, moveresult) then
+				return
+			end
 			if self.staying then
 				stop_horizontal(self, def, dtime)
 				set_animation(self, "sit")
+				self.behavior_state = "staying"
 				return
 			end
 			if respond_to_nearby_player(self, def, pos, dtime, moveresult) then
@@ -346,19 +468,26 @@ local function register_animal(kind)
 					local distance = math.sqrt(dx * dx + dz * dz)
 					if distance > 28 and teleport_near_owner(self, owner_pos) then
 						set_animation(self, "idle")
+						self.behavior_state = "following_owner"
 						return
 					elseif distance > 2.8 then
 						local running = distance > 7
 						move_toward(self, def, dx, dz,
 							running and def.run_speed or def.walk_speed,
 							running and "run" or "walk", dtime, moveresult)
+						self.behavior_state = "following_owner"
 						return
 					elseif distance <= 2.8 then
 						stop_horizontal(self, def, dtime)
 						set_animation(self, "idle")
+						self.behavior_state = "near_owner"
 						return
 					end
 				end
+			end
+
+			if hunt_nearby_rabbit(self, def, pos, dtime, moveresult) then
+				return
 			end
 
 			self.decision_timer = self.decision_timer - dtime
@@ -381,9 +510,11 @@ local function register_animal(kind)
 					self.move_dir_x, self.move_dir_z = 0, 0
 					self.decision_timer = 0
 				end
+				self.behavior_state = "wandering"
 			else
 				stop_horizontal(self, def, dtime)
 				set_animation(self, self.idle_animation)
+				self.behavior_state = self.idle_animation == "graze" and "grazing" or "resting"
 			end
 		end,
 
