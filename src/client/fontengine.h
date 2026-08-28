@@ -35,6 +35,10 @@ enum FontMode : u8 {
 	/// in the originally requested font (setting "fallback_font_path")
 	_FM_Fallback,
 
+	/// Use only in `FontEngine`. Final broad-Unicode fallback used after the
+	/// preferred script-specific fallback (setting "secondary_fallback_font_path")
+	_FM_SecondaryFallback,
+
 	/// Sum of all font modes
 	FM_MaxMode,
 

@@ -50,6 +50,34 @@ local shore_micro_nodes = {
 
 local ambient_music_handles = {}
 local ambient_music_name = "openclasscraft_ambient_learning_loop"
+local atmosphere_handles = {}
+local atmosphere_state = {}
+local atmosphere_clock = 0
+
+local habitat_ambience = {
+	openclasscraft_learning_meadow = {name = "openclasscraft_forest_ambience", gain = 0.08},
+	openclasscraft_temperate_forest = {name = "openclasscraft_forest_ambience", gain = 0.22},
+	openclasscraft_freshwater_wetland = {name = "openclasscraft_river_ambience", gain = 0.26},
+	openclasscraft_monsoon_forest = {name = "openclasscraft_forest_ambience", gain = 0.28},
+	openclasscraft_grassland_savanna = {name = "openclasscraft_wind_ambience", gain = 0.10},
+	openclasscraft_dry_scrub = {name = "openclasscraft_wind_ambience", gain = 0.18},
+	openclasscraft_montane_conifer = {name = "openclasscraft_forest_ambience", gain = 0.18},
+	openclasscraft_alpine_tundra = {name = "openclasscraft_wind_ambience", gain = 0.20},
+	openclasscraft_mangrove_coast = {name = "openclasscraft_coast_ambience", gain = 0.25},
+	openclasscraft_shallow_reef = {name = "openclasscraft_coast_ambience", gain = 0.28},
+}
+
+local weather_chances = {
+	openclasscraft_temperate_forest = {rain = 20},
+	openclasscraft_freshwater_wetland = {rain = 34},
+	openclasscraft_monsoon_forest = {rain = 52},
+	openclasscraft_grassland_savanna = {rain = 12, dust = 11},
+	openclasscraft_dry_scrub = {rain = 4, dust = 30},
+	openclasscraft_montane_conifer = {rain = 15, snow = 15},
+	openclasscraft_alpine_tundra = {snow = 38},
+	openclasscraft_mangrove_coast = {rain = 30},
+	openclasscraft_shallow_reef = {rain = 24},
+}
 
 local function apply_real_world_sky(player)
 	if player.set_sky then
@@ -95,10 +123,229 @@ local function start_ambient_music(player)
 	stop_ambient_music(player_name)
 	ambient_music_handles[player_name] = minetest.sound_play(ambient_music_name, {
 		to_player = player_name,
-		gain = 0.28,
+		gain = 0.20,
 		loop = true,
 		fade = 1.5,
 	}, true)
+end
+
+local function stop_atmosphere(player_name)
+	for _, handle in pairs(atmosphere_handles[player_name] or {}) do
+		if handle then
+			minetest.sound_stop(handle)
+		end
+	end
+	atmosphere_handles[player_name] = nil
+	atmosphere_state[player_name] = nil
+end
+
+local function fade_out_sound(handle)
+	if not handle then
+		return
+	end
+	minetest.sound_fade(handle, -0.22, 0)
+	minetest.after(1.1, function()
+		minetest.sound_stop(handle)
+	end)
+end
+
+local function set_atmosphere_layer(player_name, layer, sound)
+	local handles = atmosphere_handles[player_name]
+	if not handles then
+		handles = {}
+		atmosphere_handles[player_name] = handles
+	end
+	local state = atmosphere_state[player_name]
+	if not state then
+		state = {}
+		atmosphere_state[player_name] = state
+	end
+	local key = layer .. "_sound"
+	if state[key] == (sound and sound.name or false) then
+		return
+	end
+	if handles[layer] then
+		fade_out_sound(handles[layer])
+		handles[layer] = nil
+	end
+	state[key] = sound and sound.name or false
+	if sound then
+		handles[layer] = minetest.sound_play(sound.name, {
+			to_player = player_name,
+			gain = sound.gain,
+			loop = true,
+			fade = 1.25,
+		}, true)
+	end
+end
+
+local function habitat_at(pos)
+	if openclasscraft_mapgen and openclasscraft_mapgen.get_habitat_name then
+		return openclasscraft_mapgen.get_habitat_name(pos)
+	end
+	return "openclasscraft_learning_meadow"
+end
+
+local habitat_index = {
+	openclasscraft_learning_meadow = 1,
+	openclasscraft_temperate_forest = 2,
+	openclasscraft_freshwater_wetland = 3,
+	openclasscraft_monsoon_forest = 4,
+	openclasscraft_grassland_savanna = 5,
+	openclasscraft_dry_scrub = 6,
+	openclasscraft_montane_conifer = 7,
+	openclasscraft_alpine_tundra = 8,
+	openclasscraft_mangrove_coast = 9,
+	openclasscraft_shallow_reef = 10,
+}
+
+local function weather_for(habitat)
+	local chances = weather_chances[habitat]
+	if not chances then
+		return "clear"
+	end
+	local epoch = math.floor((minetest.get_gametime and minetest.get_gametime() or 0) / 95)
+	local index = habitat_index[habitat] or 1
+	local roll = (epoch * 37 + index * 23 + math.floor(epoch / 3) * 11) % 100
+	if roll < (chances.rain or 0) then
+		return "rain"
+	end
+	roll = roll - (chances.rain or 0)
+	if roll < (chances.snow or 0) then
+		return "snow"
+	end
+	roll = roll - (chances.snow or 0)
+	if roll < (chances.dust or 0) then
+		return "dust"
+	end
+	return "clear"
+end
+
+local function has_open_sky(pos)
+	for y = 2, 11 do
+		local node = minetest.get_node_or_nil({x = pos.x, y = pos.y + y, z = pos.z})
+		local def = node and minetest.registered_nodes[node.name]
+		if not node or (def and def.walkable) then
+			return false
+		end
+	end
+	return true
+end
+
+local function emit_weather(player, weather)
+	if weather == "clear" then
+		return
+	end
+	local pos = player:get_pos()
+	if not pos or not has_open_sky(pos) then
+		return
+	end
+	local params = {
+		amount = 70,
+		time = 2.7,
+		minpos = {x = pos.x - 8, y = pos.y + 6, z = pos.z - 8},
+		maxpos = {x = pos.x + 8, y = pos.y + 11, z = pos.z + 8},
+		minvel = {x = -0.2, y = -12, z = -0.2},
+		maxvel = {x = 0.2, y = -9, z = 0.2},
+		minacc = {x = 0, y = -2, z = 0},
+		maxacc = {x = 0, y = -1, z = 0},
+		minexptime = 0.65,
+		maxexptime = 1.1,
+		minsize = 0.7,
+		maxsize = 1.25,
+		collisiondetection = true,
+		collision_removal = true,
+		vertical = true,
+		texture = "default_water.png^[colorize:#C8EAFF:105",
+		playername = player:get_player_name(),
+	}
+	if weather == "snow" then
+		params.amount = 42
+		params.minvel = {x = -0.7, y = -1.6, z = -0.4}
+		params.maxvel = {x = 0.7, y = -0.8, z = 0.4}
+		params.minacc = {x = -0.12, y = -0.18, z = 0}
+		params.maxacc = {x = 0.12, y = -0.08, z = 0}
+		params.minexptime = 4.0
+		params.maxexptime = 6.0
+		params.minsize = 1.0
+		params.maxsize = 2.1
+		params.texture = "default_snow.png"
+	elseif weather == "dust" then
+		params.amount = 32
+		params.minpos.y = pos.y + 0.2
+		params.maxpos.y = pos.y + 2.8
+		params.minvel = {x = 1.0, y = 0.05, z = -0.35}
+		params.maxvel = {x = 2.8, y = 0.45, z = 0.35}
+		params.minacc = {x = 0.1, y = -0.08, z = 0}
+		params.maxacc = {x = 0.3, y = 0.04, z = 0}
+		params.minexptime = 1.8
+		params.maxexptime = 3.2
+		params.minsize = 0.8
+		params.maxsize = 1.8
+		params.texture = "default_sand.png^[colorize:#D8AD69:90"
+	end
+	minetest.add_particlespawner(params)
+end
+
+local function apply_weather_clouds(player, weather)
+	if not player.set_clouds then
+		return
+	end
+	local clouds = {
+		density = 0.38,
+		color = "#FFFFFFE8",
+		ambient = "#DCEBFFFF",
+		height = 145,
+		thickness = 18,
+		speed = {x = 0.35, z = -0.08},
+	}
+	if weather == "rain" then
+		clouds.density = 0.78
+		clouds.color = "#7C8798EF"
+		clouds.ambient = "#AAB6C5FF"
+		clouds.thickness = 28
+	elseif weather == "snow" then
+		clouds.density = 0.70
+		clouds.color = "#C4CCD7F0"
+		clouds.ambient = "#DCE3EAFF"
+		clouds.thickness = 24
+	elseif weather == "dust" then
+		clouds.density = 0.24
+		clouds.color = "#E7C994C8"
+		clouds.ambient = "#EAD6B1E8"
+		clouds.speed = {x = 1.0, z = 0.08}
+	end
+	player:set_clouds(clouds)
+end
+
+local function update_player_atmosphere(player)
+	local player_name = player:get_player_name()
+	local pos = player:get_pos()
+	if not pos then
+		return
+	end
+	local habitat = habitat_at(pos)
+	local weather = weather_for(habitat)
+	local state = atmosphere_state[player_name] or {}
+	atmosphere_state[player_name] = state
+	local weather_sound
+	if weather == "rain" then
+		weather_sound = {name = "openclasscraft_rain_ambience", gain = 0.25}
+	elseif weather == "snow" or weather == "dust" then
+		weather_sound = {name = "openclasscraft_wind_ambience", gain = weather == "dust" and 0.22 or 0.14}
+	end
+	local habitat_sound = habitat_ambience[habitat]
+	if weather_sound and habitat_sound and weather_sound.name == habitat_sound.name then
+		habitat_sound = nil
+	end
+	set_atmosphere_layer(player_name, "habitat", habitat_sound)
+	set_atmosphere_layer(player_name, "weather", weather_sound)
+	if state.weather ~= weather then
+		state.weather = weather
+		apply_weather_clouds(player, weather)
+	end
+	state.habitat = habitat
+	emit_weather(player, weather)
 end
 
 local function can_replace(pos)
@@ -377,12 +624,26 @@ minetest.register_on_joinplayer(function(player)
 		if player and player:is_player() then
 			apply_real_world_sky(player)
 			start_ambient_music(player)
+			update_player_atmosphere(player)
 		end
 	end)
 end)
 
 minetest.register_on_leaveplayer(function(player)
-	stop_ambient_music(player:get_player_name())
+	local player_name = player:get_player_name()
+	stop_ambient_music(player_name)
+	stop_atmosphere(player_name)
+end)
+
+minetest.register_globalstep(function(dtime)
+	atmosphere_clock = atmosphere_clock + dtime
+	if atmosphere_clock < 2.6 then
+		return
+	end
+	atmosphere_clock = 0
+	for _, player in ipairs(minetest.get_connected_players()) do
+		update_player_atmosphere(player)
+	end
 end)
 
 minetest.register_chatcommand("music", {

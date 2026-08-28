@@ -4,7 +4,8 @@
 The meshes intentionally use a small number of cuboids so they remain readable in
 the voxel world and inexpensive on classroom hardware.  The generated glTF files
 contain one timeline with stable ranges for idle, walking, running, sitting, and
-grazing animations.  Re-run this script after changing proportions or animation
+grazing, sleeping, drinking, alert, climbing, and swimming animations.  Re-run
+this script after changing proportions or animation
 poses; it has no third-party Python dependencies.
 """
 
@@ -32,6 +33,11 @@ ANIMATION_RANGES = {
     "run": (3.1, 4.1),
     "sit": (4.2, 5.2),
     "graze": (5.3, 6.7),
+    "sleep": (6.8, 8.0),
+    "drink": (8.1, 9.5),
+    "alert": (9.6, 10.5),
+    "climb": (10.6, 11.6),
+    "swim": (11.7, 12.7),
 }
 
 
@@ -382,6 +388,128 @@ def animal_definition(kind):
             ("tail", (0, .70, -.82), (.16, .17, .72), "fur", (-8, 0, 0)),
             ("tail", (0, .74, -1.17), (.14, .15, .45), "dark", (8, 0, 0)),
         )
+    elif kind == "frog":
+        bones = {
+            "body": (0, .30, 0), "head": (0, .43, .42),
+            "leg_fl": (-.29, .20, .27), "leg_fr": (.29, .20, .27),
+            "leg_bl": (-.38, .18, -.28), "leg_br": (.38, .18, -.28),
+        }
+        parts = (
+            ("body", (0, .31, -.05), (.76, .42, .78), "fur", (0, 0, 0)),
+            ("body", (0, .24, .25), (.59, .25, .39), "accent", (0, 0, 0)),
+            ("head", (0, .45, .43), (.70, .43, .48), "fur", (0, 0, 0)),
+            ("head", (-.25, .63, .57), (.20, .20, .18), "fur", (0, 0, 0)),
+            ("head", (.25, .63, .57), (.20, .20, .18), "fur", (0, 0, 0)),
+            ("head", (-.25, .66, .66), (.09, .10, .06), "detail", (0, 0, 0)),
+            ("head", (.25, .66, .66), (.09, .10, .06), "detail", (0, 0, 0)),
+            ("head", (0, .38, .71), (.30, .05, .05), "dark", (0, 0, 0)),
+            ("leg_fl", (-.30, .15, .32), (.18, .16, .48), "accent", (0, -12, 0)),
+            ("leg_fr", (.30, .15, .32), (.18, .16, .48), "accent", (0, 12, 0)),
+            ("leg_bl", (-.43, .13, -.30), (.23, .18, .66), "fur", (0, -28, 0)),
+            ("leg_br", (.43, .13, -.30), (.23, .18, .66), "fur", (0, 28, 0)),
+        )
+    elif kind == "otter":
+        bones = {
+            "body": (0, .53, 0), "head": (0, .68, .67),
+            "ear_l": (-.19, .84, .61), "ear_r": (.19, .84, .61),
+            "leg_fl": (-.24, .35, .35), "leg_fr": (.24, .35, .35),
+            "leg_bl": (-.25, .34, -.38), "leg_br": (.25, .34, -.38),
+            "tail": (0, .49, -.68),
+        }
+        parts = (
+            ("body", (0, .55, -.06), (.66, .50, 1.34), "fur", (0, 0, 0)),
+            ("body", (0, .46, .39), (.50, .30, .46), "accent", (0, 0, 0)),
+            ("head", (0, .71, .73), (.55, .48, .58), "fur", (0, 0, 0)),
+            ("head", (0, .62, 1.08), (.38, .24, .36), "accent", (0, 0, 0)),
+            ("head", (0, .64, 1.29), (.18, .12, .09), "dark", (0, 0, 0)),
+            ("head", (-.22, .80, 1.00), (.08, .10, .06), "detail", (0, 0, 0)),
+            ("head", (.22, .80, 1.00), (.08, .10, .06), "detail", (0, 0, 0)),
+            ("ear_l", (-.24, .88, .67), (.18, .15, .12), "dark", (0, 0, -8)),
+            ("ear_r", (.24, .88, .67), (.18, .15, .12), "dark", (0, 0, 8)),
+            ("leg_fl", (-.24, .20, .35), (.18, .34, .25), "dark", (0, 0, 0)),
+            ("leg_fr", (.24, .20, .35), (.18, .34, .25), "dark", (0, 0, 0)),
+            ("leg_bl", (-.25, .19, -.38), (.19, .34, .28), "dark", (0, 0, 0)),
+            ("leg_br", (.25, .19, -.38), (.19, .34, .28), "dark", (0, 0, 0)),
+            ("tail", (0, .47, -.99), (.28, .24, .82), "fur", (-9, 0, 0)),
+            ("tail", (0, .37, -1.43), (.19, .15, .43), "dark", (-9, 0, 0)),
+        )
+    elif kind == "boar":
+        bones = {
+            "body": (0, .76, 0), "head": (0, .78, .71),
+            "ear_l": (-.23, 1.02, .67), "ear_r": (.23, 1.02, .67),
+            "leg_fl": (-.31, .50, .42), "leg_fr": (.31, .50, .42),
+            "leg_bl": (-.31, .50, -.43), "leg_br": (.31, .50, -.43),
+            "tail": (0, .86, -.74),
+        }
+        parts = (
+            ("body", (0, .79, -.04), (.91, .76, 1.48), "fur", (0, 0, 0)),
+            ("body", (0, 1.18, -.04), (.26, .22, 1.20), "dark", (0, 0, 0)),
+            ("head", (0, .80, .80), (.74, .65, .72), "fur", (0, 0, 0)),
+            ("head", (0, .66, 1.22), (.56, .36, .48), "accent", (0, 0, 0)),
+            ("head", (0, .67, 1.49), (.38, .24, .12), "dark", (0, 0, 0)),
+            ("head", (-.29, .88, 1.10), (.08, .10, .07), "detail", (0, 0, 0)),
+            ("head", (.29, .88, 1.10), (.08, .10, .07), "detail", (0, 0, 0)),
+            ("head", (-.27, .57, 1.42), (.08, .28, .08), "accent", (18, 0, 12)),
+            ("head", (.27, .57, 1.42), (.08, .28, .08), "accent", (18, 0, -12)),
+            ("ear_l", (-.28, 1.08, .72), (.25, .32, .17), "dark", (-9, 0, -12)),
+            ("ear_r", (.28, 1.08, .72), (.25, .32, .17), "dark", (-9, 0, 12)),
+            ("leg_fl", (-.31, .25, .42), (.21, .54, .25), "dark", (0, 0, 0)),
+            ("leg_fr", (.31, .25, .42), (.21, .54, .25), "dark", (0, 0, 0)),
+            ("leg_bl", (-.31, .25, -.43), (.21, .54, .25), "dark", (0, 0, 0)),
+            ("leg_br", (.31, .25, -.43), (.21, .54, .25), "dark", (0, 0, 0)),
+            ("tail", (0, .92, -.91), (.15, .15, .34), "dark", (22, 0, 0)),
+        )
+    elif kind == "tahr":
+        bones = {
+            "body": (0, 1.00, 0), "neck": (0, 1.27, .56),
+            "head": (0, 1.48, .80), "ear_l": (-.24, 1.67, .77),
+            "ear_r": (.24, 1.67, .77), "leg_fl": (-.32, .73, .45),
+            "leg_fr": (.32, .73, .45), "leg_bl": (-.32, .73, -.44),
+            "leg_br": (.32, .73, -.44), "tail": (0, 1.13, -.70),
+        }
+        parts = (
+            ("body", (0, 1.03, -.04), (.88, .76, 1.38), "fur", (0, 0, 0)),
+            ("body", (0, .90, .18), (.74, .64, .78), "accent", (0, 0, 0)),
+            ("neck", (0, 1.31, .58), (.56, .84, .48), "fur", (-13, 0, 0)),
+            ("head", (0, 1.51, .87), (.56, .50, .62), "accent", (0, 0, 0)),
+            ("head", (0, 1.40, 1.23), (.39, .26, .32), "fur", (0, 0, 0)),
+            ("head", (0, 1.42, 1.42), (.20, .13, .08), "dark", (0, 0, 0)),
+            ("head", (-.23, 1.59, 1.09), (.07, .09, .06), "detail", (0, 0, 0)),
+            ("head", (.23, 1.59, 1.09), (.07, .09, .06), "detail", (0, 0, 0)),
+            ("head", (-.19, 1.88, .70), (.10, .69, .10), "dark", (-24, 0, -13)),
+            ("head", (.19, 1.88, .70), (.10, .69, .10), "dark", (-24, 0, 13)),
+            ("ear_l", (-.31, 1.70, .84), (.25, .15, .20), "accent", (0, -8, -17)),
+            ("ear_r", (.31, 1.70, .84), (.25, .15, .20), "accent", (0, 8, 17)),
+            ("leg_fl", (-.32, .37, .45), (.20, .77, .22), "fur", (0, 0, 0)),
+            ("leg_fr", (.32, .37, .45), (.20, .77, .22), "fur", (0, 0, 0)),
+            ("leg_bl", (-.32, .37, -.44), (.20, .77, .22), "fur", (0, 0, 0)),
+            ("leg_br", (.32, .37, -.44), (.20, .77, .22), "fur", (0, 0, 0)),
+            ("leg_fl", (-.32, .06, .48), (.23, .16, .30), "dark", (0, 0, 0)),
+            ("leg_fr", (.32, .06, .48), (.23, .16, .30), "dark", (0, 0, 0)),
+            ("leg_bl", (-.32, .06, -.40), (.23, .16, .30), "dark", (0, 0, 0)),
+            ("leg_br", (.32, .06, -.40), (.23, .16, .30), "dark", (0, 0, 0)),
+            ("tail", (0, 1.16, -.79), (.22, .30, .20), "dark", (-20, 0, 0)),
+        )
+    elif kind == "turtle":
+        bones = {
+            "body": (0, .30, 0), "head": (0, .31, .70),
+            "flipper_l": (-.48, .20, .14), "flipper_r": (.48, .20, .14),
+            "rear_l": (-.38, .19, -.54), "rear_r": (.38, .19, -.54),
+            "tail": (0, .23, -.73),
+        }
+        parts = (
+            ("body", (0, .35, -.04), (1.12, .42, 1.35), "fur", (0, 0, 0)),
+            ("body", (0, .49, -.05), (.92, .24, 1.12), "accent", (0, 0, 0)),
+            ("head", (0, .32, .84), (.45, .36, .55), "dark", (0, 0, 0)),
+            ("head", (0, .28, 1.16), (.32, .24, .24), "dark", (0, 0, 0)),
+            ("head", (-.18, .39, 1.03), (.07, .09, .06), "detail", (0, 0, 0)),
+            ("head", (.18, .39, 1.03), (.07, .09, .06), "detail", (0, 0, 0)),
+            ("flipper_l", (-.59, .18, .17), (.55, .16, .76), "dark", (0, -24, -8)),
+            ("flipper_r", (.59, .18, .17), (.55, .16, .76), "dark", (0, 24, 8)),
+            ("rear_l", (-.40, .18, -.59), (.37, .14, .49), "dark", (0, 22, -5)),
+            ("rear_r", (.40, .18, -.59), (.37, .14, .49), "dark", (0, -22, 5)),
+            ("tail", (0, .21, -.85), (.16, .13, .30), "dark", (0, 0, 0)),
+        )
     else:
         raise ValueError(f"unknown animal kind: {kind}")
     return bones, parts
@@ -447,6 +575,42 @@ def animation_angle(kind, bone, time):
             return "x", 18 + math.sin(phase) * 5
         if bone == "tail":
             return "y", math.sin(phase) * 4
+    elif 6.8 <= time <= 8.0:
+        phase = (time - 6.8) / 1.2 * math.tau
+        if bone == "head":
+            return "x", 12 + math.sin(phase) * 1.5
+        if bone.startswith("leg_") or bone.startswith("flipper_"):
+            return "x", -28
+        if bone == "tail":
+            return "y", math.sin(phase) * 2
+    elif 8.1 <= time <= 9.5:
+        phase = (time - 8.1) / 1.4 * math.tau
+        if bone == "head":
+            return "x", 44 + math.sin(phase) * 5
+        if bone == "neck":
+            return "x", 20 + math.sin(phase) * 3
+    elif 9.6 <= time <= 10.5:
+        phase = (time - 9.6) / .9 * math.tau
+        if bone == "head":
+            return "y", math.sin(phase) * 8
+        if bone == "ear_l":
+            return "z", 8 + math.sin(phase) * 5
+        if bone == "ear_r":
+            return "z", -8 - math.sin(phase) * 5
+    elif 10.6 <= time <= 11.6:
+        phase = (time - 10.6) * math.tau
+        if bone.startswith("leg_"):
+            first_pair = bone in ("leg_fl", "leg_br", "leg_l")
+            return "x", math.sin(phase) * (38 if first_pair else -38)
+        if bone == "tail":
+            return "y", math.sin(phase) * 10
+    elif 11.7 <= time <= 12.7:
+        phase = (time - 11.7) * math.tau
+        if bone.startswith("leg_") or bone.startswith("wing_") or bone.startswith("flipper_") or bone.startswith("rear_"):
+            direction = 1 if bone.endswith("_l") or bone in ("leg_fl", "leg_br") else -1
+            return "x", math.sin(phase) * 24 * direction
+        if bone == "tail":
+            return "y", math.sin(phase) * 15
     return "x", 0
 
 
@@ -492,7 +656,12 @@ def generate(kind):
              2, 2.25, 2.5, 2.75, 3,
              3.1, 3.35, 3.6, 3.85, 4.1,
              4.2, 4.45, 4.7, 4.95, 5.2,
-             5.3, 5.65, 6.0, 6.35, 6.7)
+             5.3, 5.65, 6.0, 6.35, 6.7,
+             6.8, 7.1, 7.4, 7.7, 8.0,
+             8.1, 8.45, 8.8, 9.15, 9.5,
+             9.6, 9.825, 10.05, 10.275, 10.5,
+             10.6, 10.85, 11.1, 11.35, 11.6,
+             11.7, 11.95, 12.2, 12.45, 12.7)
     time_accessor = binary.add_accessor(times, 5126, "SCALAR", "f",
                                         minimum=(min(times),), maximum=(max(times),))
 
@@ -549,5 +718,6 @@ def generate(kind):
 
 
 if __name__ == "__main__":
-    for animal in ("rabbit", "deer", "fox", "squirrel", "duck", "cow", "chicken", "dog", "cat"):
+    for animal in ("rabbit", "deer", "fox", "squirrel", "duck", "cow", "chicken", "dog", "cat",
+                   "frog", "otter", "boar", "tahr", "turtle"):
         generate(animal)

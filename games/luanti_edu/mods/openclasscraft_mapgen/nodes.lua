@@ -15,12 +15,12 @@ mapgen.HABITATS = {
 	openclasscraft_freshwater_wetland = {
 		title = "Freshwater River and Wetland",
 		lesson = "Watersheds, freshwater flow, wetland filtration, aquatic plants, and changing water levels.",
-		wildlife = "Ducks, rabbits, and visiting deer.",
+		wildlife = "Ducks and frogs along the margins, smooth-coated otters in connected water, plus rabbits and visiting deer.",
 	},
 	openclasscraft_monsoon_forest = {
 		title = "Monsoon Forest",
 		lesson = "Rainfall, biodiversity, canopy structure, decomposition, and nutrient cycling.",
-		wildlife = "Deer and squirrels, with occasional foxes and rabbits.",
+		wildlife = "Deer, squirrels, wild boar, rain-calling frogs, with occasional foxes and rabbits.",
 	},
 	openclasscraft_grassland_savanna = {
 		title = "Grassland and Savanna",
@@ -30,27 +30,27 @@ mapgen.HABITATS = {
 	openclasscraft_dry_scrub = {
 		title = "Dry Scrub and Desert",
 		lesson = "Water conservation, heat adaptation, sparse vegetation, and solar-energy investigations.",
-		wildlife = "Sparse rabbit and fox populations.",
+		wildlife = "Sparse rabbit, wild boar, and fox populations adapted to limited water.",
 	},
 	openclasscraft_montane_conifer = {
 		title = "Montane Conifer Forest",
 		lesson = "Altitude, cooling, watersheds, erosion, conifer adaptation, and mountain soils.",
-		wildlife = "Deer, squirrels, and foxes.",
+		wildlife = "Himalayan tahr on steep ground, with deer, squirrels, rabbits, and foxes below.",
 	},
 	openclasscraft_alpine_tundra = {
 		title = "Alpine Tundra and Snow",
 		lesson = "Cold adaptation, seasonal snow, exposed rock, short growing seasons, and climate change.",
-		wildlife = "Small, sparse rabbit and fox populations.",
+		wildlife = "Herds of Himalayan tahr, with small, sparse rabbit and fox populations.",
 	},
 	openclasscraft_mangrove_coast = {
 		title = "Coast and Mangrove",
 		lesson = "Salinity, shoreline erosion, mangrove roots, nursery habitats, and land-water boundaries.",
-		wildlife = "Ducks near sheltered water and rabbits above the shoreline.",
+		wildlife = "Ducks, frogs, otters, and olive ridley turtles near sheltered water; rabbits stay above the shoreline.",
 	},
 	openclasscraft_shallow_reef = {
 		title = "Shallow Reef",
 		lesson = "Marine habitats, sunlight zones, coral communities, coastal protection, and water quality.",
-		wildlife = "Aquatic animal populations will use this habitat as the marine-life system expands.",
+		wildlife = "Olive ridley turtles cross shallow water, with occasional otters near connected mangrove channels.",
 	},
 	openclasscraft_geology = {
 		title = "Controlled Geology Zone",

@@ -4,16 +4,41 @@
 
 local MODNAME = minetest.get_current_modname()
 local GRAVITY = -9.81
-local ANIMAL_LIMIT = 6
+
+local function integer_setting(name, default, minimum, maximum)
+	local value = tonumber(minetest.settings:get(name)) or default
+	return math.max(minimum, math.min(maximum, math.floor(value + 0.5)))
+end
+
+local NEAR_ANIMAL_RADIUS = 28
+local NEAR_ANIMAL_LIMIT = 3
+local WIDE_ANIMAL_RADIUS = 64
+local WIDE_ANIMAL_LIMIT = 8
+local PLAYER_ANIMAL_RADIUS = integer_setting(
+	"openclasscraft_wildlife_player_radius", 56, 28, 96)
+local PLAYER_ANIMAL_LIMIT = integer_setting(
+	"openclasscraft_wildlife_player_limit", 5, 0, 24)
+local MIN_PLAYER_SPAWN_DISTANCE = integer_setting(
+	"openclasscraft_wildlife_spawn_clearance", 22, 12, 48)
+local MAX_PLAYER_SPAWN_DISTANCE = 72
+local SPAWN_CELL_SIZE = 48
+local SPAWN_CELL_COOLDOWN = 90
 local OBSERVATION_RADIUS = 10
 local TWO_PI = math.pi * 2
 local STEERING_ANGLES = {math.pi / 6, math.pi / 3, math.pi / 2, math.pi * 0.78}
+local FOOD_NODES = {"group:flora", "group:grass", "group:leaves"}
+local WATER_NODES = {"group:water"}
 local ANIMATIONS = {
-	idle = {{x = 0.0, y = 1.9}, 1.0},
-	walk = {{x = 2.0, y = 3.0}, 1.0},
-	run = {{x = 3.1, y = 4.1}, 1.0},
-	sit = {{x = 4.2, y = 5.2}, 1.0},
-	graze = {{x = 5.3, y = 6.7}, 1.0},
+	idle = {{x = 0.0, y = 1.9}, 1.0, 0.24},
+	walk = {{x = 2.0, y = 3.0}, 1.0, 0.20},
+	run = {{x = 3.1, y = 4.1}, 1.25, 0.14},
+	sit = {{x = 4.2, y = 5.2}, 1.0, 0.25},
+	graze = {{x = 5.3, y = 6.7}, 1.0, 0.26},
+	sleep = {{x = 6.8, y = 8.0}, 0.72, 0.34},
+	drink = {{x = 8.1, y = 9.5}, 1.0, 0.25},
+	alert = {{x = 9.6, y = 10.5}, 1.0, 0.16},
+	climb = {{x = 10.6, y = 11.6}, 1.2, 0.14},
+	swim = {{x = 11.7, y = 12.7}, 1.05, 0.20},
 }
 
 local function protected(pos, player)
@@ -67,6 +92,7 @@ local animal_defs = {
 		avoid_speed_factor = 1.20,
 		player_behavior = "skittish",
 		forage_chance = 0.55,
+		flock_radius = 10.0,
 		tameable = false,
 		observation = "Deer pause to watch distant movement, but run when a person comes too close. Their browsing shapes forest plants.",
 	},
@@ -87,6 +113,7 @@ local animal_defs = {
 		prey_hunt_radius = 12.0,
 		prey_chase_radius = 8.0,
 		player_behavior = "wary",
+		nocturnal = true,
 		tameable = true,
 		observation = "Wild foxes cautiously watch people, avoid close contact, and stalk nearby small animals before breaking into a chase.",
 	},
@@ -136,6 +163,7 @@ local animal_defs = {
 		player_behavior = "skittish",
 		forage_chance = 0.42,
 		can_swim = true,
+		flock_radius = 8.0,
 		tameable = false,
 		observation = "Ducks float and forage in wetlands, watch unfamiliar people, and hurry away from predators or close approaches.",
 	},
@@ -155,6 +183,7 @@ local animal_defs = {
 		avoid_speed_factor = 0.72,
 		player_behavior = "calm",
 		forage_chance = 0.70,
+		flock_radius = 10.0,
 		domestic = true,
 		tameable = false,
 		observation = "Cows are calm herd animals and ruminant herbivores. They usually watch people and step away when crowded.",
@@ -178,6 +207,7 @@ local animal_defs = {
 		fox_prey = true,
 		player_behavior = "skittish",
 		forage_chance = 0.65,
+		flock_radius = 7.0,
 		domestic = true,
 		tameable = false,
 		observation = "Chickens scratch and peck while foraging, stay alert to sudden movement, and run from foxes.",
@@ -226,6 +256,109 @@ local animal_defs = {
 		tameable = true,
 		observation = "Domestic cats often observe first, approach when curious, and keep more personal space than dogs.",
 	},
+	frog = {
+		description = "Indian Bullfrog",
+		mesh = "occ_frog.glb",
+		textures = {"occ_frog_fur.png", "occ_frog_accent.png", "occ_frog_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 5.0, y = 5.0},
+		walk_speed = 0.75,
+		run_speed = 2.45,
+		acceleration = 10,
+		turn_speed = 7.5,
+		hop_strength = 3.2,
+		hop_interval = 0.95,
+		collisionbox = {-0.24, 0, -0.31, 0.24, 0.48, 0.31},
+		player_notice_radius = 7.5,
+		player_flee_radius = 4.0,
+		avoid_speed_factor = 1.20,
+		predator_notice_radius = 8.0,
+		predator_escape_speed_factor = 1.35,
+		fox_prey = true,
+		player_behavior = "skittish",
+		forage_chance = 0.35,
+		can_swim = true,
+		nocturnal = true,
+		flock_radius = 4.5,
+		observation = "Indian bullfrogs stay near freshwater, feed on small invertebrates, call after rain, and leap into water when disturbed.",
+	},
+	otter = {
+		description = "Smooth-coated Otter",
+		mesh = "occ_otter.glb",
+		textures = {"occ_otter_fur.png", "occ_otter_accent.png", "occ_otter_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 8.4, y = 8.4},
+		walk_speed = 1.25,
+		run_speed = 2.7,
+		acceleration = 7,
+		turn_speed = 5.8,
+		jump_strength = 3.2,
+		collisionbox = {-0.34, 0, -0.72, 0.34, 0.92, 0.72},
+		player_notice_radius = 10.0,
+		player_flee_radius = 4.2,
+		avoid_speed_factor = 1.08,
+		player_behavior = "curious",
+		greeting_distance = 3.0,
+		forage_chance = 0.45,
+		can_swim = true,
+		flock_radius = 7.0,
+		observation = "Smooth-coated otters live in social family groups, travel between riverbanks and water, and cautiously investigate quiet observers.",
+	},
+	boar = {
+		description = "Wild Boar",
+		mesh = "occ_boar.glb",
+		textures = {"occ_boar_fur.png", "occ_boar_accent.png", "occ_boar_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 10.8, y = 10.8},
+		walk_speed = 1.0,
+		run_speed = 2.35,
+		acceleration = 5,
+		turn_speed = 3.8,
+		jump_strength = 3.1,
+		collisionbox = {-0.54, 0, -0.84, 0.54, 1.55, 0.84},
+		player_notice_radius = 13.0,
+		player_flee_radius = 7.0,
+		avoid_speed_factor = 1.12,
+		player_behavior = "wary",
+		forage_chance = 0.72,
+		flock_radius = 8.0,
+		observation = "Wild boar forage by rooting through leaf litter, remain close to their sounder, and normally move away from people when given space.",
+	},
+	tahr = {
+		description = "Himalayan Tahr",
+		mesh = "occ_tahr.glb",
+		textures = {"occ_tahr_fur.png", "occ_tahr_accent.png", "occ_tahr_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 10.4, y = 10.4},
+		walk_speed = 1.1,
+		run_speed = 2.45,
+		acceleration = 6,
+		turn_speed = 4.2,
+		jump_strength = 4.4,
+		stepheight = 1.35,
+		collisionbox = {-0.43, 0, -0.73, 0.43, 2.15, 0.73},
+		player_notice_radius = 15.0,
+		player_flee_radius = 8.0,
+		avoid_speed_factor = 1.18,
+		player_behavior = "skittish",
+		forage_chance = 0.62,
+		flock_radius = 9.0,
+		observation = "Himalayan tahr form mountain herds, browse tough alpine plants, and use powerful legs while keeping away from exposed drops.",
+	},
+	turtle = {
+		description = "Olive Ridley Sea Turtle",
+		mesh = "occ_turtle.glb",
+		textures = {"occ_turtle_fur.png", "occ_turtle_accent.png", "occ_turtle_dark.png", "occ_animal_eyes.png"},
+		visual_size = {x = 8.0, y = 8.0},
+		walk_speed = 0.52,
+		run_speed = 1.15,
+		acceleration = 2.8,
+		turn_speed = 2.4,
+		collisionbox = {-0.48, 0, -0.63, 0.48, 0.58, 0.63},
+		player_notice_radius = 7.5,
+		player_flee_radius = 2.4,
+		avoid_speed_factor = 0.85,
+		player_behavior = "shy",
+		forage_chance = 0.30,
+		can_swim = true,
+		observation = "Olive ridley turtles move slowly on shore, swim with broad flippers, and withdraw rather than approach when people come close.",
+	},
 }
 
 local FOX_PREY = {}
@@ -240,8 +373,83 @@ local function set_animation(self, name)
 		return
 	end
 	local animation = ANIMATIONS[name] or ANIMATIONS.idle
-	self.object:set_animation(animation[1], animation[2], 0.18, true)
+	self.object:set_animation(animation[1], animation[2], animation[3], true)
 	self.animation_state = name
+end
+
+local function clamp(value, low, high)
+	return math.max(low, math.min(high, value))
+end
+
+local function horizontal_distance(a, b)
+	local dx = b.x - a.x
+	local dz = b.z - a.z
+	return math.sqrt(dx * dx + dz * dz), dx, dz
+end
+
+local function play_animal_sound(self, sound_name, gain, cooldown)
+	local now = self.behavior_clock or 0
+	if now < (self.next_sound_at or 0) then
+		return false
+	end
+	minetest.sound_play(sound_name, {
+		object = self.object,
+		gain = gain or 0.45,
+		max_hear_distance = 18,
+	}, true)
+	self.next_sound_at = now + (cooldown or 2.0)
+	return true
+end
+
+local function play_species_call(self, urgent)
+	local def = animal_defs[self.kind]
+	local size_gain = clamp((def.visual_size.x or 8) / 18, 0.28, 0.72)
+	return play_animal_sound(self, "occ_" .. self.kind .. "_call",
+		urgent and math.min(size_gain + 0.12, 0.82) or size_gain,
+		urgent and 1.6 or 5.0)
+end
+
+local function activity_particles(pos, activity)
+	local texture = "default_grass.png^[colorize:#7BBE64:85"
+	local minvel = {x = -0.22, y = 0.3, z = -0.22}
+	local maxvel = {x = 0.22, y = 0.75, z = 0.22}
+	if activity == "drink" then
+		texture = "default_water.png^[colorize:#BDEBFF:90"
+	elseif activity == "hunt" then
+		texture = "default_dirt.png^[colorize:#D9C098:80"
+	elseif activity == "trust" then
+		texture = "default_mese_crystal_fragment.png^[colorize:#79E6A7:120"
+	end
+	minetest.add_particlespawner({
+		amount = activity == "trust" and 16 or 9,
+		time = 0.28,
+		minpos = {x = pos.x - 0.22, y = pos.y + 0.2, z = pos.z - 0.22},
+		maxpos = {x = pos.x + 0.22, y = pos.y + 0.7, z = pos.z + 0.22},
+		minvel = minvel,
+		maxvel = maxvel,
+		minacc = {x = 0, y = -0.7, z = 0},
+		maxacc = {x = 0, y = -0.2, z = 0},
+		minexptime = 0.45,
+		maxexptime = 0.9,
+		minsize = 0.55,
+		maxsize = 1.25,
+		texture = texture,
+		glow = activity == "trust" and 5 or 0,
+	})
+end
+
+local function begin_activity(self, name, duration, animation, sound_name)
+	self.activity = {
+		name = name,
+		ends_at = (self.behavior_clock or 0) + duration,
+		animation = animation,
+		particles_at = 0,
+	}
+	self.behavior_state = name
+	self.move_dir_x, self.move_dir_z = 0, 0
+	if sound_name then
+		play_animal_sound(self, sound_name, 0.38, 1.1)
+	end
 end
 
 local function approach(current, target, amount)
@@ -419,6 +627,73 @@ local function update_collision_avoidance(self, moveresult)
 	self.avoid_until = now + 0.9
 end
 
+local function recover_if_stuck(self, def, pos, moveresult)
+	local velocity = self.object:get_velocity() or {y = 0}
+	if self.tree_escape or self.in_water or math.abs(velocity.y or 0) > 0.35 then
+		return false
+	end
+	local now = self.behavior_clock or 0
+	local recently_requested = now - (self.last_move_request_at or -10) <= 0.45
+	if not recently_requested then
+		self.progress_pos = {x = pos.x, y = pos.y, z = pos.z}
+		self.progress_check_at = now + 0.8
+		self.stuck_count = 0
+		return false
+	end
+	if not self.progress_pos then
+		self.progress_pos = {x = pos.x, y = pos.y, z = pos.z}
+		self.progress_check_at = now + 0.8
+		return false
+	end
+	if now < (self.progress_check_at or 0) and not horizontal_collision(moveresult) then
+		return false
+	end
+
+	local progress = horizontal_distance(self.progress_pos, pos)
+	self.progress_pos = {x = pos.x, y = pos.y, z = pos.z}
+	self.progress_check_at = now + 0.8
+	if progress >= 0.20 and not horizontal_collision(moveresult) then
+		self.stuck_count = 0
+		return false
+	end
+
+	self.stuck_count = (self.stuck_count or 0) + 1
+	self.avoid_side = -(self.avoid_side or 1)
+	self.avoid_until = now + 1.25
+	self.decision_timer = 0
+	if self.stuck_count < 2 then
+		return false
+	end
+
+	-- The nudge is deliberately shorter than one node and only uses routes that
+	-- pass the same body, wall, water, and cliff probes as ordinary movement.
+	local base_angle = math.atan2(self.last_move_dir_z or 0, self.last_move_dir_x or 1)
+	local recovery_angles = {
+		base_angle + math.pi / 2,
+		base_angle - math.pi / 2,
+		base_angle + math.pi * 0.75,
+		base_angle - math.pi * 0.75,
+		base_angle + math.pi,
+	}
+	for _, angle in ipairs(recovery_angles) do
+		local dir_x, dir_z = math.cos(angle), math.sin(angle)
+		local x, z = pos.x + dir_x * 0.62, pos.z + dir_z * 0.62
+		local clear = route_probe(pos, def, x, z)
+		if clear then
+			self.object:set_pos({x = x, y = pos.y + 0.03, z = z})
+			self.object:set_velocity({x = 0, y = 0, z = 0})
+			self.move_dir_x, self.move_dir_z = dir_x, dir_z
+			self.stuck_count = 0
+			self.progress_pos = {x = x, y = pos.y, z = z}
+			self.behavior_state = "recovering_route"
+			return true
+		end
+	end
+	self.move_dir_x = -(self.last_move_dir_x or 1)
+	self.move_dir_z = -(self.last_move_dir_z or 0)
+	return false
+end
+
 local function grounded(self, moveresult)
 	if moveresult and moveresult.touching_ground ~= nil then
 		return moveresult.touching_ground
@@ -438,6 +713,10 @@ local function stop_horizontal(self, def, dtime)
 end
 
 local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresult, route_check)
+	-- Movement is an interrupt: danger, following, and navigation always wake an
+	-- animal from a low-priority feeding or resting activity.
+	self.activity = nil
+	self.last_move_request_at = self.behavior_clock or 0
 	local distance = math.sqrt(dx * dx + dz * dz)
 	if distance < 0.01 then
 		stop_horizontal(self, def, dtime)
@@ -479,7 +758,7 @@ local function move_toward(self, def, dx, dz, speed, animation, dtime, moveresul
 	self.last_move_dir_z = dir_z
 
 	turn_toward(self, def, dir_x, dir_z, dtime)
-	set_animation(self, animation)
+	set_animation(self, self.in_water and def.can_swim and "swim" or animation)
 	return true
 end
 
@@ -559,6 +838,189 @@ local function closest_animal(pos, kind, radius, excluded_object)
 		end
 	end
 	return closest, closest_pos, closest_distance, closest_entity
+end
+
+local FORAGE_SPECIES = {
+	rabbit = true,
+	deer = true,
+	squirrel = true,
+	duck = true,
+	cow = true,
+	chicken = true,
+	frog = true,
+	otter = true,
+	boar = true,
+	tahr = true,
+	turtle = true,
+}
+
+local function update_life_needs(self, dtime)
+	local moving = self.animation_state == "walk" or self.animation_state == "run"
+		or self.animation_state == "swim" or self.animation_state == "climb"
+	local effort = moving and 1.45 or 1.0
+	self.hunger = clamp((self.hunger or 0.2) + dtime * 0.0017 * effort, 0, 1)
+	self.thirst = clamp((self.thirst or 0.2) + dtime * 0.0021 * effort, 0, 1)
+	if self.animation_state == "sleep" then
+		self.fatigue = clamp((self.fatigue or 0.2) - dtime * 0.065, 0, 1)
+	else
+		self.fatigue = clamp((self.fatigue or 0.2) + dtime * 0.00145 * effort, 0, 1)
+	end
+end
+
+local function update_activity(self, def, pos, dtime)
+	local activity = self.activity
+	if not activity then
+		return false
+	end
+	stop_horizontal(self, def, dtime)
+	set_animation(self, activity.animation)
+	self.behavior_state = activity.name
+	local now = self.behavior_clock or 0
+	if activity.name ~= "sleeping" and now >= (activity.particles_at or 0) then
+		local particle_kind = activity.name
+		if activity.name == "grazing" or activity.name == "eating" then
+			particle_kind = "eat"
+		elseif activity.name == "drinking" then
+			particle_kind = "drink"
+		end
+		activity_particles(pos, particle_kind)
+		activity.particles_at = now + 0.72
+	end
+	if now < activity.ends_at then
+		return true
+	end
+	if activity.name == "eating" or activity.name == "grazing" then
+		self.hunger = clamp((self.hunger or 0) - 0.72, 0, 1)
+	elseif activity.name == "drinking" then
+		self.thirst = clamp((self.thirst or 0) - 0.82, 0, 1)
+	elseif activity.name == "sleeping" then
+		self.fatigue = clamp((self.fatigue or 0) - 0.68, 0, 1)
+	end
+	self.activity = nil
+	self.need_target = nil
+	self.decision_timer = 0.3 + math.random() * 0.7
+	set_animation(self, "idle")
+	return false
+end
+
+local function rest_period_for(def)
+	local timeofday = minetest.get_timeofday and minetest.get_timeofday() or 0.5
+	local is_night = timeofday < 0.20 or timeofday > 0.82
+	return def.nocturnal and not is_night or (not def.nocturnal and is_night)
+end
+
+local function find_need_target(self, pos, need)
+	local now = self.behavior_clock or 0
+	if self.need_target and self.need_target.kind == need
+			and now < (self.need_target.expires_at or 0) then
+		return self.need_target.pos
+	end
+	if now < (self.next_need_search_at or 0) then
+		return nil
+	end
+	self.next_need_search_at = now + 2.5 + math.random() * 1.5
+	local nodes = need == "drink" and WATER_NODES or FOOD_NODES
+	local radius = need == "drink" and 11 or 8
+	local target = minetest.find_node_near(pos, radius, nodes)
+	if target then
+		self.need_target = {kind = need, pos = target, expires_at = now + 8.0}
+	end
+	return target
+end
+
+local function handle_life_needs(self, def, pos, dtime, moveresult)
+	if (self.fatigue or 0) >= 0.74 and (rest_period_for(def) or self.fatigue >= 0.94) then
+		local nearby = closest_player(pos, math.max(2.5, def.player_flee_radius or 0))
+		if not nearby then
+			begin_activity(self, "sleeping", 7.5 + math.random() * 5.0, "sleep")
+			return true
+		end
+	end
+
+	if (self.thirst or 0) >= 0.62 then
+		local target = find_need_target(self, pos, "drink")
+		if target then
+			local distance, dx, dz = horizontal_distance(pos, target)
+			if distance <= 1.55 then
+				turn_toward(self, def, dx, dz, dtime)
+				begin_activity(self, "drinking", 3.1 + math.random() * 1.2,
+					"drink", "occ_animal_drink")
+			else
+				move_with_steering(self, def, dx, dz, def.walk_speed * 0.82,
+					"walk", dtime, moveresult)
+				self.behavior_state = "seeking_water"
+			end
+			return true
+		end
+	end
+
+	if FORAGE_SPECIES[self.kind] and (self.hunger or 0) >= 0.58 then
+		local target = find_need_target(self, pos, "eat")
+		if target then
+			local distance, dx, dz = horizontal_distance(pos, target)
+			if distance <= 1.55 then
+				turn_toward(self, def, dx, dz, dtime)
+				begin_activity(self, "eating", 3.0 + math.random() * 1.5,
+					"graze", "occ_animal_eat")
+			else
+				move_with_steering(self, def, dx, dz, def.walk_speed * 0.72,
+					"walk", dtime, moveresult)
+				self.behavior_state = "foraging"
+			end
+			return true
+		end
+	end
+	return false
+end
+
+local function flock_direction(self, def, pos, base_x, base_z)
+	if not def.flock_radius then
+		return base_x, base_z
+	end
+	local count = 0
+	local center_x, center_z = 0, 0
+	local align_x, align_z = 0, 0
+	local separate_x, separate_z = 0, 0
+	for _, object in ipairs(minetest.get_objects_inside_radius(pos, def.flock_radius)) do
+		if object ~= self.object then
+			local entity = object:get_luaentity()
+			local other_pos = object:get_pos()
+			if entity and entity.kind == self.kind and other_pos then
+				local distance, dx, dz = horizontal_distance(pos, other_pos)
+				if distance > 0.05 then
+					count = count + 1
+					center_x = center_x + other_pos.x
+					center_z = center_z + other_pos.z
+					align_x = align_x + (entity.last_move_dir_x or 0)
+					align_z = align_z + (entity.last_move_dir_z or 0)
+					if distance < 2.0 then
+						local strength = (2.0 - distance) / distance
+						separate_x = separate_x - dx * strength
+						separate_z = separate_z - dz * strength
+					end
+				end
+			end
+		end
+	end
+	if count == 0 then
+		self.flock_state = "searching_group"
+		return base_x, base_z
+	end
+	center_x, center_z = center_x / count - pos.x, center_z / count - pos.z
+	align_x, align_z = align_x / count, align_z / count
+	self.flock_state = count >= 2 and "moving_with_group" or "near_companion"
+	return base_x + center_x * 0.10 + align_x * 0.38 + separate_x * 0.92,
+		base_z + center_z * 0.10 + align_z * 0.38 + separate_z * 0.92
+end
+
+local function update_species_calls(self)
+	local now = self.behavior_clock or 0
+	if now < (self.next_call_at or 0) or self.animation_state == "sleep" then
+		return
+	end
+	play_species_call(self, false)
+	local base = self.kind == "frog" and 9 or (self.kind == "chicken" and 12 or 18)
+	self.next_call_at = now + base + math.random() * 18
 end
 
 local function watch_target(self, def, dx, dz, dtime, state)
@@ -815,7 +1277,7 @@ local function update_squirrel_tree_escape(self, def, pos, dtime, moveresult)
 			self.object:set_velocity({x = align_x, y = def.climb_speed, z = align_z})
 		end
 		turn_toward(self, def, escape.trunk.x - pos.x, escape.trunk.z - pos.z, dtime)
-		set_animation(self, "run")
+		set_animation(self, "climb")
 		self.behavior_state = "climbing_tree"
 		return true
 	end
@@ -856,7 +1318,7 @@ local function update_squirrel_tree_escape(self, def, pos, dtime, moveresult)
 		local align_z = math.max(-0.9, math.min(0.9, (escape.climb_z - pos.z) * 4.0))
 		self.object:set_velocity({x = align_x, y = -1.35, z = align_z})
 		turn_toward(self, def, escape.trunk.x - pos.x, escape.trunk.z - pos.z, dtime)
-		set_animation(self, "walk")
+		set_animation(self, "climb")
 		self.behavior_state = "descending_tree"
 		return true
 	end
@@ -876,6 +1338,10 @@ local function respond_to_predator(self, def, pos, dtime, moveresult)
 	local phase = (self.behavior_clock or 0) * 4.8 + (self.behavior_phase or 0)
 	local weave_amount = self.kind == "rabbit" and 0.42 or (def.evasion_weave or 0.30)
 	local weave = math.sin(phase) * weave_amount
+	if self.behavior_state ~= "escaping_fox" then
+		play_animal_sound(self, "occ_animal_alert", 0.42, 1.2)
+		play_species_call(self, true)
+	end
 	flee_from(self, def, pos, fox_pos, def.run_speed * def.predator_escape_speed_factor,
 		weave, dtime, moveresult, "escaping_fox")
 	return true
@@ -912,6 +1378,20 @@ local function respond_to_nearby_player(self, def, pos, dtime, moveresult)
 			and player_is_chasing(player, player_pos, pos, distance)
 			and begin_squirrel_tree_escape(self, def, pos, player, player_pos) then
 		return update_squirrel_tree_escape(self, def, pos, dtime, moveresult)
+	end
+
+	if def.player_behavior == "shy" then
+		if distance <= def.player_flee_radius
+				and player_is_chasing(player, player_pos, pos, distance) then
+			flee_from(self, def, pos, player_pos, def.run_speed * def.avoid_speed_factor,
+				0, dtime, moveresult, "escaping_player", "swim")
+		else
+			stop_horizontal(self, def, dtime)
+			turn_toward(self, def, -dx, -dz, dtime)
+			set_animation(self, "alert")
+			self.behavior_state = "withdrawn_from_player"
+		end
+		return true
 	end
 
 	if def.player_behavior == "social" then
@@ -958,18 +1438,75 @@ local function hunt_nearby_prey(self, def, pos, dtime, moveresult)
 	if self.kind ~= "fox" or (self.owner and self.owner ~= "") then
 		return false
 	end
+	if (self.hunger or 0) < 0.42 then
+		return false
+	end
+	local now = self.behavior_clock or 0
 	local prey, prey_pos, distance, prey_entity = closest_animal(pos, FOX_PREY, def.prey_hunt_radius, self.object)
 	if not prey then
+		local remembered = self.hunt_target
+		local remembered_entity = remembered and remembered:get_luaentity()
+		local remembered_pos = remembered_entity and remembered:get_pos()
+		if remembered_pos and remembered_entity and FOX_PREY[remembered_entity.kind]
+				and (not remembered_entity.owner or remembered_entity.owner == "")
+				and now < (self.hunt_until or 0) then
+			local remembered_distance = horizontal_distance(pos, remembered_pos)
+			if remembered_distance <= def.prey_hunt_radius * 1.8 then
+				prey = remembered
+				prey_pos = remembered_pos
+				distance = remembered_distance
+				prey_entity = remembered_entity
+			end
+		end
+		if not prey and self.hunt_last_pos and now < (self.hunt_until or 0) then
+			local search_distance, search_x, search_z = horizontal_distance(pos, self.hunt_last_pos)
+			if search_distance > 0.8 then
+				move_with_steering(self, def, search_x, search_z, def.walk_speed,
+					"walk", dtime, moveresult)
+			else
+				stop_horizontal(self, def, dtime)
+				set_animation(self, "alert")
+			end
+			self.behavior_state = "searching_for_" .. (self.hunt_target_kind or "prey")
+			self.decision_timer = 0.8
+			return true
+		end
+		self.hunt_target = nil
+		self.hunt_target_kind = nil
+		self.hunt_last_pos = nil
+		self.hunt_until = 0
 		return false
 	end
 	local prey_kind = prey_entity.kind
+	self.hunt_target = prey
+	self.hunt_target_kind = prey_kind
+	self.hunt_last_pos = {x = prey_pos.x, y = prey_pos.y, z = prey_pos.z}
+	self.hunt_until = math.max(self.hunt_until or 0, now + 14.0)
 	local dx = prey_pos.x - pos.x
 	local dz = prey_pos.z - pos.z
-	if distance <= 1.15 then
-		watch_target(self, def, dx, dz, dtime, "watching_" .. prey_kind)
+	if distance <= 0.92 and (not prey_entity.owner or prey_entity.owner == "")
+			and (self.behavior_clock or 0) >= (self.next_pounce_at or 0) then
+		self.next_pounce_at = (self.behavior_clock or 0) + 9.0
+		minetest.sound_play("occ_hunt_pounce", {object = self.object, gain = 0.5,
+			max_hear_distance = 18}, true)
+		activity_particles(prey_pos, "hunt")
+		prey:remove()
+		self.hunt_target = nil
+		self.hunt_target_kind = nil
+		self.hunt_last_pos = nil
+		self.hunt_until = 0
+		self.hunger = 0.05
+		begin_activity(self, "eating", 2.8, "graze", "occ_animal_eat")
+		self.behavior_state = "completed_hunt"
 	elseif distance > def.prey_chase_radius then
-		move_with_steering(self, def, dx, dz, def.walk_speed * 0.72, "walk", dtime, moveresult)
-		self.behavior_state = "stalking_" .. prey_kind
+		local stalking = math.sin((self.behavior_clock or 0) * 1.4 + self.behavior_phase) > -0.35
+		if stalking then
+			move_with_steering(self, def, dx, dz, def.walk_speed * 0.62, "walk", dtime, moveresult)
+			self.behavior_state = "stalking_" .. prey_kind
+		else
+			watch_target(self, def, dx, dz, dtime, "watching_" .. prey_kind)
+			set_animation(self, "alert")
+		end
 	else
 		move_with_steering(self, def, dx, dz, def.run_speed, "run", dtime, moveresult)
 		self.behavior_state = "chasing_" .. prey_kind
@@ -1020,7 +1557,7 @@ local function register_animal(kind)
 			textures = def.textures,
 			visual_size = def.visual_size,
 			static_save = true,
-			stepheight = 1.1,
+			stepheight = def.stepheight or 1.1,
 			hp_max = 10,
 			makes_footstep_sound = true,
 			backface_culling = true,
@@ -1041,6 +1578,13 @@ local function register_animal(kind)
 		avoid_until = 0,
 		next_avoid_flip = 0,
 		tree_search_after = 0,
+		hunger = 0.2,
+		thirst = 0.2,
+		fatigue = 0.2,
+		next_call_at = 0,
+		next_sound_at = 0,
+		stuck_count = 0,
+		natural_spawn = false,
 
 		on_activate = function(self, staticdata)
 			self.object:set_armor_groups({immortal = 1})
@@ -1049,6 +1593,10 @@ local function register_animal(kind)
 			if type(data) == "table" then
 				self.owner = type(data.owner) == "string" and data.owner or ""
 				self.staying = data.staying == true
+				self.hunger = type(data.hunger) == "number" and clamp(data.hunger, 0, 1) or nil
+				self.thirst = type(data.thirst) == "number" and clamp(data.thirst, 0, 1) or nil
+				self.fatigue = type(data.fatigue) == "number" and clamp(data.fatigue, 0, 1) or nil
+				self.natural_spawn = data.natural_spawn == true
 			end
 			self.decision_timer = 0.4 + math.random() * 1.6
 			self.behavior_clock = 0
@@ -1059,12 +1607,34 @@ local function register_animal(kind)
 			self.next_avoid_flip = 0
 			self.tree_escape = nil
 			self.tree_search_after = 0
+			self.activity = nil
+			self.need_target = nil
+			self.next_need_search_at = 0
+			self.next_call_at = 8 + math.random() * 18
+			self.next_sound_at = 0
+			self.hunt_target = nil
+			self.hunt_target_kind = nil
+			self.hunt_last_pos = nil
+			self.hunt_until = 0
+			self.hunger = self.hunger or (0.14 + math.random() * 0.24)
+			self.thirst = self.thirst or (0.12 + math.random() * 0.26)
+			self.fatigue = self.fatigue or (0.10 + math.random() * 0.28)
+			self.progress_pos = self.object:get_pos()
+			self.progress_check_at = 0.8
+			self.stuck_count = 0
 			update_nametag(self)
 			set_animation(self, self.staying and "sit" or "idle")
 		end,
 
 		get_staticdata = function(self)
-			return minetest.serialize({owner = self.owner, staying = self.staying})
+			return minetest.serialize({
+				owner = self.owner,
+				staying = self.staying,
+				hunger = self.hunger,
+				thirst = self.thirst,
+				fatigue = self.fatigue,
+				natural_spawn = self.natural_spawn,
+			})
 		end,
 
 		on_step = function(self, dtime, moveresult)
@@ -1073,20 +1643,45 @@ local function register_animal(kind)
 				return
 			end
 			self.behavior_clock = (self.behavior_clock or 0) + dtime
+			update_life_needs(self, dtime)
 			update_collision_avoidance(self, moveresult)
 			update_buoyancy(self, def, pos, dtime)
+			if recover_if_stuck(self, def, pos, moveresult) then
+				pos = self.object:get_pos() or pos
+			end
 			if update_squirrel_tree_escape(self, def, pos, dtime, moveresult) then
 				return
 			end
 			if respond_to_predator(self, def, pos, dtime, moveresult) then
 				return
 			end
+			if self.activity and self.activity.name == "sleeping"
+					and def.player_behavior ~= "calm" and def.player_behavior ~= "social" then
+				local nearby, nearby_pos, distance = closest_player(pos, def.player_flee_radius or 2.5)
+				if nearby and player_is_chasing(nearby, nearby_pos, pos, distance) then
+					self.activity = nil
+					play_animal_sound(self, "occ_animal_alert", 0.42, 1.0)
+					play_species_call(self, true)
+					set_animation(self, "alert")
+				end
+			end
+			if update_activity(self, def, pos, dtime) then
+				return
+			end
 			if self.staying then
+				if (self.fatigue or 0) >= 0.78 then
+					begin_activity(self, "sleeping", 8.0, "sleep")
+					return
+				elseif FORAGE_SPECIES[self.kind] and (self.hunger or 0) >= 0.64 then
+					begin_activity(self, "grazing", 3.2, "graze", "occ_animal_eat")
+					return
+				end
 				stop_horizontal(self, def, dtime)
 				set_animation(self, "sit")
 				self.behavior_state = "staying"
 				return
 			end
+			update_species_calls(self)
 			if respond_to_nearby_player(self, def, pos, dtime, moveresult) then
 				return
 			end
@@ -1112,12 +1707,23 @@ local function register_animal(kind)
 						self.behavior_state = "following_owner"
 						return
 					elseif distance <= follow_distance then
+						local urgent_need = (self.thirst or 0) >= 0.62
+							or (self.fatigue or 0) >= 0.74
+							or (FORAGE_SPECIES[self.kind] and (self.hunger or 0) >= 0.58)
+						if urgent_need then
+							self.behavior_state = "pausing_near_owner"
+						else
 						stop_horizontal(self, def, dtime)
 						set_animation(self, "idle")
 						self.behavior_state = "near_owner"
 						return
+						end
 					end
 				end
+			end
+
+			if handle_life_needs(self, def, pos, dtime, moveresult) then
+				return
 			end
 
 			if hunt_nearby_prey(self, def, pos, dtime, moveresult) then
@@ -1130,12 +1736,17 @@ local function register_animal(kind)
 				local choice = math.random()
 				if choice < 0.42 then
 					self.move_dir_x, self.move_dir_z = 0, 0
-					self.idle_animation = def.forage_chance and math.random() < def.forage_chance
-						and "graze" or "idle"
+					if FORAGE_SPECIES[self.kind] and def.forage_chance
+							and math.random() < def.forage_chance then
+						begin_activity(self, "grazing", 2.4 + math.random() * 2.1,
+							"graze", "occ_animal_eat")
+						return
+					end
+					self.idle_animation = "idle"
 				else
 					local angle = math.random() * TWO_PI
-					self.move_dir_x = math.cos(angle)
-					self.move_dir_z = math.sin(angle)
+					self.move_dir_x, self.move_dir_z = flock_direction(self, def, pos,
+						math.cos(angle), math.sin(angle))
 					self.idle_animation = "idle"
 				end
 			end
@@ -1148,10 +1759,10 @@ local function register_animal(kind)
 					self.move_dir_x, self.move_dir_z = 0, 0
 					self.decision_timer = 0
 				end
-				self.behavior_state = "wandering"
+				self.behavior_state = self.flock_state or "wandering"
 			else
 				stop_horizontal(self, def, dtime)
-				set_animation(self, self.idle_animation)
+				set_animation(self, self.in_water and def.can_swim and "swim" or self.idle_animation)
 				self.behavior_state = self.idle_animation == "graze" and "grazing" or "resting"
 			end
 		end,
@@ -1163,8 +1774,16 @@ local function register_animal(kind)
 				if self.owner == "" or self.owner == player_name then
 					self.owner = player_name
 					self.staying = false
+					self.activity = nil
 					clicker:set_wielded_item(consume_one(clicker, itemstack))
 					update_nametag(self)
+					local pos = self.object:get_pos()
+					if pos then
+						activity_particles(pos, "trust")
+					end
+					self.next_sound_at = 0
+					play_animal_sound(self, "occ_companion_trust", 0.55, 1.0)
+					begin_activity(self, "eating", 2.8, "graze", "occ_animal_eat")
 					minetest.chat_send_player(player_name,
 						"[Ecology] " .. def.description .. " trusts you and will follow. Right-click again to ask it to stay.")
 				else
@@ -1174,11 +1793,14 @@ local function register_animal(kind)
 			end
 			if self.owner == player_name then
 				self.staying = not self.staying
+				self.activity = nil
 				update_nametag(self)
 				minetest.chat_send_player(player_name,
 					self.staying and "[Ecology] Companion will stay here." or "[Ecology] Companion will follow you.")
 				return
 			end
+			self.next_sound_at = 0
+			play_species_call(self, false)
 			minetest.chat_send_player(player_name, "[Field note] " .. def.observation)
 		end,
 	})
@@ -1198,7 +1820,14 @@ local function register_animal(kind)
 			if protected(pos, placer) or minetest.get_node(pos).name ~= "air" then
 				return itemstack
 			end
-			if minetest.add_entity(pos, entity_name) then
+			local object = minetest.add_entity(pos, entity_name)
+			if object then
+				activity_particles(pos, "trust")
+				minetest.sound_play("occ_" .. kind .. "_call", {
+					object = object,
+					gain = 0.5,
+					max_hear_distance = 18,
+				}, true)
 				return consume_one(placer, itemstack)
 			end
 			return itemstack
@@ -1329,6 +1958,10 @@ minetest.register_tool(MODNAME .. ":field_journal", {
 			"[Field survey · %s] Plants: %d · Tree nodes: %d · Water nodes: %d · Animals: %d · Species: %d · Habitat score: %d/100",
 			habitat and habitat.title or "Learning Habitat",
 			#plants, #trees, #water, animal_count, species_count, score))
+		minetest.sound_play("occ_field_note", {
+			to_player = user:get_player_name(),
+			gain = 0.44,
+		}, true)
 		return itemstack
 	end,
 })
@@ -1363,15 +1996,41 @@ minetest.register_decoration({
 	decoration = MODNAME .. ":wetland_reed",
 })
 
-local function local_animal_count(pos)
+local wildlife_spawn_after = {}
+
+local function local_animal_count(pos, radius, kind)
 	local count = 0
-	for _, object in ipairs(minetest.get_objects_inside_radius(pos, 24)) do
+	for _, object in ipairs(minetest.get_objects_inside_radius(pos, radius)) do
 		local entity = object:get_luaentity()
-		if entity and animal_defs[entity.kind] then
+		if entity and animal_defs[entity.kind] and (not kind or entity.kind == kind) then
 			count = count + 1
 		end
 	end
 	return count
+end
+
+local function nearest_player_context(pos)
+	local nearest
+	local nearest_pos
+	for _, player in ipairs(minetest.get_connected_players()) do
+		local player_pos = player:get_pos()
+		if player_pos then
+			local distance = horizontal_distance(pos, player_pos)
+			if not nearest or distance < nearest then
+				nearest = distance
+				nearest_pos = player_pos
+			end
+		end
+	end
+	return nearest, nearest_pos
+end
+
+local function spawn_cell_key(pos, habitat_name)
+	return table.concat({
+		habitat_name,
+		math.floor(pos.x / SPAWN_CELL_SIZE),
+		math.floor(pos.z / SPAWN_CELL_SIZE),
+	}, ":")
 end
 
 local habitat_wildlife = {
@@ -1380,34 +2039,44 @@ local habitat_wildlife = {
 		{kind = "rabbit", weight = 28}, {kind = "fox", weight = 10},
 	},
 	openclasscraft_freshwater_wetland = {
-		{kind = "duck", weight = 55}, {kind = "rabbit", weight = 25},
-		{kind = "deer", weight = 15}, {kind = "squirrel", weight = 5},
+		{kind = "duck", weight = 30}, {kind = "frog", weight = 28},
+		{kind = "otter", weight = 14}, {kind = "rabbit", weight = 13},
+		{kind = "deer", weight = 10}, {kind = "squirrel", weight = 5},
 	},
 	openclasscraft_monsoon_forest = {
-		{kind = "squirrel", weight = 38}, {kind = "deer", weight = 34},
-		{kind = "rabbit", weight = 20}, {kind = "fox", weight = 8},
+		{kind = "squirrel", weight = 25}, {kind = "deer", weight = 24},
+		{kind = "boar", weight = 22}, {kind = "frog", weight = 14},
+		{kind = "rabbit", weight = 9}, {kind = "fox", weight = 6},
 	},
 	openclasscraft_grassland_savanna = {
 		{kind = "deer", weight = 46}, {kind = "rabbit", weight = 38},
 		{kind = "fox", weight = 12}, {kind = "squirrel", weight = 4},
 	},
 	openclasscraft_dry_scrub = {
-		{kind = "rabbit", weight = 60}, {kind = "fox", weight = 25},
-		{weight = 15},
+		{kind = "rabbit", weight = 44}, {kind = "boar", weight = 26},
+		{kind = "fox", weight = 20}, {weight = 10},
 	},
 	openclasscraft_montane_conifer = {
-		{kind = "deer", weight = 42}, {kind = "squirrel", weight = 35},
-		{kind = "fox", weight = 15}, {kind = "rabbit", weight = 8},
+		{kind = "tahr", weight = 34}, {kind = "deer", weight = 28},
+		{kind = "squirrel", weight = 22}, {kind = "fox", weight = 10},
+		{kind = "rabbit", weight = 6},
 	},
 	openclasscraft_alpine_tundra = {
-		{kind = "rabbit", weight = 68}, {kind = "fox", weight = 18},
-		{weight = 14},
+		{kind = "tahr", weight = 58}, {kind = "rabbit", weight = 24},
+		{kind = "fox", weight = 10}, {weight = 8},
 	},
 	openclasscraft_mangrove_coast = {
-		{kind = "duck", weight = 60}, {kind = "rabbit", weight = 25},
-		{kind = "deer", weight = 10}, {weight = 5},
+		{kind = "duck", weight = 28}, {kind = "otter", weight = 24},
+		{kind = "turtle", weight = 22}, {kind = "frog", weight = 14},
+		{kind = "rabbit", weight = 7}, {weight = 5},
+	},
+	openclasscraft_shallow_reef = {
+		{kind = "turtle", weight = 88}, {kind = "otter", weight = 8},
+		{weight = 4},
 	},
 }
+
+local WATER_DEPENDENT = {duck = true, frog = true, otter = true, turtle = true}
 
 local function weighted_wildlife(entries)
 	if not entries then
@@ -1438,25 +2107,55 @@ minetest.register_abm({
 		"default:desert_sand",
 		"default:sand",
 	},
-	neighbors = {"air"},
-	interval = 45,
-	chance = 1800,
+	neighbors = {"air", "group:water"},
+	interval = 60,
+	chance = 2600,
 	catch_up = false,
 	action = function(pos)
 		local above = vector.add(pos, {x = 0, y = 1, z = 0})
-		if minetest.get_node(above).name ~= "air" or (minetest.get_node_light(above, 0.5) or 0) < 10 or
-			local_animal_count(above) >= ANIMAL_LIMIT or openclasscraft_mapgen.is_campus(pos) then
+		local above_name = minetest.get_node(above).name
+		local above_is_water = minetest.get_item_group(above_name, "water") > 0
+		local player_distance, nearest_player_pos = nearest_player_context(above)
+		if (above_name ~= "air" and not above_is_water)
+				or (minetest.get_node_light(above, 0.5) or 0) < 8
+				or not player_distance
+				or player_distance < MIN_PLAYER_SPAWN_DISTANCE
+				or player_distance > MAX_PLAYER_SPAWN_DISTANCE
+				or local_animal_count(nearest_player_pos, PLAYER_ANIMAL_RADIUS)
+					>= PLAYER_ANIMAL_LIMIT
+				or local_animal_count(above, NEAR_ANIMAL_RADIUS) >= NEAR_ANIMAL_LIMIT
+				or local_animal_count(above, WIDE_ANIMAL_RADIUS) >= WIDE_ANIMAL_LIMIT
+				or openclasscraft_mapgen.is_campus(pos) then
 			return
 		end
 		local habitat_name = openclasscraft_mapgen.get_habitat_name(pos)
+		local cell_key = spawn_cell_key(pos, habitat_name)
+		local now = minetest.get_gametime()
+		if now < (wildlife_spawn_after[cell_key] or 0) then
+			return
+		end
 		local kind = weighted_wildlife(habitat_wildlife[habitat_name])
 		if not kind then
 			return
 		end
-		if kind == "duck" and not minetest.find_node_near(pos, 9, {"group:water"}) then
+		if above_is_water and not animal_defs[kind].can_swim then
 			return
 		end
-		minetest.add_entity(vector.add(above, {x = 0, y = 0.2, z = 0}), MODNAME .. ":" .. kind)
+		if WATER_DEPENDENT[kind] and not above_is_water
+				and not minetest.find_node_near(pos, 9, WATER_NODES) then
+			return
+		end
+		local species_limit = kind == "fox" and 1 or 2
+		if local_animal_count(above, WIDE_ANIMAL_RADIUS, kind) >= species_limit then
+			return
+		end
+		local object = minetest.add_entity(
+			vector.add(above, {x = 0, y = 0.2, z = 0}),
+			MODNAME .. ":" .. kind,
+			minetest.serialize({natural_spawn = true}))
+		if object then
+			wildlife_spawn_after[cell_key] = now + SPAWN_CELL_COOLDOWN
+		end
 	end,
 })
 

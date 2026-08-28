@@ -400,10 +400,10 @@ void set_default_settings()
 	settings->setDefault("serverlist_file", "favoriteservers.json");
 
 	// General font settings
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "Arimo-Regular.ttf"));
-	settings->setDefault("font_path_italic", porting::getDataPath("fonts" DIR_DELIM "Arimo-Italic.ttf"));
-	settings->setDefault("font_path_bold", porting::getDataPath("fonts" DIR_DELIM "Arimo-Bold.ttf"));
-	settings->setDefault("font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "Arimo-BoldItalic.ttf"));
+	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "NotoSans-Regular.ttf"));
+	settings->setDefault("font_path_italic", porting::getDataPath("fonts" DIR_DELIM "NotoSans-Italic.ttf"));
+	settings->setDefault("font_path_bold", porting::getDataPath("fonts" DIR_DELIM "NotoSans-Bold.ttf"));
+	settings->setDefault("font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "NotoSans-BoldItalic.ttf"));
 	settings->setDefault("font_bold", "false");
 	settings->setDefault("font_italic", "false");
 	settings->setDefault("font_shadow", "1");
@@ -414,7 +414,8 @@ void set_default_settings()
 	settings->setDefault("mono_font_path_bold", porting::getDataPath("fonts" DIR_DELIM "AtkinsonHyperlegibleMono-Bold.ttf"));
 	settings->setDefault("mono_font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "AtkinsonHyperlegibleMono-BoldItalic.ttf"));
 	settings->setDefault("mono_font_size_divisible_by", "1");
-	settings->setDefault("fallback_font_path", porting::getDataPath("fonts" DIR_DELIM "DroidSansFallbackFull.ttf"));
+	settings->setDefault("fallback_font_path", porting::getDataPath("fonts" DIR_DELIM "NotoSansMalayalam-Variable.ttf"));
+	settings->setDefault("secondary_fallback_font_path", porting::getDataPath("fonts" DIR_DELIM "DroidSansFallbackFull.ttf"));
 
 	std::string font_size_str = std::to_string(TTF_DEFAULT_FONT_SIZE);
 	settings->setDefault("font_size", font_size_str);

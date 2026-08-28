@@ -823,7 +823,9 @@ fake_function() {
 	gettext("Italic monospace font path");
 	gettext("Bold and italic monospace font path");
 	gettext("Fallback font path");
-	gettext("Path of the fallback font. Must be a TrueType font.\nThis font will be used for certain languages or if the default font is unavailable.");
+	gettext("Path of the preferred script fallback font. Must be a TrueType font.\nOpenClassCraft uses Noto Sans Malayalam here for consistent Malayalam text shaping.");
+	gettext("Secondary fallback font path");
+	gettext("Path of the final broad-script fallback font. Must be a TrueType font.\nThis is used only when neither the primary nor preferred fallback contains a glyph.");
 	gettext("Lighting");
 	gettext("Light curve low gradient");
 	gettext("Gradient of light curve at minimum light level.\nControls the contrast of the lowest light levels.");

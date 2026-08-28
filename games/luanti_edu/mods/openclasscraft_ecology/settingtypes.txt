@@ -1,0 +1,11 @@
+[OpenClassCraft wildlife population]
+
+# Maximum total animals allowed around a player before natural spawning pauses.
+# Educator-placed animals and pets count toward the budget but are never removed.
+openclasscraft_wildlife_player_limit (Nearby wildlife limit) int 5 0 24
+
+# Radius in nodes used for the nearby wildlife limit.
+openclasscraft_wildlife_player_radius (Nearby wildlife radius) int 56 28 96
+
+# Natural animals are never created closer than this many nodes to a player.
+openclasscraft_wildlife_spawn_clearance (Wildlife spawn clearance) int 22 12 48

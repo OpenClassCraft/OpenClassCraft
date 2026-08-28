@@ -3293,19 +3293,19 @@
 #    Path to the default font. Must be a TrueType font.
 #    The fallback font will be used if the font cannot be loaded.
 #    type: filepath
-# font_path = fonts/Arimo-Regular.ttf
+# font_path = fonts/NotoSans-Regular.ttf
 
 #    Bold font path
 #    type: filepath
-# font_path_bold = fonts/Arimo-Bold.ttf
+# font_path_bold = fonts/NotoSans-Bold.ttf
 
 #    Italic font path
 #    type: filepath
-# font_path_italic = fonts/Arimo-Italic.ttf
+# font_path_italic = fonts/NotoSans-Italic.ttf
 
 #    Bold and italic font path
 #    type: filepath
-# font_path_bold_italic = fonts/Arimo-BoldItalic.ttf
+# font_path_bold_italic = fonts/NotoSans-BoldItalic.ttf
 
 #    Font size of the monospace font where 1 unit = 1 pixel at 96 DPI
 #    type: int min: 5 max: 72
@@ -3335,10 +3335,15 @@
 #    type: filepath
 # mono_font_path_bold_italic = fonts/Cousine-BoldItalic.ttf
 
-#    Path of the fallback font. Must be a TrueType font.
-#    This font will be used for certain languages or if the default font is unavailable.
+#    Path of the preferred script fallback font. Must be a TrueType font.
+#    OpenClassCraft uses Noto Sans Malayalam here for consistent Malayalam text shaping.
 #    type: filepath
-# fallback_font_path = fonts/DroidSansFallbackFull.ttf
+# fallback_font_path = fonts/NotoSansMalayalam-Variable.ttf
+
+#    Path of the final broad-script fallback font. Must be a TrueType font.
+#    This is used only when neither the primary nor preferred fallback contains a glyph.
+#    type: filepath
+# secondary_fallback_font_path = fonts/DroidSansFallbackFull.ttf
 
 ### Lighting
 

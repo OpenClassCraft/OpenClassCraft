@@ -8,14 +8,14 @@ This mod turns Luanti's native Valleys map generator into a bounded learning lan
 | --- | --- |
 | Learning meadow | Pollination, plant growth, soil, and introductory observation |
 | Temperate forest | Foxes, deer, rabbits, squirrels, succession, and predator-prey systems |
-| Freshwater river and wetland | Watersheds, wetland filtration, aquatic plants, and ducks |
-| Monsoon forest | Rainfall, biodiversity, canopy structure, and decomposition |
+| Freshwater river and wetland | Watersheds, wetland filtration, aquatic plants, ducks, frogs, and otters |
+| Monsoon forest | Rainfall, biodiversity, decomposition, deer, boar, squirrels, and frogs |
 | Grassland and savanna | Grazing, food webs, scattered trees, and seasonal drought |
 | Dry scrub and desert | Water conservation, heat adaptation, and solar-energy lessons |
-| Montane conifer forest | Altitude, temperature, watersheds, erosion, and mountain soils |
-| Alpine tundra and snow | Climate, seasons, snow, exposed rock, and cold adaptation |
-| Coast and mangrove | Salinity, shoreline erosion, roots, and nursery habitat |
-| Shallow reef | Sunlight zones, coral communities, coastal protection, and water quality |
+| Montane conifer forest | Altitude, temperature, watersheds, erosion, tahr, and mountain soils |
+| Alpine tundra and snow | Climate, seasons, tahr, exposed rock, and cold adaptation |
+| Coast and mangrove | Salinity, shoreline erosion, otters, turtles, roots, and nursery habitat |
+| Shallow reef | Turtles, sunlight zones, coral communities, coastal protection, and water quality |
 | Controlled geology zone | Rock layers, groundwater, erosion, and rare deep caves |
 
 ## Safety and predictability
