@@ -49,23 +49,6 @@
 
         <div class="product-stage" aria-label="OpenClassCraft voxel school world">
           <img class="world-image" src="assets/background.png" alt="A bright voxel learning world with a school, science lab, trees, water, and coding blocks">
-          <div class="lesson-card" aria-hidden="true">
-            <div class="lesson-card-top">
-              <span class="live-dot"></span>
-              <span>Robot path · Lesson 01</span>
-              <span>12 min</span>
-            </div>
-            <div class="block-sequence">
-              <span class="code-block start">START</span>
-              <span class="connector"></span>
-              <span class="code-block move">MOVE</span>
-              <span class="connector"></span>
-              <span class="code-block loop">LOOP ×3</span>
-              <span class="connector"></span>
-              <span class="code-block stop">STOP</span>
-            </div>
-            <div class="lesson-result"><span>✓</span> Robot reached checkpoint</div>
-          </div>
           <div class="stage-label label-offline" aria-hidden="true"><span>●</span> Works offline</div>
           <div class="stage-label label-lan" aria-hidden="true">Local class · no cloud sign-in</div>
         </div>
@@ -83,41 +66,75 @@
 
     <section class="section experience" id="experience">
       <div class="page-shell">
-        <div class="section-heading heading-split">
+        <div class="section-heading heading-split experience-heading">
           <div>
-            <p class="eyebrow"><span></span> From instruction to intuition</p>
-            <h2>Students do not just read the algorithm. They walk around it.</h2>
+            <p class="eyebrow"><span></span> Physical robot programming</p>
+            <h2>Build the program on the ground. Watch the robot prove it.</h2>
           </div>
-          <p>Each action is a block in the world. The robot makes the result immediate, and a failed path becomes an invitation to reason—not a red mark at the end of a worksheet.</p>
+          <p>The core lesson does not happen in a detached editor. Students place instruction nodes directly in the voxel world, connect them from START, and run the chain through a nearby robot.</p>
         </div>
 
-        <div class="steps-grid">
-          <article class="step-card">
-            <span class="step-number">01</span>
-            <div class="step-visual build-visual" aria-hidden="true">
-              <span>START</span><i></i><span>MOVE</span><i></i><span>TURN</span>
+        <div class="robot-program-frame">
+          <div class="program-demo">
+            <div class="program-demo-bar">
+              <span><i></i> In-world program</span>
+              <span>Connected left to right · +X direction</span>
             </div>
-            <h3>Build the idea</h3>
-            <p>Place instructions in a visible sequence: move, turn, sense, loop, wait, place, or dig.</p>
-          </article>
-          <article class="step-card featured-step">
-            <span class="step-number">02</span>
-            <div class="step-visual run-visual" aria-hidden="true">
-              <span class="robot-face">◼ ◼</span>
-              <span class="path-line"></span>
-              <span class="checkpoint">⚑</span>
+
+            <div class="voxel-program">
+              <p class="texture-note"><span aria-hidden="true">◆</span> Actual in-game block faces</p>
+              <div class="program-chain" aria-label="Example program: START, move forward, move forward, turn right, stop">
+                <figure class="physical-block">
+                  <span>01</span>
+                  <img src="assets/coding-start.png" width="96" height="96" alt="START programming block">
+                  <figcaption>Run</figcaption>
+                </figure>
+                <figure class="physical-block">
+                  <span>02</span>
+                  <img src="assets/coding-move.png" width="96" height="96" alt="Move forward programming block">
+                  <figcaption>Move 1</figcaption>
+                </figure>
+                <figure class="physical-block">
+                  <span>03</span>
+                  <img src="assets/coding-move.png" width="96" height="96" alt="Move forward programming block">
+                  <figcaption>Move 1</figcaption>
+                </figure>
+                <figure class="physical-block">
+                  <span>04</span>
+                  <img src="assets/coding-turn-right.png" width="96" height="96" alt="Turn right programming block">
+                  <figcaption>Turn 90°</figcaption>
+                </figure>
+                <figure class="physical-block">
+                  <span>05</span>
+                  <img src="assets/coding-stop.png" width="96" height="96" alt="Stop programming block">
+                  <figcaption>Stop</figcaption>
+                </figure>
+              </div>
+
+              <div class="run-cue">
+                <span class="click-cursor" aria-hidden="true">↖</span>
+                <div><strong>Right-click START to run</strong><span>The nearest robot within 32 nodes executes each connected instruction in order.</span></div>
+              </div>
             </div>
-            <h3>Run it in the world</h3>
-            <p>Start the program and watch a nearby robot carry out the sequence one physical step at a time.</p>
-          </article>
-          <article class="step-card">
-            <span class="step-number">03</span>
-            <div class="step-visual debug-visual" aria-hidden="true">
-              <span>Expected</span><b>→</b><span class="wrong">Blocked</span><b>→</b><span class="fixed">Fixed</span>
+
+            <div class="robot-output" aria-label="Robot result: move one node, move one node, turn right, then stop">
+              <span class="output-label"><i></i> Robot result</span>
+              <div class="output-actions"><span>Move 1 node</span><b>→</b><span>Move 1 node</span><b>→</b><span>Turn right</span><b>→</b><span>Stop</span></div>
             </div>
-            <h3>Debug together</h3>
-            <p>Compare intent with outcome, change one block, and run again. The thinking stays shared and concrete.</p>
-          </article>
+          </div>
+
+          <div class="program-explainer">
+            <p class="panel-kicker">The classroom loop</p>
+            <h3>Every idea becomes something the robot can do.</h3>
+            <ol class="program-steps">
+              <li><span>01</span><div><strong>Place</strong><p>Build a visible sequence of physical instruction blocks beside the robot.</p></div></li>
+              <li><span>02</span><div><strong>Predict and run</strong><p>Agree on the expected path, then activate the START block.</p></div></li>
+              <li><span>03</span><div><strong>Observe and debug</strong><p>Watch the robot, change one block in the world, and run the program again.</p></div></li>
+            </ol>
+            <div class="concept-list" aria-label="Programming concepts available in the game">
+              <span>Sequence</span><span>Loops</span><span>Conditions</span><span>Sensing</span><span>Place &amp; dig</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -229,7 +246,7 @@
 
         <div class="sponsored-note">
           <span class="sponsored-icon" aria-hidden="true">✦</span>
-          <div><strong>Government and Little KITEs schools</strong><p>Eligible, properly authorised Kerala government-school pilots are planned as sponsored School Edition licences at no charge. This is an OpenClassCraft programme, not an endorsement or commitment by KITE or the Government of Kerala.</p></div>
+          <div><strong>Sponsored access for government schools</strong><p>Eligible, properly authorised government schools anywhere can apply for a sponsored School Edition licence at no charge. Local education-department, security, privacy, and software-installation approvals still apply. This is an OpenClassCraft programme, not an endorsement or commitment by any government authority.</p></div>
         </div>
       </div>
     </section>
@@ -275,8 +292,8 @@
             <p>Use classroom aliases or group names only. Do not enter dates of birth, personal email addresses, health information, government identifiers, or other sensitive student records.</p>
           </details>
           <details>
-            <summary>Can a Kerala government school install it immediately?</summary>
-            <p>No assumption should be made. The school must follow KITE and departmental approval, security, privacy, and software-installation procedures. OpenClassCraft will support a technical evaluation, but cannot grant that approval.</p>
+            <summary>Can a government school use OpenClassCraft?</summary>
+            <p>Yes. Government schools in any region may apply for sponsored School Edition access at no charge. Installation on government-managed systems must still follow the applicable education-department, security, privacy, and software-installation procedures; OpenClassCraft cannot grant those local approvals.</p>
           </details>
         </div>
       </div>
