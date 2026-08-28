@@ -1440,9 +1440,13 @@ void Game::processKeyInput()
 			m_game_formspec.showPauseMenu();
 		}
 	} else if (wasKeyDown(KeyType::CHAT)) {
-		openConsole(0.2, L"");
+		openConsole(g_settings->getBool("openclasscraft_visual_chat") ?
+				0.46f : 0.2f, L"");
 	} else if (wasKeyDown(KeyType::CMD)) {
-		openConsole(0.2, L"/");
+		if (g_settings->getBool("openclasscraft_visual_commands"))
+			client->typeChatMessage(L"/occ_actions");
+		else
+			openConsole(0.2, L"/");
 	} else if (wasKeyDown(KeyType::CMD_LOCAL)) {
 		if (client->modsLoaded())
 			openConsole(0.2, L".");

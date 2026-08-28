@@ -1,4 +1,4 @@
--- Minetest Game mod: default
+-- OpenClassCraft world foundations, derived from the original default game mod.
 -- See README.txt for licensing and other information.
 
 -- The API documentation in here was moved into game_api.txt
@@ -71,9 +71,8 @@ function minetest.chat_send_player(name, message)
 	if type(message) ~= "string" or message:find("%[Read aloud%]") then
 		return
 	end
-	if message:find("%[Luanti Edu%]") or message:find("%[OpenClassCraft%]") then
+	if message:find("%[OpenClassCraft%]") then
 		local clean = message
-			:gsub("%[Luanti Edu%]%s*", "")
 			:gsub("%[OpenClassCraft%]%s*", "")
 			:gsub("[✓✗■]", "")
 			:gsub("%s+", " ")

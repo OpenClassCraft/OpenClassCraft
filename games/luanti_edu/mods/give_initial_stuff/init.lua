@@ -1,6 +1,6 @@
 -- OpenClassCraft catalog setup.
 -- New players start with an empty hotbar and choose unlimited items from the
--- categorized inventory catalog. /givetools remains available for testing.
+-- categorized inventory catalog. The visual Actions screen offers this kit.
 
 local STARTER_ITEMS = {
     -- Starter tools. These use diamond-level capabilities but appear as normal tools.
@@ -96,7 +96,7 @@ minetest.register_on_joinplayer(function(player)
 	end)
 end)
 
--- Optional command for teachers who prefer a preselected kit.
+-- Internal action used by the visual classroom interface.
 minetest.register_chatcommand("givetools", {
     description = "Give starter tools and coding blocks",
     func = function(name)

@@ -97,14 +97,14 @@ minetest.register_chatcommand("occ_set_role", {
 	func = function(name, params)
 		local target_name, role = params:match("^%s*(%S+)%s+(%S+)%s*$")
 		if not target_name or not role then
-			return false, "Usage: /occ_set_role <name> <student|educator|observer>"
+			return false, "Choose a player and role in the Actions screen."
 		end
 		return player_api.set_openclasscraft_role(target_name, role, name)
 	end,
 })
 
 minetest.register_chatcommand("student_skin", {
-	description = "Switch to the default Luanti Edu student skin.",
+	description = "Switch to the default OpenClassCraft student appearance.",
 	func = function(name)
 		local player = minetest.get_player_by_name(name)
 		if not player then
@@ -116,7 +116,7 @@ minetest.register_chatcommand("student_skin", {
 })
 
 minetest.register_chatcommand("educator_skin", {
-	description = "Switch to the Luanti Edu professor skin.",
+	description = "Switch to the OpenClassCraft educator appearance.",
 	func = function(name)
 		local player = minetest.get_player_by_name(name)
 		if not player then
@@ -128,7 +128,7 @@ minetest.register_chatcommand("educator_skin", {
 })
 
 minetest.register_chatcommand("professor_skin", {
-	description = "Switch to the Luanti Edu professor skin.",
+	description = "Switch to the OpenClassCraft educator appearance.",
 	func = function(name)
 		local player = minetest.get_player_by_name(name)
 		if not player then

@@ -69,6 +69,16 @@ private:
 	void drawText();
 	void drawPrompt();
 
+	// OpenClassCraft chat-card layout. All rectangles include the current
+	// opening/closing animation offset.
+	s32 getCardMargin() const;
+	s32 getPanelPadding() const;
+	s32 getHeaderHeight() const;
+	s32 getInputHeight() const;
+	core::rect<s32> getCardRect() const;
+	core::rect<s32> getMessageRect() const;
+	core::rect<s32> getInputRect() const;
+
 	// If clicked fragment has a web url, send it to the system default web browser.
 	// Returns true if, and only if a web url was pressed.
 	bool weblinkClick(s32 col, s32 row);

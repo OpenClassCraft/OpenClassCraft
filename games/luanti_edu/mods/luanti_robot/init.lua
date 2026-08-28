@@ -1,4 +1,4 @@
--- Luanti Edu: Robot Entity
+-- OpenClassCraft: Robot Entity
 -- A friendly programmable robot that students control via coding blocks.
 
 local ROBOT_GRAVITY = -9.81
@@ -63,7 +63,7 @@ minetest.register_entity("luanti_robot:robot", {
     on_rightclick = function(self, clicker)
         local pname = clicker:get_player_name()
         minetest.chat_send_player(pname,
-            "[Luanti Edu] Robot is ready! Place START block and coding blocks, then right-click START to run.")
+            "[OpenClassCraft] Robot is ready! Place START block and coding blocks, then right-click START to run.")
     end,
 
     on_step = function(self, dtime)
@@ -190,13 +190,13 @@ minetest.register_node("luanti_robot:spawner", {
             local ent = obj:get_luaentity()
             if ent and ent.name == "luanti_robot:robot" then
                 minetest.chat_send_player(pname,
-                    "[Luanti Edu] A robot already exists here!")
+                    "[OpenClassCraft] A robot already exists here!")
                 return itemstack
             end
         end
         minetest.add_entity(spawn_pos, "luanti_robot:robot")
         minetest.chat_send_player(pname,
-            "[Luanti Edu] Robot spawned! Now build your program with coding blocks and right-click the START block.")
+            "[OpenClassCraft] Robot spawned! Now build your program with coding blocks and right-click the START block.")
         return itemstack
     end,
 })

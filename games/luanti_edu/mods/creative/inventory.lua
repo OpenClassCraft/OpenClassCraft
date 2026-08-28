@@ -229,10 +229,62 @@ function creative.register_tab(name, title, items)
 	})
 end
 
--- Sort registered items
-local registered_nodes = {}
-local registered_tools = {}
-local registered_craftitems = {}
+-- OpenClassCraft intentionally exposes a small, lesson-focused catalog. The
+-- default survival game's ores, ingots, weapons, furnaces, and technical items
+-- stay registered for world compatibility but never appear to students.
+local BUILD_ITEMS = {
+	["default:pick_diamond"] = true,
+	["default:axe_diamond"] = true,
+	["default:shovel_diamond"] = true,
+	["default:stone"] = true,
+	["default:cobble"] = true,
+	["default:stonebrick"] = true,
+	["default:stone_block"] = true,
+	["default:sandstone"] = true,
+	["default:sandstonebrick"] = true,
+	["default:sandstone_block"] = true,
+	["default:brick"] = true,
+	["default:glass"] = true,
+	["default:dirt"] = true,
+	["default:dirt_with_grass"] = true,
+	["default:sand"] = true,
+	["default:clay"] = true,
+	["default:snowblock"] = true,
+	["default:ice"] = true,
+	["default:tree"] = true,
+	["default:wood"] = true,
+	["default:leaves"] = true,
+	["default:sapling"] = true,
+	["default:jungletree"] = true,
+	["default:junglewood"] = true,
+	["default:jungleleaves"] = true,
+	["default:junglesapling"] = true,
+	["default:pine_tree"] = true,
+	["default:pine_wood"] = true,
+	["default:pine_needles"] = true,
+	["default:pine_sapling"] = true,
+	["default:acacia_tree"] = true,
+	["default:acacia_wood"] = true,
+	["default:acacia_leaves"] = true,
+	["default:acacia_sapling"] = true,
+	["default:aspen_tree"] = true,
+	["default:aspen_wood"] = true,
+	["default:aspen_leaves"] = true,
+	["default:aspen_sapling"] = true,
+	["default:cactus"] = true,
+	["default:papyrus"] = true,
+	["default:bookshelf"] = true,
+	["default:ladder_wood"] = true,
+	["default:fence_wood"] = true,
+	["default:fence_rail_wood"] = true,
+	["default:torch"] = true,
+	["default:apple"] = true,
+	["default:book"] = true,
+	["default:paper"] = true,
+	["default:stick"] = true,
+}
+
+local registered_build = {}
 local registered_classroom = {}
 local registered_programming = {}
 local registered_chemistry = {}
@@ -242,14 +294,8 @@ local registered_electronics = {}
 minetest.register_on_mods_loaded(function()
 	for name, def in pairs(minetest.registered_items) do
 		local group = def.groups or {}
-
-		local nogroup = not (group.node or group.tool or group.craftitem)
-		if group.node or (nogroup and minetest.registered_nodes[name]) then
-			registered_nodes[name] = def
-		elseif group.tool or (nogroup and minetest.registered_tools[name]) then
-			registered_tools[name] = def
-		elseif group.craftitem or (nogroup and minetest.registered_craftitems[name]) then
-			registered_craftitems[name] = def
+		if BUILD_ITEMS[name] and group.not_in_creative_inventory ~= 1 then
+			registered_build[name] = def
 		end
 		if name:match("^openclasscraft_classroom:") or name:match("^openclasscraft_creator:") then
 			registered_classroom[name] = def
@@ -273,10 +319,7 @@ minetest.register_on_mods_loaded(function()
 	end
 end)
 
-creative.register_tab("all", S("All"), minetest.registered_items)
-creative.register_tab("nodes", S("Nodes"), registered_nodes)
-creative.register_tab("tools", S("Tools"), registered_tools)
-creative.register_tab("craftitems", S("Items"), registered_craftitems)
+creative.register_tab("build", S("Build"), registered_build)
 creative.register_tab("classroom", S("Classroom"), registered_classroom)
 creative.register_tab("programming", S("Programming"), registered_programming)
 creative.register_tab("chemistry", S("Chemistry"), registered_chemistry)
@@ -284,5 +327,5 @@ creative.register_tab("ecology", S("Ecology"), registered_ecology)
 creative.register_tab("electronics", S("Electronics"), registered_electronics)
 
 function sfinv.get_homepage_name(player)
-	return "creative:all"
+	return "creative:build"
 end

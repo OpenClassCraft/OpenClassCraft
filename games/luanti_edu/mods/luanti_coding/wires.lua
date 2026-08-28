@@ -1,4 +1,4 @@
--- Luanti Edu: Wire / Connector blocks
+-- OpenClassCraft: Wire / Connector blocks
 -- Players use these to connect programming blocks together.
 -- Wires carry the execution signal between non-adjacent blocks.
 

@@ -15,7 +15,8 @@ For downloads, complete platform build instructions, Teacher Console setup, priv
 - An in-game Creator Lab with four material styles and simple stored actions.
 - A flat-area World Edit Wand intended for backed-up lesson worlds.
 - Student and educator presentation, custom sky and music, learning-themed vegetation, and classroom textures.
-- Optional larger UI, Cousine font, stronger contrast, distinct selection color, simplified HUD, and helper chat settings.
+- A branded class-chat card using Atkinson Hyperlegible Mono and a clickable <kbd>/</kbd> Actions center.
+- Optional larger UI, stronger contrast, distinct selection color, simplified HUD, and helper chat settings.
 - An optional HTTP bridge to a Teacher Console running on the same host computer.
 
 ## Start a robot program
@@ -32,9 +33,9 @@ Programs are linear and limited to 256 instructions. Loop, IF, and WHILE nodes a
 - Interact with a Guide or board to read it; sneak-interact to edit it when ownership/server permissions allow.
 - Use the Lesson Planner to create up to four ordered tasks: read a board, talk to a Guide, reach a checkpoint, make water, or receive a teacher check.
 - Place atom items in the Chemistry Lab and choose a supported molecule.
-- `/givetools` gives a quick teaching kit. New-player hotbars otherwise start empty because the inventory catalog is unlimited.
-- `/student_skin`, `/educator_skin`, and `/professor_skin` change presentation. The professor command is a skin alias, not a third permission role.
-- `/music` restarts ambient music and `/sky` reapplies the custom sky.
+- Press <kbd>/</kbd> to open the clickable Actions center for a starter kit, appearance, role, class joining, submissions, sky, music, and educator controls.
+- Press <kbd>T</kbd> to open the larger OpenClassCraft class-chat card.
+- New-player hotbars start empty; the inventory provides the curated Build, Classroom, Programming, Chemistry, Ecology, and Electronics catalogs.
 
 The current creative catalog and editing tools are not strictly role-gated. Use trusted classroom servers and backed-up worlds.
 
@@ -47,6 +48,7 @@ The current creative catalog and editing tools are not strictly role-gated. Use 
 | `openclasscraft_classroom` | Guides, boards, lesson progress, checkpoints, chemistry, and Teacher Console bridge. |
 | `openclasscraft_creator` | Creator Lab materials/actions and World Edit Wand. |
 | `openclasscraft_world` | Sky, music, vegetation, and generated world details. |
+| `openclasscraft_interface` | Class chat, clickable Actions, class joining, submissions, and host role controls. |
 | `creative` / `sfinv` | Searchable, categorized unlimited inventory. |
 | `player_api` | Student/educator skins and presentation metadata. |
 | `default` | Base nodes, tools, accessibility forms, and shared game behavior. |
@@ -64,11 +66,13 @@ openclasscraft_high_contrast
 openclasscraft_colorblind_support
 openclasscraft_simplified_controls
 openclasscraft_large_ui
+openclasscraft_visual_chat
+openclasscraft_visual_commands
 ```
 
 The read-aloud option emits labeled helper chat for screen-reader use; it does not synthesize speech. Colorblind support currently changes the selected-list highlight rather than recoloring every texture.
 
-The Teacher Console bridge is disabled unless its URL, token, and HTTP-mod permission are added to `minetest.conf`. `/occ_teacher_sync` requires the `server` privilege. Never commit an exported bridge token.
+The Teacher Console bridge is disabled unless its URL, token, and HTTP-mod permission are added to `minetest.conf`. Its **Sync** action is visible only to the classroom host. Never commit an exported bridge token.
 
 ## Use with another Luanti build
 
@@ -79,7 +83,7 @@ Stock Luanti will load the Lua game, but OpenClassCraft's customized main menu, 
 ## Development notes
 
 - Lua source is under `mods/`; textures, models, and sounds live in each mod's media directories.
-- Newly generated chunks receive the OpenClassCraft vegetation and decoration pass. Existing generated terrain is not rewritten.
+- Newly generated chunks receive the OpenClassCraft vegetation and decoration pass without survival ores. Existing generated terrain is not rewritten.
 - Creator desktop exports use textures supplied by `openclasscraft_creator`, so they are not fully self-contained outside this game.
 - The nested `.github/` directory came from the game lineage; repository CI workflows must live in the root `.github/workflows/` directory to run on GitHub.
 - Custom game logic does not yet have complete automated end-to-end tests. Validate a fresh world, robot chain, lesson sequence, chemistry reaction, and multiplayer permission model after changes.

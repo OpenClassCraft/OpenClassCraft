@@ -227,6 +227,10 @@ Arimo - Apache License, version 2.0
 Cousine - Apache License, version 2.0
   Digitized data copyright (c) 2010-2012 Google Corporation.
 
+Atkinson Hyperlegible Mono - SIL Open Font License, version 1.1
+  Copyright 2020-2024 The Atkinson Hyperlegible Mono Project Authors.
+  See fonts/AtkinsonHyperlegibleMono-LICENSE.txt.
+
 DroidSansFallBackFull:
 
   Copyright (C) 2008 The Android Open Source Project

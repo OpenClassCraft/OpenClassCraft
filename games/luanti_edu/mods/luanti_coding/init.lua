@@ -1,4 +1,4 @@
--- Luanti Edu: Block Coding System
+-- OpenClassCraft: Block Coding System
 -- Registers all visual programming blocks
 
 local modpath = minetest.get_modpath("luanti_coding")

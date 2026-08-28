@@ -1,4 +1,4 @@
-# Luanti Edu simple robot model
+# OpenClassCraft programmable robot model
 mtllib robot.mtl
 o robot
 v -0.32 0.0 -0.2

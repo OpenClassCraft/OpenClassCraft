@@ -2297,10 +2297,8 @@ end
 local mg_name = minetest.get_mapgen_setting("mg_name")
 
 if mg_name == "v6" then
-	default.register_mgv6_ores()
 	default.register_mgv6_decorations()
 else
 	default.register_biomes()
-	default.register_ores()
 	default.register_decorations()
 end

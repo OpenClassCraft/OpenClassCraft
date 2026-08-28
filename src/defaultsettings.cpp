@@ -316,6 +316,8 @@ void set_default_settings()
 	settings->setDefault("openclasscraft_colorblind_support", "false");
 	settings->setDefault("openclasscraft_simplified_controls", "false");
 	settings->setDefault("openclasscraft_large_ui", "false");
+	settings->setDefault("openclasscraft_visual_chat", "true");
+	settings->setDefault("openclasscraft_visual_commands", "true");
 
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
@@ -407,17 +409,17 @@ void set_default_settings()
 	settings->setDefault("font_shadow", "1");
 	settings->setDefault("font_shadow_alpha", "127");
 	settings->setDefault("font_size_divisible_by", "1");
-	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "Cousine-Regular.ttf"));
-	settings->setDefault("mono_font_path_italic", porting::getDataPath("fonts" DIR_DELIM "Cousine-Italic.ttf"));
-	settings->setDefault("mono_font_path_bold", porting::getDataPath("fonts" DIR_DELIM "Cousine-Bold.ttf"));
-	settings->setDefault("mono_font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "Cousine-BoldItalic.ttf"));
+	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "AtkinsonHyperlegibleMono-Regular.ttf"));
+	settings->setDefault("mono_font_path_italic", porting::getDataPath("fonts" DIR_DELIM "AtkinsonHyperlegibleMono-Italic.ttf"));
+	settings->setDefault("mono_font_path_bold", porting::getDataPath("fonts" DIR_DELIM "AtkinsonHyperlegibleMono-Bold.ttf"));
+	settings->setDefault("mono_font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "AtkinsonHyperlegibleMono-BoldItalic.ttf"));
 	settings->setDefault("mono_font_size_divisible_by", "1");
 	settings->setDefault("fallback_font_path", porting::getDataPath("fonts" DIR_DELIM "DroidSansFallbackFull.ttf"));
 
 	std::string font_size_str = std::to_string(TTF_DEFAULT_FONT_SIZE);
 	settings->setDefault("font_size", font_size_str);
 	settings->setDefault("mono_font_size", font_size_str);
-	settings->setDefault("chat_font_size", "0"); // Default "font_size"
+	settings->setDefault("chat_font_size", "17");
 
 	// ContentDB
 	settings->setDefault("contentdb_url", "https://content.luanti.org");

@@ -1497,7 +1497,7 @@ minetest.register_chatcommand("occ_join", {
 				assigned_role = "educator"
 			else
 				assigned_role = "observer"
-				educator_warning = " Educator elevation requires the host to run /occ_set_role."
+				educator_warning = " Ask the host to open Actions and assign the Educator role."
 			end
 		end
 		if player_api and player_api.set_openclasscraft_role then
@@ -1520,7 +1520,7 @@ minetest.register_chatcommand("occ_submit_build", {
 		local player = minetest.get_player_by_name(name)
 		local session = lesson_storage:get_string("teacher_bridge_session_code")
 		if not player or session == "" or player:get_meta():get_string("openclasscraft_joined_session") ~= session then
-			return false, "Join the active class first with /occ_join CODE."
+			return false, "Open Actions and join the active class first."
 		end
 		local pos = vector.round(player:get_pos())
 		local note = trim(param)

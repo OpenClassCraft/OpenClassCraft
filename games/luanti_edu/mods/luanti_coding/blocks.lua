@@ -1,4 +1,4 @@
--- Luanti Edu: Programming Blocks
+-- OpenClassCraft: Programming Blocks
 -- Each block represents a programming concept. Players physically place and
 -- connect these blocks in the world to create programs.
 --
@@ -40,7 +40,7 @@ minetest.register_node("luanti_coding:start", {
     is_ground_content = false,
     on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
         local pname = clicker:get_player_name()
-        minetest.chat_send_player(pname, "[Luanti Edu] Running your program...")
+        minetest.chat_send_player(pname, "[OpenClassCraft] Running your program...")
         luanti_coding.run_program(pos, clicker)
         return itemstack
     end,
@@ -145,7 +145,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         local meta = minetest.get_meta(pos)
         meta:set_int("loop_count", count)
         minetest.chat_send_player(player:get_player_name(),
-            "[Luanti Edu] Loop set to repeat " .. count .. " times.")
+            "[OpenClassCraft] Loop set to repeat " .. count .. " times.")
     end
 end)
 

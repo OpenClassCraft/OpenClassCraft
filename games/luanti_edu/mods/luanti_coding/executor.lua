@@ -1,4 +1,4 @@
--- Luanti Edu: Program Executor
+-- OpenClassCraft: Program Executor
 -- Reads the chain of programming blocks starting from a START block,
 -- builds a list of instructions, and executes them step-by-step on
 -- the nearest luanti_robot entity.
@@ -134,7 +134,7 @@ local function execute_step(robot, instructions, index, player_name, state)
         if ent and ent.object then
             code_feedback(ent.object:get_pos(), "#44ff77")
         end
-        minetest.chat_send_player(player_name, "[Luanti Edu] Program finished!")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Program finished!")
         report_program_result(player_name, true, #instructions, nil, "Program finished after all instructions ran.")
         return
     end
@@ -142,7 +142,7 @@ local function execute_step(robot, instructions, index, player_name, state)
     local inst = instructions[index]
     local ent = robot:get_luaentity()
     if not ent then
-        minetest.chat_send_player(player_name, "[Luanti Edu] Robot not found!")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Robot not found!")
         return
     end
 
@@ -152,42 +152,42 @@ local function execute_step(robot, instructions, index, player_name, state)
     if action == "move_forward" then
         if not ent:move_forward() then
             code_feedback(inst.pos, "#ff3344")
-            minetest.chat_send_player(player_name, "[Luanti Edu] Robot blocked at step " .. index .. ". Program paused.")
+            minetest.chat_send_player(player_name, "[OpenClassCraft] Robot blocked at step " .. index .. ". Program paused.")
             report_program_result(player_name, false, #instructions, index, "Robot was blocked while moving forward.")
             return
         end
-        minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Move Forward")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Step " .. index .. ": Move Forward")
 
     elseif action == "turn_left" then
         ent:turn_left()
-        minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Turn Left")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Step " .. index .. ": Turn Left")
 
     elseif action == "turn_right" then
         ent:turn_right()
-        minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Turn Right")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Step " .. index .. ": Turn Right")
 
     elseif action == "place_block" then
         if not ent:place_block() then
             code_feedback(inst.pos, "#ff3344")
-            minetest.chat_send_player(player_name, "[Luanti Edu] Cannot place a block at step " .. index .. ". Program paused.")
+            minetest.chat_send_player(player_name, "[OpenClassCraft] Cannot place a block at step " .. index .. ". Program paused.")
             report_program_result(player_name, false, #instructions, index, "Robot could not place a block.")
             return
         end
-        minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Place Block")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Step " .. index .. ": Place Block")
 
     elseif action == "dig_block" then
         if not ent:dig_block() then
             code_feedback(inst.pos, "#ff3344")
-            minetest.chat_send_player(player_name, "[Luanti Edu] Nothing to dig at step " .. index .. ". Program paused.")
+            minetest.chat_send_player(player_name, "[OpenClassCraft] Nothing to dig at step " .. index .. ". Program paused.")
             report_program_result(player_name, false, #instructions, index, "Robot found nothing to dig.")
             return
         end
-        minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Dig Block")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Step " .. index .. ": Dig Block")
 
     elseif action == "if_clear" then
         local is_clear = ent:is_forward_clear()
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] Step " .. index .. ": IF Clear -> " ..
+            "[OpenClassCraft] Step " .. index .. ": IF Clear -> " ..
             (is_clear and "YES (run next)" or "NO (skip next)"))
         if not is_clear then
             index = index + 1
@@ -195,14 +195,14 @@ local function execute_step(robot, instructions, index, player_name, state)
 
     elseif action == "else_block" then
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] Step " .. index .. ": ELSE -> skipping alternate block")
+            "[OpenClassCraft] Step " .. index .. ": ELSE -> skipping alternate block")
         index = index + 1
 
     elseif action == "while_clear" then
         local is_clear = ent:is_forward_clear()
         local repeats = state.while_counts[index] or 0
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] Step " .. index .. ": WHILE Clear -> " ..
+            "[OpenClassCraft] Step " .. index .. ": WHILE Clear -> " ..
             (is_clear and "YES" or "NO") .. " (" .. repeats .. "/" .. WHILE_MAX_REPEAT .. ")")
 
         local next_inst = instructions[index + 1]
@@ -247,21 +247,21 @@ local function execute_step(robot, instructions, index, player_name, state)
     elseif action == "variable_inc" then
         state.variables.counter = (state.variables.counter or 0) + 1
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] Step " .. index .. ": Variable counter = " .. state.variables.counter)
+            "[OpenClassCraft] Step " .. index .. ": Variable counter = " .. state.variables.counter)
 
     elseif action == "sensor_clear" then
         local node = get_forward_node(ent)
         local is_clear = ent:is_forward_clear()
         local node_name = node and node.name or "unknown"
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] Step " .. index .. ": Sensor sees " .. node_name ..
+            "[OpenClassCraft] Step " .. index .. ": Sensor sees " .. node_name ..
             " -> " .. (is_clear and "clear" or "blocked"))
         if not is_clear then
             index = index + 1
         end
 
     elseif action == "wait" then
-        minetest.chat_send_player(player_name, "[Luanti Edu] Step " .. index .. ": Wait")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Step " .. index .. ": Wait")
         minetest.after(WAIT_DELAY, function()
             execute_step(robot, instructions, index + 1, player_name, state)
         end)
@@ -269,7 +269,7 @@ local function execute_step(robot, instructions, index, player_name, state)
 
     elseif action == "loop_start" then
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] Step " .. index .. ": LOOP x" .. inst.count)
+            "[OpenClassCraft] Step " .. index .. ": LOOP x" .. inst.count)
         local next_inst = instructions[index + 1]
         if next_inst then
             local expanded = {}
@@ -292,7 +292,7 @@ local function execute_step(robot, instructions, index, player_name, state)
         if stop_ent and stop_ent.object then
             code_feedback(stop_ent.object:get_pos(), "#44ff77")
         end
-        minetest.chat_send_player(player_name, "[Luanti Edu] Program complete!")
+        minetest.chat_send_player(player_name, "[OpenClassCraft] Program complete!")
         report_program_result(player_name, true, #instructions, nil, "Program reached its STOP block.")
         return
     end
@@ -308,7 +308,7 @@ function luanti_coding.run_program(start_pos, player)
 
     if not robot then
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] No robot found nearby! Place a Robot Spawner and right-click it first.")
+            "[OpenClassCraft] No robot found nearby! Place a Robot Spawner and right-click it first.")
         return
     end
 
@@ -316,12 +316,12 @@ function luanti_coding.run_program(start_pos, player)
 
     if #instructions == 0 then
         minetest.chat_send_player(player_name,
-            "[Luanti Edu] No instructions found! Connect some blocks to the right of the START block.")
+            "[OpenClassCraft] No instructions found! Connect some blocks to the right of the START block.")
         return
     end
 
     minetest.chat_send_player(player_name,
-        "[Luanti Edu] Starting program with " .. #instructions .. " instruction(s)...")
+        "[OpenClassCraft] Starting program with " .. #instructions .. " instruction(s)...")
 
     execute_step(robot, instructions, 1, player_name)
 end

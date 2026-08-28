@@ -97,9 +97,9 @@ Download the matching `.sha256` file as well and verify the archive before openi
 1. Open **Start Game** and choose **Singleplayer**.
 2. Select **New World**, name it, and create it with the OpenClassCraft game.
 3. Select the world and choose **Play Game**.
-4. Open the inventory (the default key is <kbd>I</kbd>) and choose **Programming**, **Classroom**, **Chemistry**, **Ecology**, or **Electronics**.
+4. Open the inventory (the default key is <kbd>I</kbd>) and choose **Build**, **Programming**, **Classroom**, **Chemistry**, **Ecology**, or **Electronics**.
 
-New players intentionally start with an empty hotbar. The unlimited catalog contains the lesson items; `/givetools` is also available when a quick teaching kit is useful.
+New players intentionally start with an empty hotbar. The catalog contains only lesson and building items; survival ores, weapons, furnaces, and generic technical items are hidden. Press <kbd>/</kbd> for the clickable **Actions** center, where a starter kit, appearance, world, class-join, submission, and educator controls are available without typing commands. Press <kbd>T</kbd> for the redesigned class chat.
 
 Default movement follows Luanti conventions: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move, <kbd>Space</kbd> to jump, left click to dig/use, right click to place/interact, and <kbd>Esc</kbd> for the pause menu. Keys can be changed in Settings.
 
@@ -199,7 +199,7 @@ The lab consumes the atom items and creates the molecule in front of the lab. A 
 
 ### World presentation
 
-Newly generated chunks receive OpenClassCraft's bright sky, clouds, chunky trees, grass, learning flowers, small stones, and sand details. Existing generated terrain is not retroactively rebuilt. Ambient classroom music starts per player; `/music` restarts it and `/sky` reapplies the custom sky.
+Newly generated chunks receive OpenClassCraft's bright sky, clouds, chunky trees, grass, learning flowers, small stones, and sand details. Survival ores are not generated. Existing generated terrain is not retroactively rebuilt. Ambient classroom music starts per player; use **Restart music** or **Refresh sky** in the <kbd>/</kbd> Actions center when needed.
 
 ## Local classroom multiplayer
 
@@ -227,7 +227,9 @@ Settings are available in the OpenClassCraft/Luanti settings interface and can a
 
 | Setting | What it does today |
 | --- | --- |
-| `openclasscraft_dyslexia_font` | Selects bundled Cousine regular/bold/italic fonts for menus and in-game text. Restart after changing it. |
+| `openclasscraft_dyslexia_font` | Selects bundled Atkinson Hyperlegible Mono regular/bold/italic fonts for menus and in-game text. Restart after changing it. |
+| `openclasscraft_visual_chat` | Uses the larger OpenClassCraft class-chat card when <kbd>T</kbd> is pressed. |
+| `openclasscraft_visual_commands` | Makes <kbd>/</kbd> open clickable Actions instead of a command prompt. |
 | `openclasscraft_large_ui` | Raises GUI/HUD scaling, enlarges forms, and uses a six-slot hotbar. A restart is recommended. |
 | `openclasscraft_high_contrast` | Uses stronger background, text, and inventory-list contrast in OpenClassCraft forms. |
 | `openclasscraft_colorblind_support` | Changes the selected inventory/list highlight to a more distinct blue. It is not a full texture recoloring system. |
@@ -310,7 +312,7 @@ The Teacher Console and the hosted OpenClassCraft process must run on the same c
 2. Choose **Start bridge**, then **Export settings**.
 3. Copy the generated `openclasscraft-teacher-bridge.conf` settings into the host's `minetest.conf`.
 4. Keep its generated token secret and restart the OpenClassCraft host.
-5. In the hosted world, a player with the `server` privilege runs `/occ_teacher_sync`.
+5. In the hosted world, the host presses <kbd>/</kbd> and chooses **Sync** in Actions.
 
 The bridge returns only the selected lesson plan. The game may post the player name, lesson title, and completed/total task counts back to the Console. It does not send the Console's full student records, notes, reports, or backups. Imported bridge tasks currently become manual teacher-check tasks in game.
 
@@ -437,17 +439,9 @@ The `release-build` workflow uses Fedora 44 as the default CI and public-alpha t
 
 The same workflow clean-installs and checks the Linux Creator and School Console. Creator preview packages are separate CI artifacts. School Console packaging is disabled unless an owner-authorised manual run enables it, uses an internal artifact name and short retention, and is excluded by the Community release allow-list. Public publishing defaults to the Fedora-only alpha scope; a later explicit `all-community` scope can include validated Ubuntu and Windows assets. Either scope refuses every unexpected filename.
 
-### Useful chat commands
+### Visual classroom controls
 
-| Command | Purpose |
-| --- | --- |
-| `/givetools` | Give the current programming, classroom, ecology, and electronics teaching kit. |
-| `/student_skin` | Select the student skin. |
-| `/educator_skin` | Select the educator skin. |
-| `/professor_skin` | Select the professor-style skin; this is a skin alias, not a separate permission role. |
-| `/music` | Restart ambient classroom music. |
-| `/sky` | Reapply OpenClassCraft sky settings. |
-| `/occ_teacher_sync` | Fetch the selected lesson from a configured local Teacher Console bridge; requires `server`. |
+Press <kbd>/</kbd> to open **Class Chat & Actions**. Visible controls provide the starter kit, student or educator appearance, current role, sky and music refresh, class-code joining, build submission, host-only role assignment, and Teacher Console sync. The underlying compatibility commands remain internal for server administration, but students do not need to learn them.
 
 ### Data and configuration
 

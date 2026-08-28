@@ -320,13 +320,13 @@ gui::IGUIFont *FontEngine::initFont(FontSpec spec)
 	std::string accessibility_font_path;
 	if (g_settings->getBool("openclasscraft_dyslexia_font") &&
 			spec.mode != _FM_Fallback) {
-		std::string accessibility_name = "Cousine-Regular.ttf";
+		std::string accessibility_name = "AtkinsonHyperlegibleMono-Regular.ttf";
 		if (setting_suffix == "_bold")
-			accessibility_name = "Cousine-Bold.ttf";
+			accessibility_name = "AtkinsonHyperlegibleMono-Bold.ttf";
 		else if (setting_suffix == "_italic")
-			accessibility_name = "Cousine-Italic.ttf";
+			accessibility_name = "AtkinsonHyperlegibleMono-Italic.ttf";
 		else if (setting_suffix == "_bold_italic")
-			accessibility_name = "Cousine-BoldItalic.ttf";
+			accessibility_name = "AtkinsonHyperlegibleMono-BoldItalic.ttf";
 		std::string accessibility_rel_path =
 				std::string("fonts") + DIR_DELIM + accessibility_name;
 		accessibility_font_path = porting::getDataPath(accessibility_rel_path.c_str());

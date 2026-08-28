@@ -7,6 +7,12 @@
 #    A restart is required after changing this.
 openclasscraft_dyslexia_font (Dyslexia-friendly font) bool false
 
+#    Uses the larger OpenClassCraft class-chat card.
+openclasscraft_visual_chat (Visual class chat) bool true
+
+#    Opens clickable classroom Actions when / is pressed.
+openclasscraft_visual_commands (Clickable slash actions) bool true
+
 #    Announces supported classroom/game messages in chat-friendly read-aloud form.
 openclasscraft_read_aloud (Read aloud helpers) bool false
 

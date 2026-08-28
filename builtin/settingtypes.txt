@@ -885,6 +885,12 @@ language (Language) enum   ,be,bg,ca,cs,da,de,el,en,eo,es,et,eu,fi,fr,gd,gl,hu,i
 #    A restart is required after changing this.
 openclasscraft_dyslexia_font (OpenClassCraft: dyslexia-friendly font) bool false
 
+#    Uses OpenClassCraft's larger inset class-chat card instead of the legacy console.
+openclasscraft_visual_chat (OpenClassCraft: visual class chat) bool true
+
+#    Opens clickable classroom Actions when / is pressed instead of a command prompt.
+openclasscraft_visual_commands (OpenClassCraft: clickable / actions) bool true
+
 #    Makes menus, forms, HUD elements, and touch targets larger.
 #    A restart is recommended after changing this.
 openclasscraft_large_ui (OpenClassCraft: large UI mode) bool false
