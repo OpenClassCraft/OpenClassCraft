@@ -209,8 +209,10 @@ def animal_definition(kind):
             ("head", (0, .88, .74), (.58, .52, .55), "fur", (0, 0, 0)),
             ("head", (0, .78, 1.07), (.42, .27, .34), "accent", (0, 0, 0)),
             ("head", (0, .80, 1.27), (.17, .13, .10), "dark", (0, 0, 0)),
-            ("head", (-.24, .96, .96), (.07, .10, .07), "detail", (0, 0, 0)),
-            ("head", (.24, .96, .96), (.07, .10, .07), "detail", (0, 0, 0)),
+            # Keep the eyes slightly proud of the head surface. The previous
+            # eye boxes ended inside the fur cuboid and disappeared in-game.
+            ("head", (-.215, .965, 1.035), (.10, .13, .055), "detail", (0, 0, 0)),
+            ("head", (.215, .965, 1.035), (.10, .13, .055), "detail", (0, 0, 0)),
             ("ear_l", (-.20, 1.17, .67), (.23, .45, .18), "fur", (-4, 0, -8)),
             ("ear_r", (.20, 1.17, .67), (.23, .45, .18), "fur", (-4, 0, 8)),
             ("ear_l", (-.20, 1.16, .77), (.10, .28, .03), "dark", (-4, 0, -8)),
