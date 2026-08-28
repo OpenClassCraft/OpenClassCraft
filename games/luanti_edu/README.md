@@ -15,6 +15,7 @@ For downloads, complete platform build instructions, Teacher Console setup, priv
 - An in-game Creator Lab with four material styles and simple stored actions.
 - A flat-area World Edit Wand intended for backed-up lesson worlds.
 - Student and educator presentation, custom sky and music, learning-themed vegetation, and classroom textures.
+- A deterministic Valleys learning world with a safe central campus, eight connected field trails, marked habitat checkpoints, rivers, coasts, mountains, snow, and biome-specific ecology.
 - A branded class-chat card using Atkinson Hyperlegible Mono and a clickable <kbd>/</kbd> Actions center.
 - Optional larger UI, stronger contrast, distinct selection color, simplified HUD, and helper chat settings.
 - An optional HTTP bridge to a Teacher Console running on the same host computer.
@@ -48,6 +49,7 @@ The current creative catalog and editing tools are not strictly role-gated. Use 
 | `openclasscraft_classroom` | Guides, boards, lesson progress, checkpoints, chemistry, and Teacher Console bridge. |
 | `openclasscraft_creator` | Creator Lab materials/actions and World Edit Wand. |
 | `openclasscraft_world` | Sky, music, vegetation, and generated world details. |
+| `openclasscraft_mapgen` | Curated biomes, safe campus terrain, connected field trails, habitat markers, and map-generation safety rules. |
 | `openclasscraft_interface` | Class chat, clickable Actions, class joining, submissions, and host role controls. |
 | `creative` / `sfinv` | Searchable, categorized unlimited inventory. |
 | `player_api` | Student/educator skins and presentation metadata. |
@@ -55,7 +57,7 @@ The current creative catalog and editing tools are not strictly role-gated. Use 
 
 ## Configuration
 
-The bundled defaults enable creative mode, disable player damage, prefer peaceful play, and stop automatic time progression. The game-level `disabled_settings` rule forces damage off. Server operators should still review `minetest.conf`, privileges, passwords, and firewall rules before hosting students.
+The bundled defaults enable creative mode, disable player damage, prefer peaceful play, stop automatic time progression, and lock new worlds to the deterministic Valleys learning map. Ores and dungeons are disabled, caves are rare and deep, and map generation is limited to a classroom-manageable world. The game-level `disabled_settings` rule forces damage off. Server operators should still review `minetest.conf`, privileges, passwords, and firewall rules before hosting students.
 
 Accessibility keys are declared in `settingtypes.txt`:
 
@@ -83,7 +85,7 @@ Stock Luanti will load the Lua game, but OpenClassCraft's customized main menu, 
 ## Development notes
 
 - Lua source is under `mods/`; textures, models, and sounds live in each mod's media directories.
-- Newly generated chunks receive the OpenClassCraft vegetation and decoration pass without survival ores. Existing generated terrain is not rewritten.
+- Newly generated chunks use the curated OpenClassCraft habitat, campus, trail, vegetation, and wildlife systems without survival ores or dungeons. Existing generated terrain is not rewritten; use a new world when validating map-generation changes.
 - Creator desktop exports use textures supplied by `openclasscraft_creator`, so they are not fully self-contained outside this game.
 - The nested `.github/` directory came from the game lineage; repository CI workflows must live in the root `.github/workflows/` directory to run on GitHub.
 - Custom game logic does not yet have complete automated end-to-end tests. Validate a fresh world, robot chain, lesson sequence, chemistry reaction, and multiplayer permission model after changes.

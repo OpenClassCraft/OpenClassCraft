@@ -336,6 +336,9 @@ minetest.register_lbm({
 	end,
 })
 
+-- The dedicated OpenClassCraft map generator owns all vegetation in new
+-- worlds. Keep this fallback only for installations that omit that mod.
+if not minetest.get_modpath("openclasscraft_mapgen") then
 minetest.register_on_generated(function(minp, maxp, blockseed)
 	if maxp.y < 0 or minp.y > 80 then
 		return
@@ -366,6 +369,7 @@ minetest.register_on_generated(function(minp, maxp, blockseed)
 		end
 	end
 end)
+end
 
 minetest.register_on_joinplayer(function(player)
 	apply_real_world_sky(player)

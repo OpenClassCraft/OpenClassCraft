@@ -64,7 +64,7 @@ The planned school price covers onboarding, the operational Console, teacher tra
 | --- | --- |
 | Physical block coding | A `START` block reads a line of programming blocks and drives a nearby robot. Movement, turning, bounded repetition, conditions, sensing, waiting, placing, digging, variables, and stopping are represented in-world. |
 | Programmable robot | A persistent robot entity can move, rotate, inspect the node ahead, place stone, and dig. |
-| Ecology and habitats | Meadow, monsoon-forest, and freshwater-wetland biome content supports growable pollinator plants, bounded wildlife spawning, farm animals, persistent real-life pets, predator–prey behavior, and measurable habitat surveys. |
+| Ecology and habitats | A deterministic Valleys learning world connects a safe campus to temperate forest, wetland, monsoon forest, savanna, dry scrub, montane conifer, alpine snow, mangrove coast, and shallow reef habitats. Biome-specific plants, bounded wildlife, farm animals, persistent pets, predator–prey behavior, and field surveys make those regions playable. |
 | Classroom electronics | Deterministic, bounded power networks connect batteries, switches, wires, lamps, and rotating motors. A multimeter reports component state. |
 | Lesson authoring | Placeable Guides, blackboards, whiteboards, a Lesson Planner, and checkpoint flags let an educator build instructions and progress tasks into a world. |
 | Chemistry activities | A Chemistry Lab combines H, O, C, N, Na, and Cl atom items into seven supported molecules, including water, oxygen, carbon dioxide, salt, ammonia, and methane. |
@@ -147,7 +147,9 @@ Open the **Ecology** catalog for the Field Journal, seeds, companion treats, pla
 
 All nine species use lightweight rigged models, species-appropriate scales, and distinct movement. Rabbits and squirrels freeze before bounding away; deer watch from farther off and then run; ducks waddle on land, float and swim in water, and forage near wetlands; cows calmly graze and step away when crowded; chickens peck and flee sudden danger. Wild foxes stalk and chase rabbits, squirrels, ducks, and chickens, while prey use evasive escape paths. These chases remain classroom-safe and do not damage either animal. Unowned dogs greet players socially, while cats tend to observe before approaching. A held Companion Treat attracts tameable animals, and owned companions follow or stay for their owner. Movement accelerates and turns smoothly, avoids unsafe drops, preserves momentum through hops, and steers around blocked routes.
 
-Newly generated terrain can include pollinator meadow, monsoon forest, and freshwater wetland biome content. Existing explored map chunks are not regenerated, so use a new world or travel into new terrain to see map-generation changes.
+Every new world opens at a deterministic learning campus with ecology, programming, electronics, and classroom stations. Eight connected, marked field trails extend no farther than 640 nodes through a curated Valleys landscape: temperate forest, freshwater river and wetland, monsoon forest, grassland and savanna, dry scrub and desert, montane conifer forest, alpine tundra and snow, and coast, mangrove, and shallow reef. Trail markers report the local habitat when used, and the Field Journal includes the habitat name in each survey.
+
+Wild animal populations now follow those habitats: foxes, deer, rabbits, and squirrels occupy appropriate land regions, while ducks require wetland or mangrove habitat with nearby water. Farm animals and pets remain educator-placed rather than spawning as wildlife. Existing explored map chunks are not regenerated, so create a new world to see the campus and complete biome system.
 
 ## Electronics and mechanisms
 
@@ -199,7 +201,7 @@ The lab consumes the atom items and creates the molecule in front of the lab. A 
 
 ### World presentation
 
-Newly generated chunks receive OpenClassCraft's bright sky, clouds, chunky trees, grass, learning flowers, small stones, and sand details. Survival ores are not generated. Existing generated terrain is not retroactively rebuilt. Ambient classroom music starts per player; use **Restart music** or **Refresh sky** in the <kbd>/</kbd> Actions center when needed.
+New worlds use the locked Valleys generator and a fixed learning-world seed, so schools receive the same campus, broad hills, connected rivers, field routes, and nearby habitat structure. Biome-specific trees, grasses, flowers, reeds, cactus, mangrove roots, kelp, coral, snow, and lichen replace the old generic decoration pass. Survival ores and dungeons are disabled; caves are rare, deep, and reserved for geology and groundwater study. Existing generated terrain is not retroactively rebuilt. Ambient classroom music starts per player; use **Restart music** or **Refresh sky** in the <kbd>/</kbd> Actions center when needed.
 
 ## Local classroom multiplayer
 

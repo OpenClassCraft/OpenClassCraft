@@ -899,53 +899,14 @@ minetest.register_tool(MODNAME .. ":field_journal", {
 		end
 		local score = math.min(100, math.floor(#plants / 4) + math.floor(#trees / 3) +
 			math.floor(#water / 8) + species_count * 15)
+		local habitat_name = openclasscraft_mapgen.get_habitat_name(pos)
+		local habitat = openclasscraft_mapgen.HABITATS[habitat_name]
 		minetest.chat_send_player(user:get_player_name(), string.format(
-			"[Field survey] Plants: %d · Tree nodes: %d · Water nodes: %d · Animals: %d · Species: %d · Habitat score: %d/100",
+			"[Field survey · %s] Plants: %d · Tree nodes: %d · Water nodes: %d · Animals: %d · Species: %d · Habitat score: %d/100",
+			habitat and habitat.title or "Learning Habitat",
 			#plants, #trees, #water, animal_count, species_count, score))
 		return itemstack
 	end,
-})
-
-minetest.register_biome({
-	name = "openclasscraft_pollinator_meadow",
-	node_top = "default:dirt_with_grass",
-	depth_top = 1,
-	node_filler = "default:dirt",
-	depth_filler = 3,
-	node_riverbed = "default:sand",
-	depth_riverbed = 2,
-	y_min = 1,
-	y_max = 90,
-	heat_point = 58,
-	humidity_point = 62,
-})
-
-minetest.register_biome({
-	name = "openclasscraft_monsoon_forest",
-	node_top = "default:dirt_with_rainforest_litter",
-	depth_top = 1,
-	node_filler = "default:dirt",
-	depth_filler = 4,
-	node_riverbed = "default:sand",
-	depth_riverbed = 3,
-	y_min = 1,
-	y_max = 110,
-	heat_point = 82,
-	humidity_point = 88,
-})
-
-minetest.register_biome({
-	name = "openclasscraft_freshwater_wetland",
-	node_top = "default:dirt_with_grass",
-	depth_top = 1,
-	node_filler = "default:dirt",
-	depth_filler = 4,
-	node_riverbed = "default:sand",
-	depth_riverbed = 3,
-	y_min = -1,
-	y_max = 12,
-	heat_point = 72,
-	humidity_point = 96,
 })
 
 minetest.register_decoration({
@@ -954,7 +915,11 @@ minetest.register_decoration({
 	place_on = {"default:dirt_with_grass"},
 	sidelen = 16,
 	fill_ratio = 0.018,
-	biomes = {"openclasscraft_pollinator_meadow"},
+	biomes = {
+		"openclasscraft_learning_meadow",
+		"openclasscraft_temperate_forest",
+		"openclasscraft_grassland_savanna",
+	},
 	y_min = 1,
 	y_max = 90,
 	decoration = MODNAME .. ":pollinator_flower",
@@ -965,12 +930,12 @@ minetest.register_decoration({
 minetest.register_decoration({
 	name = MODNAME .. ":wetland_reeds",
 	deco_type = "simple",
-	place_on = {"default:dirt_with_grass", "default:dirt"},
+	place_on = {"default:dirt_with_grass", "default:dirt", "default:sand"},
 	sidelen = 16,
 	fill_ratio = 0.03,
-	biomes = {"openclasscraft_freshwater_wetland"},
+	biomes = {"openclasscraft_freshwater_wetland", "openclasscraft_mangrove_coast"},
 	y_min = -1,
-	y_max = 12,
+	y_max = 18,
 	decoration = MODNAME .. ":wetland_reed",
 })
 
@@ -985,9 +950,70 @@ local function local_animal_count(pos)
 	return count
 end
 
+local habitat_wildlife = {
+	openclasscraft_temperate_forest = {
+		{kind = "deer", weight = 30}, {kind = "squirrel", weight = 32},
+		{kind = "rabbit", weight = 28}, {kind = "fox", weight = 10},
+	},
+	openclasscraft_freshwater_wetland = {
+		{kind = "duck", weight = 55}, {kind = "rabbit", weight = 25},
+		{kind = "deer", weight = 15}, {kind = "squirrel", weight = 5},
+	},
+	openclasscraft_monsoon_forest = {
+		{kind = "squirrel", weight = 38}, {kind = "deer", weight = 34},
+		{kind = "rabbit", weight = 20}, {kind = "fox", weight = 8},
+	},
+	openclasscraft_grassland_savanna = {
+		{kind = "deer", weight = 46}, {kind = "rabbit", weight = 38},
+		{kind = "fox", weight = 12}, {kind = "squirrel", weight = 4},
+	},
+	openclasscraft_dry_scrub = {
+		{kind = "rabbit", weight = 60}, {kind = "fox", weight = 25},
+		{weight = 15},
+	},
+	openclasscraft_montane_conifer = {
+		{kind = "deer", weight = 42}, {kind = "squirrel", weight = 35},
+		{kind = "fox", weight = 15}, {kind = "rabbit", weight = 8},
+	},
+	openclasscraft_alpine_tundra = {
+		{kind = "rabbit", weight = 68}, {kind = "fox", weight = 18},
+		{weight = 14},
+	},
+	openclasscraft_mangrove_coast = {
+		{kind = "duck", weight = 60}, {kind = "rabbit", weight = 25},
+		{kind = "deer", weight = 10}, {weight = 5},
+	},
+}
+
+local function weighted_wildlife(entries)
+	if not entries then
+		return nil
+	end
+	local total = 0
+	for _, entry in ipairs(entries) do
+		total = total + entry.weight
+	end
+	local roll = math.random() * total
+	for _, entry in ipairs(entries) do
+		roll = roll - entry.weight
+		if roll <= 0 then
+			return entry.kind
+		end
+	end
+	return entries[#entries].kind
+end
+
 minetest.register_abm({
-	label = "OpenClassCraft balanced wildlife spawning",
-	nodenames = {"default:dirt_with_grass", "default:dirt_with_rainforest_litter"},
+	label = "OpenClassCraft habitat-specific wildlife spawning",
+	nodenames = {
+		"default:dirt_with_grass",
+		"default:dirt_with_rainforest_litter",
+		"default:dry_dirt_with_dry_grass",
+		"default:dirt_with_coniferous_litter",
+		"default:dirt_with_snow",
+		"default:desert_sand",
+		"default:sand",
+	},
 	neighbors = {"air"},
 	interval = 45,
 	chance = 1800,
@@ -995,22 +1021,16 @@ minetest.register_abm({
 	action = function(pos)
 		local above = vector.add(pos, {x = 0, y = 1, z = 0})
 		if minetest.get_node(above).name ~= "air" or (minetest.get_node_light(above, 0.5) or 0) < 10 or
-			local_animal_count(above) >= ANIMAL_LIMIT then
+			local_animal_count(above) >= ANIMAL_LIMIT or openclasscraft_mapgen.is_campus(pos) then
 			return
 		end
-		local biome = minetest.get_biome_data(pos)
-		local humidity = biome and (biome.humidity or 0) or 0
-		local roll = math.random(1, 100)
-		local kind = "rabbit"
-		if humidity > 90 and pos.y <= 15 and roll <= 55
-				and minetest.find_node_near(pos, 7, {"group:water"}) then
-			kind = "duck"
-		elseif humidity > 78 then
-			kind = roll <= 36 and "squirrel" or "deer"
-		elseif roll <= 12 then
-			kind = "fox"
-		elseif roll <= 38 then
-			kind = "squirrel"
+		local habitat_name = openclasscraft_mapgen.get_habitat_name(pos)
+		local kind = weighted_wildlife(habitat_wildlife[habitat_name])
+		if not kind then
+			return
+		end
+		if kind == "duck" and not minetest.find_node_near(pos, 9, {"group:water"}) then
+			return
 		end
 		minetest.add_entity(vector.add(above, {x = 0, y = 0.2, z = 0}), MODNAME .. ":" .. kind)
 	end,
