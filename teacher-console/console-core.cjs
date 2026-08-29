@@ -2,8 +2,8 @@
 
 const crypto = require("crypto");
 
-const STATE_SCHEMA_VERSION = 3;
-const BRIDGE_RESPONSE_VERSION = 3;
+const STATE_SCHEMA_VERSION = 4;
+const BRIDGE_RESPONSE_VERSION = 4;
 const STATE_KIND = "openclasscraft-teacher-console-state";
 const ENCRYPTED_STATE_KIND = "openclasscraft-teacher-console-encrypted-state";
 const CURRICULUM_PACK_KIND = "openclasscraft-curriculum-pack";
@@ -337,6 +337,32 @@ function normaliseEvidence(value) {
   };
 }
 
+function normaliseChatMessage(value) {
+  return {
+    id: trim(value?.id, 100) || makeId("chat", value?.playerName),
+    assignmentId: trim(value?.assignmentId, 100),
+    sessionId: trim(value?.sessionId, 100),
+    group: trim(value?.group, 100),
+    world: trim(value?.world, 120),
+    lessonId: trim(value?.lessonId, 100),
+    lessonTitle: trim(value?.lessonTitle, 160),
+    studentId: trim(value?.studentId, 100),
+    playerName: trim(value?.playerName, 100),
+    message: trim(value?.message, 300),
+    channel: "class",
+    createdAt: trim(value?.createdAt, 60) || nowIso(),
+  };
+}
+
+function classroomEventTime(value) {
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    const date = new Date(seconds * 1000);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  return nowIso();
+}
+
 function defaultState() {
   const lessons = [
     normaliseLesson({
@@ -370,7 +396,7 @@ function defaultState() {
     profile: { teacherName: "Teacher", className: "Class 7A" },
     groups: ["Group A", "Group B"],
     assignments: [],
-    bridge: { enabled: false, port: 31085, token: "", sessionCode: "", assignmentId: "", assignmentIndex: -1 },
+    bridge: { enabled: false, port: 31085, token: "", sessionCode: "", sessionId: "", assignmentId: "", assignmentIndex: -1 },
     lessons,
     students,
     progress: [
@@ -383,6 +409,7 @@ function defaultState() {
     submissions: [],
     portfolios: [],
     presence: [],
+    chatMessages: [],
     worldSnapshots: [],
     audit: [],
     unmatchedEvents: [],
@@ -428,6 +455,7 @@ function normaliseState(raw) {
       port: Math.max(1024, Math.min(65535, Number(source.bridge?.port) || 31085)),
       token: trim(source.bridge?.token, 128),
       sessionCode: trim(source.bridge?.sessionCode, 12).toUpperCase(),
+      sessionId: trim(source.bridge?.sessionId, 100),
       assignmentId: trim(source.bridge?.assignmentId, 100) || legacyAssignment?.id || "",
       assignmentIndex: bridgeIndex,
     },
@@ -446,6 +474,9 @@ function normaliseState(raw) {
       status: entry.status === "left" ? "left" : "online",
       lastSeen: trim(entry.lastSeen, 60) || nowIso(),
     })).slice(0, 500) : [],
+    chatMessages: Array.isArray(source.chatMessages)
+      ? source.chatMessages.map(normaliseChatMessage).filter((entry) => entry.message).slice(0, 5000)
+      : [],
     worldSnapshots: Array.isArray(source.worldSnapshots) ? source.worldSnapshots.filter(Boolean).map((entry) => ({
       id: trim(entry.id, 100) || makeId("snapshot", entry.assignmentId),
       assignmentId: trim(entry.assignmentId, 100),
@@ -673,9 +704,43 @@ function addUnmatchedEvent(state, event) {
 function applyClassroomEvent(stateInput, event) {
   const state = normaliseState(stateInput);
   if (!event || typeof event !== "object" || !trim(event.type, 60)) throw new Error("Invalid classroom event.");
-  const supported = ["presence", "lesson_progress", "robot_result", "chemistry_result", "build_submission"];
+  const supported = ["presence", "lesson_progress", "robot_result", "chemistry_result", "build_submission", "chat_message"];
   if (!supported.includes(event.type)) throw new Error("Unsupported classroom event type.");
   const student = findStudentForEvent(state, event);
+  if (event.type === "chat_message") {
+    const assignment = selectedBridgeAssignment(state);
+    const lesson = findLessonForEvent(state, event);
+    const assignmentId = trim(event.assignmentId, 100);
+    const sessionId = trim(event.sessionId, 100);
+    const message = trim(event.message, 300);
+    if (!state.bridge.enabled || !assignment || !state.bridge.sessionId) {
+      throw new Error("There is no active classroom session for this message.");
+    }
+    if (assignment.id !== assignmentId || state.bridge.sessionId !== sessionId) {
+      throw new Error("This message belongs to a different or expired classroom session.");
+    }
+    if (!student || student.group !== assignment.group) {
+      throw new Error("The message sender is not in the active classroom roster.");
+    }
+    if (!lesson || lesson.id !== assignment.lessonId) {
+      throw new Error("The message lesson does not match the active classroom assignment.");
+    }
+    if (!message) throw new Error("A classroom message cannot be empty.");
+    state.chatMessages.unshift(normaliseChatMessage({
+      assignmentId: assignment.id,
+      sessionId,
+      group: assignment.group,
+      world: assignment.world,
+      lessonId: lesson.id,
+      lessonTitle: lesson.title,
+      studentId: student.id,
+      playerName: trim(event.playerName, 100) || student.username,
+      message,
+      createdAt: classroomEventTime(event.at),
+    }));
+    state.chatMessages = state.chatMessages.slice(0, 5000);
+    return { state, matched: true };
+  }
   if (event.type === "presence") {
     if (!student) {
       addUnmatchedEvent(state, event);
@@ -777,6 +842,7 @@ function bridgeLesson(stateInput) {
     active: Boolean(state.bridge.enabled && lesson),
     updatedAt: state.updatedAt || nowIso(),
     sessionCode: state.bridge.sessionCode || state.bridge.token.slice(0, 6).toUpperCase(),
+    sessionId: state.bridge.sessionId,
     assignment: assignment ? {
       id: assignment.id,
       group: assignment.group,

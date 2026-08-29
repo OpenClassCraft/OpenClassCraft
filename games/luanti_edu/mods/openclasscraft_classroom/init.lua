@@ -1363,6 +1363,8 @@ local function bridge_apply_lesson(payload)
 	lesson_storage:set_string("teacher_bridge_version", tostring(payload.updatedAt or ""))
 	lesson_storage:set_string("teacher_bridge_session_code",
 		type(payload.sessionCode) == "string" and payload.sessionCode:upper() or "")
+	lesson_storage:set_string("teacher_bridge_session_id",
+		type(payload.sessionId) == "string" and payload.sessionId or "")
 	lesson_storage:set_string("teacher_bridge_lesson_id",
 		type(payload.lesson.id) == "string" and payload.lesson.id or "")
 	lesson_storage:set_string("teacher_bridge_roster",
@@ -1417,16 +1419,24 @@ teacher_bridge_report_event = function(player, event_type, details)
 		return
 	end
 	local lesson = get_lesson()
+	local assignment = minetest.deserialize(lesson_storage:get_string("teacher_bridge_assignment"))
+	if type(assignment) ~= "table" then assignment = {} end
 	local event = {
 		type = event_type,
 		playerName = player:get_player_name(),
+		assignmentId = type(assignment.id) == "string" and assignment.id or "",
+		assignmentGroup = type(assignment.group) == "string" and assignment.group or "",
+		world = type(assignment.world) == "string" and assignment.world or "",
+		sessionId = lesson_storage:get_string("teacher_bridge_session_id"),
 		lessonId = lesson_storage:get_string("teacher_bridge_lesson_id"),
 		lessonTitle = lesson.title,
 		at = os.time(),
 	}
 	if type(details) == "table" then
 		for key, value in pairs(details) do
-			if key ~= "type" and key ~= "playerName" then
+			if key ~= "type" and key ~= "playerName" and
+				key ~= "assignmentId" and key ~= "assignmentGroup" and
+				key ~= "world" and key ~= "sessionId" then
 				event[key] = value
 			end
 		end
@@ -1442,7 +1452,7 @@ teacher_bridge_report_event = function(player, event_type, details)
 			"X-OpenClassCraft-Token: " .. token,
 		},
 	}, function(result)
-		if not result.succeeded then
+		if not result.succeeded or (result.code or 0) < 200 or (result.code or 0) >= 300 then
 			minetest.log("warning", "[OpenClassCraft] Teacher Console classroom event was not delivered.")
 		end
 	end)
@@ -1470,6 +1480,28 @@ local function teacher_bridge_roster_entry(player_name)
 		end
 	end
 	return nil
+end
+
+local function is_active_class_member(player)
+	if not player or not player:is_player() then return false end
+	local session_code = lesson_storage:get_string("teacher_bridge_session_code")
+	local session_id = lesson_storage:get_string("teacher_bridge_session_id")
+	if session_code == "" or session_id == "" then return false end
+	if player:get_meta():get_string("openclasscraft_joined_session") ~= session_code then return false end
+	return teacher_bridge_roster_entry(player:get_player_name()) ~= nil
+end
+
+openclasscraft_classroom.is_active_class_member = is_active_class_member
+openclasscraft_classroom.report_chat_message = function(player, raw_message)
+	if not is_active_class_member(player) then return false end
+	local message = trim(type(raw_message) == "string" and raw_message or "")
+		:gsub("[%z\1-\31\127]", " "):gsub("%s+", " "):sub(1, 300)
+	if message == "" then return false end
+	teacher_bridge_report_event(player, "chat_message", {
+		channel = "class",
+		message = message,
+	})
+	return true
 end
 
 minetest.register_chatcommand("occ_join", {

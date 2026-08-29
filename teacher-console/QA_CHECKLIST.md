@@ -4,7 +4,7 @@ Use disposable student accounts and test worlds. Never use a production class ro
 
 ## Automated gate
 
-- [x] Schema-v2 data migrates to schema v3.
+- [x] Schema-v2 data migrates to schema v4.
 - [x] CSV `Role` is read from the correct column; quoted and multiline values parse.
 - [x] Plain workspace checksum corruption is rejected.
 - [x] AES-256-GCM encrypted workspace round-trips; missing/wrong passphrases fail closed.
@@ -12,6 +12,7 @@ Use disposable student accounts and test worlds. Never use a production class ro
 - [x] Stage override policy and block whitelist reach the bridge payload.
 - [x] Presence, progress, chemistry, robot, and build event models are accepted.
 - [x] Unknown player events enter reconciliation and can be replayed.
+- [x] Chat messages are accepted only for the matching active assignment, session ID, lesson, group, and rostered username.
 - [x] Curriculum packs omit roster/progress data.
 - [x] Coding, Chemistry, Science, and EVS template files and runtime exist.
 - [x] Main, preload, renderer, core, release-script JavaScript syntax passes.
@@ -26,7 +27,7 @@ npm run validate
 
 ## Fedora desktop smoke test
 
-- [x] Start from source under a Fedora graphical session; all seven views render with no reload exceptions.
+- [x] Start the current build under a Fedora graphical session; all eight views, including Chat history, render with no reload exceptions.
 - [ ] Create/edit/duplicate/publish/version/rollback a lesson.
 - [ ] Author at least two lesson stages and switch the active assignment stage.
 - [ ] Import `Name,Username,Group,Role` CSV and verify all three roles.
@@ -61,6 +62,9 @@ npm run validate
 - [ ] Confirm a roster `Educator` is not elevated by join code alone.
 - [ ] Grant Educator explicitly with `/occ_set_role`; confirm educator controls.
 - [ ] Observe presence online/left transitions in the Console.
+- [ ] Send messages through normal chat and the visual Actions window; confirm both appear only in the selected classroom's Chat history.
+- [ ] Reject chat from an unjoined player, a different assigned group, and an expired session.
+- [ ] Clear one classroom's history and confirm other classroom histories remain.
 - [ ] Complete a checkpoint and verify the correct student/lesson record.
 - [ ] Run one successful and one blocked robot program; review both submissions.
 - [ ] Create a chemistry result and submit a build; review with a rubric.

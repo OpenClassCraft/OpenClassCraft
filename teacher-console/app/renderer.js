@@ -10,6 +10,7 @@ let currentView = "dashboard";
 let editingLessonId = "";
 let editingStudentId = "";
 let editingAssignmentId = "";
+let chatAssignmentFilter = "";
 let dirty = false;
 
 const WORLD_PERMISSION_LABELS = {
@@ -33,6 +34,14 @@ function id(prefix) {
   return `${prefix}-${suffix}`;
 }
 
+function rotateClassSession() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(6);
+  globalThis.crypto.getRandomValues(bytes);
+  state.bridge.sessionCode = [...bytes].map((value) => alphabet[value % alphabet.length]).join("");
+  state.bridge.sessionId = id("session");
+}
+
 function nowIso() { return new Date().toISOString(); }
 function lessonById(value) { return state.lessons.find((lesson) => lesson.id === value); }
 function studentById(value) { return state.students.find((student) => student.id === value); }
@@ -43,13 +52,13 @@ function progressPercent(entry) { return entry.total ? Math.round((entry.complet
 function pathName(value) { return trim(value).split(/[\\/]/).filter(Boolean).pop() || "Not installed"; }
 
 function normaliseClientState() {
-  state.schemaVersion = 3;
+  state.schemaVersion = 4;
   state.updatedAt ||= nowIso();
   state.profile = { teacherName: "Teacher", className: "Class", ...(state.profile || {}) };
-  for (const key of ["groups", "assignments", "lessons", "students", "progress", "starterWorldPresets", "rubrics", "submissions", "portfolios", "presence", "worldSnapshots", "audit", "unmatchedEvents"]) {
+  for (const key of ["groups", "assignments", "lessons", "students", "progress", "starterWorldPresets", "rubrics", "submissions", "portfolios", "presence", "chatMessages", "worldSnapshots", "audit", "unmatchedEvents"]) {
     state[key] = Array.isArray(state[key]) ? state[key] : [];
   }
-  state.bridge = { enabled: false, port: 31085, token: "", sessionCode: "", assignmentId: "", assignmentIndex: -1, ...(state.bridge || {}) };
+  state.bridge = { enabled: false, port: 31085, token: "", sessionCode: "", sessionId: "", assignmentId: "", assignmentIndex: -1, ...(state.bridge || {}) };
   state.settings = state.settings || {};
   state.settings.encryptionEnabled = state.settings.encryptionEnabled === true;
   state.settings.sync = { enabled: false, folder: "", lastSyncAt: "", ...(state.settings.sync || {}) };
@@ -189,6 +198,53 @@ function renderClassroom() {
     </div>`;
 }
 
+function chatClassroomChoices() {
+  const choices = new Map();
+  for (const assignment of state.assignments) {
+    const lesson = lessonById(assignment.lessonId);
+    choices.set(assignment.id, `${assignment.group} · ${lesson?.title || assignment.world || "Classroom"}`);
+  }
+  for (const message of state.chatMessages) {
+    if (message.assignmentId && !choices.has(message.assignmentId)) {
+      choices.set(message.assignmentId, `${message.group || "Archived group"} · ${message.lessonTitle || message.world || "Archived classroom"}`);
+    }
+  }
+  return choices;
+}
+
+function chatClassroomLabel(assignmentId) {
+  if (assignmentId === "all") return "all classrooms";
+  return chatClassroomChoices().get(assignmentId) || "archived classroom";
+}
+
+function renderMessages() {
+  const choices = chatClassroomChoices();
+  if (!chatAssignmentFilter) chatAssignmentFilter = selectedAssignment()?.id || "all";
+  if (chatAssignmentFilter !== "all" && !choices.has(chatAssignmentFilter)) chatAssignmentFilter = "all";
+  const scoped = chatAssignmentFilter === "all"
+    ? state.chatMessages
+    : state.chatMessages.filter((entry) => entry.assignmentId === chatAssignmentFilter);
+  const visible = scoped.slice(0, 500);
+  const options = [
+    `<option value="all"${chatAssignmentFilter === "all" ? " selected" : ""}>All classrooms</option>`,
+    ...[...choices.entries()].map(([assignmentId, label]) => `<option value="${escapeAttribute(assignmentId)}"${chatAssignmentFilter === assignmentId ? " selected" : ""}>${escapeHtml(label)}</option>`),
+  ].join("");
+  const rows = visible.map((entry) => {
+    const student = studentById(entry.studentId);
+    const classroom = choices.get(entry.assignmentId) || `${entry.group || "Archived group"} · ${entry.lessonTitle || entry.world || "Classroom"}`;
+    return `<tr><td>${escapeHtml(new Date(entry.createdAt).toLocaleString())}</td><td>${escapeHtml(classroom)}</td><td><strong>${escapeHtml(student?.name || entry.playerName)}</strong><br><code>${escapeHtml(entry.playerName)}</code></td><td class="chat-message">${escapeHtml(entry.message)}</td></tr>`;
+  }).join("");
+  const encryptionNotice = state.settings.encryptionEnabled
+    ? "These messages are stored inside the encrypted local workspace and its encrypted backups."
+    : "These messages are currently readable in the local workspace. Turn on workspace encryption before using real classroom aliases.";
+
+  byId("messages").innerHTML = `
+    <div class="section-heading"><div><h2>Class chat history</h2><p>Only rostered players who joined the matching active classroom session are recorded.</p></div><div class="row-actions">${action(`Clear ${chatAssignmentFilter === "all" ? "all history" : "this classroom"}`, "clear-chat-history", chatAssignmentFilter, "danger", scoped.length === 0)}</div></div>
+    <div class="callout ${state.settings.encryptionEnabled ? "" : "warning"}"><strong>${state.settings.encryptionEnabled ? "Encrypted locally" : "Encryption recommended"}</strong><span>${escapeHtml(encryptionNotice)} Clearing history removes it from the active workspace, but older recovery copies may remain until they rotate out.</span></div>
+    <div class="chat-toolbar"><label for="chatAssignmentFilter">Classroom</label><select id="chatAssignmentFilter">${options}</select><span>${scoped.length} saved message${scoped.length === 1 ? "" : "s"}${scoped.length > visible.length ? ` · showing newest ${visible.length}` : ""}</span></div>
+    <div class="table-wrap chat-table"><table><thead><tr><th>Time</th><th>Classroom</th><th>Sender</th><th>Message</th></tr></thead><tbody>${rows || "<tr><td colspan=\"4\">No messages have been saved for this classroom.</td></tr>"}</tbody></table></div>`;
+}
+
 function lessonCard(lesson) {
   const currentStage = lesson.stages?.find((stage) => stage.id === lesson.activeStageId) || lesson.stages?.[0];
   const tone = lesson.status === "Published" ? "success" : lesson.status === "Archived" ? "neutral" : "warning";
@@ -282,6 +338,7 @@ function renderOperations() {
 function render() {
   renderDashboard();
   renderClassroom();
+  renderMessages();
   renderLessons();
   renderStudents();
   renderAssessment();
@@ -296,10 +353,10 @@ function showView(view) {
   currentView = view;
   document.querySelectorAll(".view").forEach((element) => element.classList.toggle("active", element.id === view));
   document.querySelectorAll(".nav-item").forEach((element) => element.classList.toggle("active", element.dataset.view === view));
-  const titles = { dashboard: "Dashboard", classroom: "Classroom", lessons: "Lessons", students: "Students", assessment: "Assessment", portfolios: "Portfolios", operations: "Operations" };
+  const titles = { dashboard: "Dashboard", classroom: "Classroom", messages: "Chat history", lessons: "Lessons", students: "Students", assessment: "Assessment", portfolios: "Portfolios", operations: "Operations" };
   byId("pageTitle").textContent = titles[view] || view;
   const labels = { dashboard: "New lesson", classroom: "Assign lesson", lessons: "New lesson", students: "New student", assessment: "New rubric", portfolios: "Attach evidence" };
-  byId("newButton").hidden = view === "operations";
+  byId("newButton").hidden = ["messages", "operations"].includes(view);
   byId("newButton").textContent = labels[view] || "New";
 }
 
@@ -638,6 +695,7 @@ async function handleAction(actionName, identifier) {
   }
   if (actionName === "select-bridge") {
     state.bridge.assignmentId = identifier; state.bridge.assignmentIndex = state.assignments.findIndex((entry) => entry.id === identifier);
+    if (state.bridge.enabled) rotateClassSession();
     audit("Live assignment selected", `${assignmentById(identifier)?.group}: ${lessonById(assignmentById(identifier)?.lessonId)?.title}`); setDirty(); render(); showView("classroom"); return save();
   }
   if (actionName === "next-stage") {
@@ -648,12 +706,17 @@ async function handleAction(actionName, identifier) {
   }
   if (actionName === "toggle-bridge") {
     if (!state.bridge.enabled && !selectedAssignment()) return toast("Select a live assignment first.", "error");
-    if (!state.bridge.enabled) {
-      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      const bytes = new Uint8Array(6); globalThis.crypto.getRandomValues(bytes);
-      state.bridge.sessionCode = [...bytes].map((value) => alphabet[value % alphabet.length]).join("");
-    }
+    if (!state.bridge.enabled) rotateClassSession();
     state.bridge.enabled = !state.bridge.enabled; audit(state.bridge.enabled ? "LAN session started" : "LAN session stopped", selectedAssignment()?.group || "No assignment"); setDirty(); await save(); render(); showView("classroom"); return;
+  }
+  if (actionName === "clear-chat-history") {
+    const scope = identifier || "all";
+    const count = scope === "all" ? state.chatMessages.length : state.chatMessages.filter((entry) => entry.assignmentId === scope).length;
+    if (!count) return;
+    const label = chatClassroomLabel(scope);
+    if (!confirm(`Clear ${count} saved message${count === 1 ? "" : "s"} from ${label}? Older recovery copies may retain them until those copies rotate out.`)) return;
+    state.chatMessages = scope === "all" ? [] : state.chatMessages.filter((entry) => entry.assignmentId !== scope);
+    audit("Class chat history cleared", `${label}: ${count} messages`); setDirty(); render(); showView("messages"); return save();
   }
   if (actionName === "change-bridge-port") {
     const value = Number(prompt("Local bridge port (1024–65535)", String(state.bridge.port)));
@@ -787,6 +850,11 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  if (event.target.id === "chatAssignmentFilter") {
+    chatAssignmentFilter = event.target.value;
+    renderMessages();
+    return;
+  }
   if (event.target.id === "assignmentPreset") {
     const preset = presetById(event.target.value); if (!preset) return;
     byId("assignmentWorld").value = preset.worldName;
@@ -883,7 +951,10 @@ window.addEventListener("beforeunload", (event) => { if (dirty) { event.preventD
 
 window.teacherConsole.onClassroomEvent((payload) => {
   state = payload.state; normaliseClientState(); dirty = false; render(); showView(currentView);
-  toast(payload.matched ? "New classroom activity received." : "An unmatched classroom event needs attention.", payload.matched ? "success" : "warning");
+  const message = payload.eventType === "chat_message"
+    ? "New class message saved."
+    : payload.matched ? "New classroom activity received." : "An unmatched classroom event needs attention.";
+  toast(message, payload.matched ? "success" : "warning");
 });
 
 function initialise(result) {

@@ -181,6 +181,12 @@ local function set_notice(player, ok, message)
 		"[OpenClassCraft] " .. notices[player:get_player_name()])
 end
 
+local function report_class_message(player, message)
+	if openclasscraft_classroom and openclasscraft_classroom.report_chat_message then
+		openclasscraft_classroom.report_chat_message(player, message)
+	end
+end
+
 local function send_class_message(player, raw_message)
 	local message = clean_text(raw_message, 300)
 	if message == "" then
@@ -193,6 +199,7 @@ local function send_class_message(player, raw_message)
 		return
 	end
 	add_chat_entry(name .. "  ·  " .. message)
+	report_class_message(player, message)
 	minetest.chat_send_all(minetest.colorize("#72D49B", name) .. "  ·  " .. message)
 	notices[name] = "Message sent to the class."
 end
@@ -291,6 +298,8 @@ end)
 minetest.register_on_chat_message(function(name, message)
 	if message:sub(1, 1) ~= "/" then
 		add_chat_entry(name .. "  ·  " .. message)
+		local player = minetest.get_player_by_name(name)
+		if player then report_class_message(player, message) end
 	end
 	return false
 end)

@@ -22,11 +22,12 @@ The current game and Teacher Console are offline-first:
 
 - game worlds and player records are stored on the host computer;
 - the Teacher Console workspace is stored as a local `teacher-console.json` file;
+- messages from rostered players who joined the active classroom session are stored in that workspace and separated by assignment and session;
 - reports are exported as CSV to a teacher-selected location;
-- backups are exported as JSON to a teacher-selected location; and
+- backups are exported to a teacher-selected location; and
 - the optional lesson bridge binds to `127.0.0.1` and uses a local token.
 
-The Teacher Console file and its exported backups are **plain JSON, not encrypted**. Local storage is not automatically safe: anyone with access to the account, disk, backup location, or exported file may be able to read it.
+The Teacher Console supports optional AES-256-GCM encryption for its workspace, backups, and opt-in folder sync. Encryption is not automatic: when it is disabled, the local workspace and any deliberately exported plain backup are readable JSON. Anyone with access to the operating-system account, disk, backup location, passphrase, or unencrypted export may be able to read student records and chat history.
 
 ## Minimum school controls
 
@@ -39,6 +40,7 @@ Before the first session:
 5. Keep the Teacher Console bridge token private. Never paste it into a public issue, screenshot, lesson document, or chat.
 6. Back up the disposable pilot world before every session involving editing or destructive tools.
 7. Explain to students that aliases are used and that they must not type personal information into chat, boards, Guides, project names, or notes.
+8. Tell students and the responsible school staff that joined-session class chat is retained in the Console. Enable workspace encryption and agree on a short retention period before using chat history.
 
 ## Data-minimised pilot record
 
@@ -49,6 +51,7 @@ The useful pilot record is intentionally small:
 | Participant | `River-3` or `Team River` | Student’s full name |
 | Session | Date, grade band, planned/completed count | Attendance sheet with personal identifiers |
 | Progress | `3 of 4 checkpoints` | Formal marks or sensitive teacher judgement |
+| Class chat | Short lesson discussion using approved aliases | Personal information, safeguarding disclosures, passwords, or unrelated private conversation |
 | Feedback | Anonymised observation | Quoted child without school/guardian approval |
 | Technical log | App version, device OS, error message | Username, token, full local path, IP address |
 
@@ -59,10 +62,11 @@ The project team should request aggregated counts and anonymised observations by
 At pilot kickoff, the school names the person responsible for the workspace and backup. At the end of the pilot:
 
 1. Export any approved aggregated report the school wants to keep.
-2. Confirm whether the school is continuing, extending, or leaving.
-3. If leaving, remove the School Console package, local workspace, exported backups, bridge configuration, and token from the pilot device according to school policy.
-4. Keep only the minimum contract, invoice, support, and anonymised evaluation record the project is legally and operationally required to retain.
-5. Record completion of the exit without copying student-level content to the project team.
+2. Clear class-message history that the school no longer needs. Remember that rolling recovery files and device backups may retain older copies until they rotate or are removed under school policy.
+3. Confirm whether the school is continuing, extending, or leaving.
+4. If leaving, remove the School Console package, local workspace, exported backups, bridge configuration, and token from the pilot device according to school policy.
+5. Keep only the minimum contract, invoice, support, and anonymised evaluation record the project is legally and operationally required to retain.
+6. Record completion of the exit without copying student-level content to the project team.
 
 Deletion of a local file may not remove copies from device backups. The school should follow its normal managed-device and backup process.
 
@@ -72,7 +76,7 @@ Deletion of a local file may not remove copies from device backups. The school s
 - Use a trusted, supervised cohort. Do not expose the founding beta to an untrusted public server.
 - Review server privileges before each session.
 - Use a copy of a world for any World Edit Wand activity; the tool has no undo.
-- Keep chat, Guide, board, project, and world names free of personal information.
+- Keep chat, Guide, board, project, and world names free of personal information. Class chat from joined roster members is a retained school record until cleared.
 - Stop the session if a learner can access teacher-only records, destructive controls cannot be contained, the world corrupts, or private data appears unexpectedly.
 
 ## Incident response

@@ -6,7 +6,7 @@ const path = require("node:path");
 const test = require("node:test");
 const core = require("../console-core.cjs");
 
-test("schema v2 data migrates to schema v3 without losing checkpoints", () => {
+test("schema v2 data migrates to schema v4 without losing checkpoints", () => {
   const state = core.normaliseState({
     schemaVersion: 2,
     schoolName: "Migration School",
@@ -15,11 +15,12 @@ test("schema v2 data migrates to schema v3 without losing checkpoints", () => {
     students: [{ id: "s1", name: "Learner", group: "7A", role: "teacher" }],
     progress: [{ studentId: "s1", lessonId: "old", complete: 1, total: 2 }],
   });
-  assert.equal(state.schemaVersion, 3);
+  assert.equal(state.schemaVersion, 4);
   assert.equal(state.lessons[0].checkpoints[0].title, "One");
   assert.equal(state.students[0].role, "Educator");
   assert.equal(state.progress[0].complete, 1);
   assert.equal(state.lessons[0].stages[0].policyMode, "inherit");
+  assert.deepEqual(state.chatMessages, []);
 });
 
 test("CSV imports Role from the Role column and supports quoted multiline values", () => {
@@ -56,10 +57,11 @@ test("bridge publishes only the selected group and enforces override stage polic
     activeStageId: "locked-stage", policy: { studentsCanPlace: false, studentsCanDig: false, studentsCanUseWorldEditWand: false, allowedBlocks: [], allowedTools: [] },
   };
   state.assignments = [assignment];
-  state.bridge = { enabled: true, port: 31085, token: "abcdef123456", assignmentId: assignment.id, assignmentIndex: 0 };
+  state.bridge = { enabled: true, port: 31085, token: "abcdef123456", sessionId: "session-a", assignmentId: assignment.id, assignmentIndex: 0 };
   const payload = core.bridgeLesson(state);
   assert.equal(payload.active, true);
   assert.equal(payload.sessionCode, "ABCDEF");
+  assert.equal(payload.sessionId, "session-a");
   assert.deepEqual(payload.roster.map((entry) => entry.name), ["Aarav", "Maya"]);
   assert.equal(payload.lesson.tasks.length, 1);
   assert.equal(payload.policy.studentsCanPlace, true);
@@ -81,6 +83,58 @@ test("classroom presence, progress, and result events update the right records",
   result = core.applyClassroomEvent(state, { type: "chemistry_result", playerName: "Aarav", lessonTitle: "Make Water", title: "Water", result: { formula: "H2O" } });
   assert.equal(result.state.submissions[0].type, "Chemistry result");
   assert.equal(result.state.submissions[0].payload.formula, "H2O");
+});
+
+test("class chat history is saved only for the matching active classroom session", () => {
+  const state = core.defaultState();
+  const lesson = state.lessons[0];
+  const assignment = {
+    id: "assignment-chat-a",
+    group: "Group A",
+    lessonId: lesson.id,
+    world: "Chemistry Room A",
+    worldPresetId: "starter-chemistry-fundamentals",
+    policy: {},
+  };
+  state.assignments = [assignment];
+  state.bridge = {
+    enabled: true,
+    port: 31085,
+    token: "abcdef123456",
+    sessionCode: "ABC123",
+    sessionId: "session-chat-a",
+    assignmentId: assignment.id,
+    assignmentIndex: 0,
+  };
+  const event = {
+    type: "chat_message",
+    playerName: "Aarav",
+    assignmentId: assignment.id,
+    sessionId: "session-chat-a",
+    lessonId: lesson.id,
+    message: "  Our water model uses two hydrogen atoms.  ",
+    at: 1700000000,
+  };
+  const result = core.applyClassroomEvent(state, event);
+  assert.equal(result.matched, true);
+  assert.equal(result.state.chatMessages.length, 1);
+  assert.deepEqual(result.state.chatMessages[0], {
+    id: result.state.chatMessages[0].id,
+    assignmentId: assignment.id,
+    sessionId: "session-chat-a",
+    group: "Group A",
+    world: "Chemistry Room A",
+    lessonId: lesson.id,
+    lessonTitle: lesson.title,
+    studentId: "student-001",
+    playerName: "Aarav",
+    message: "Our water model uses two hydrogen atoms.",
+    channel: "class",
+    createdAt: "2023-11-14T22:13:20.000Z",
+  });
+  assert.throws(() => core.applyClassroomEvent(state, { ...event, sessionId: "old-session" }), /different or expired/i);
+  assert.throws(() => core.applyClassroomEvent(state, { ...event, playerName: "Noah" }), /active classroom roster/i);
+  assert.throws(() => core.applyClassroomEvent(state, { ...event, assignmentId: "assignment-other" }), /different or expired/i);
 });
 
 test("unmatched events can be reconciled and replayed", () => {

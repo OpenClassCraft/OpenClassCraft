@@ -29,6 +29,7 @@ function evidenceDirectory() { return path.join(app.getPath("userData"), "portfo
 
 function ensureBridgeToken(state) {
   if (!state.bridge.token) state.bridge.token = crypto.randomBytes(24).toString("hex");
+  if (state.bridge.enabled && !state.bridge.sessionId) state.bridge.sessionId = crypto.randomBytes(16).toString("hex");
 }
 
 async function writeAtomic(filePath, data) {
@@ -166,9 +167,10 @@ async function configureBridge(state) {
       request.on("end", async () => {
         if (tooLarge) return;
         try {
-          const result = core.applyClassroomEvent(activeState, JSON.parse(body));
+          const event = JSON.parse(body);
+          const result = core.applyClassroomEvent(activeState, event);
           activeState = await writeState(result.state);
-          mainWindow?.webContents.send("classroom:event", { state: activeState, matched: result.matched });
+          mainWindow?.webContents.send("classroom:event", { state: activeState, matched: result.matched, eventType: event.type });
           bridgeResponse(response, 200, { accepted: true, matched: result.matched });
         }
         catch (error) {
@@ -392,6 +394,7 @@ ipcMain.handle("state:load", async () => {
 ipcMain.handle("state:unlock", async (_event, passphrase) => {
   try {
     const state = await readState(String(passphrase || ""));
+    ensureBridgeToken(state);
     activePassphrase = String(passphrase || "");
     activeState = state;
     await configureBridge(state);
@@ -601,7 +604,7 @@ ipcMain.handle("diagnostics:export", async (_event, state) => {
       arch: currentSystem.arch,
       internetRequired: currentSystem.internetRequired,
     },
-    counts: { students: normalised.students.length, groups: normalised.groups.length, lessons: normalised.lessons.length, assignments: normalised.assignments.length, progress: normalised.progress.length, submissions: normalised.submissions.length, unmatchedEvents: normalised.unmatchedEvents.length },
+    counts: { students: normalised.students.length, groups: normalised.groups.length, lessons: normalised.lessons.length, assignments: normalised.assignments.length, progress: normalised.progress.length, submissions: normalised.submissions.length, chatMessages: normalised.chatMessages.length, unmatchedEvents: normalised.unmatchedEvents.length },
     settings: { encryptionEnabled: normalised.settings.encryptionEnabled, syncEnabled: normalised.settings.sync.enabled, updateChannel: normalised.settings.updates.channel, crashReports: normalised.settings.privacy.crashReports, performanceMetrics: normalised.settings.privacy.performanceMetrics },
     recentAudit: normalised.audit.slice(0, 30).map((entry) => ({ at: entry.at, action: entry.action })),
   };
