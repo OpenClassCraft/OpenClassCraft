@@ -243,34 +243,14 @@ local function handle_fields(player, fields, context, standalone)
 	return true
 end
 
-sfinv.register_page("openclasscraft_interface:hub", {
-	title = "Home",
-	get = function(self, player, context)
-		return hub_formspec(player, context, false)
-	end,
-	on_player_receive_fields = function(self, player, context, fields)
-		return handle_fields(player, fields, context, false)
-	end,
-})
-
--- The Home hub and curated learning categories replace the generic survival
--- inventory tab. Keep the underlying page registered for compatibility.
+-- The class chat and action centre opens separately with the / key. Keep both
+-- it and the generic survival inventory out of the learning catalog so Build
+-- remains the first visible inventory page.
 sfinv.override_page("sfinv:inventory", {
 	is_in_nav = function()
 		return false
 	end,
 })
-for index, page in ipairs(sfinv.pages_unordered) do
-	if page.name == "openclasscraft_interface:hub" then
-		table.remove(sfinv.pages_unordered, index)
-		table.insert(sfinv.pages_unordered, 1, page)
-		break
-	end
-end
-
-function sfinv.get_homepage_name(player)
-	return "openclasscraft_interface:hub"
-end
 
 minetest.register_chatcommand("occ_actions", {
 	description = "Open the visual OpenClassCraft action center",
